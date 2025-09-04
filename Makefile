@@ -76,7 +76,7 @@ routes: ## ルーティング表示
 
 # ---- Tests / Lint ---------------------------------------------
 test: ## rails test（無ければrspec）
-	$(RUN) "bundle exec rails test || bundle exec rspec"
+	$(COMPOSE) run --rm api bash -lc "bundle exec rspec"
 
 rspec: ## rspecのみ実行
 	$(RUN) "bundle exec rspec"
@@ -86,3 +86,9 @@ rubocop: ## Lint チェック
 
 fmt: ## 自動整形（可能な範囲）
 	$(RUN) "bundle exec rubocop -A"
+
+rspec_install:
+	$(COMPOSE) run --rm api bash -lc "bundle add rspec-rails --group 'development,test' && bundle install && bundle exec rails g rspec:install"
+
+spec_health:
+	$(COMPOSE) run --rm api bash -lc "mkdir -p spec/requests/api/v1 && echo \"# frozen_string_literal: true\nrequire 'rails_helper'\n\nRSpec.describe 'Health API', type: :request do\n  describe 'GET /api/v1/health' do\n    it 'returns ok' do\n      get '/api/v1/health'\n      expect(response).to have_http_status(:ok)\n      body = JSON.parse(response.body)\n      expect(body['status']).to eq('ok')\n    end\n  end\nend\" > spec/requests/api/v1/health_spec.rb"# frozen_string_literal: true
