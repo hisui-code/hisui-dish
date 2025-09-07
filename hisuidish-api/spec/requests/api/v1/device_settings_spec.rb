@@ -61,21 +61,21 @@ RSpec.describe "DeviceSettings API", type: :request do
       end
     end
 
-    # context "パラメーターが不正な場合（バリデーション）" do
-    #   it "負の値など不正値なら 422 を返す（仕様に合わせて調整）" do
-    #     cur = fetch_current
+    context "パラメーターが不正な場合（バリデーション）" do
+      it "負の値など不正値なら 422 を返す（仕様に合わせて調整）" do
+        cur = fetch_current
 
-    #     payload = {
-    #       device_setting: {
-    #         stable_duration_sec: 0,
-    #         max_session_sec: -1,
-    #         lock_version: cur["lock_version"],
-    #       },
-    #     }
+        payload = {
+          device_setting: {
+            stable_duration_sec: 0,
+            max_session_sec: -1,
+            lock_version: cur["lock_version"]
+          }
+        }
 
-    #     put path, params: payload
-    #     expect(response.status).to be_between(400,422).inclusive
-    #   end
-    # end
+        put path, params: payload
+        expect(response.status).to be_between(400, 422).inclusive
+      end
+    end
   end
 end

@@ -1,12 +1,9 @@
 {
   "editor.formatOnSave": true,
-  "files.insertFinalNewline": true,
-  "files.trimTrailingWhitespace": true,
-
   "[ruby]": {
     "editor.defaultFormatter": "Shopify.ruby-lsp",
     "editor.formatOnSave": true
   },
-  "rubyLsp.formatter": "auto",
+  "rubyLsp.formatter": "rubocop",
   "rubyLsp.rubyVersionManager": { "identifier": "rbenv" }
 }

@@ -1,7 +1,7 @@
 # ---- Config ----------------------------------------------------
-COMPOSE := docker compose -f infra/docker/docker-compose.dev.yml
+ROOT := $(strip $(abspath ..))
+COMPOSE := docker compose -f "$(ROOT)/infra/docker/docker-compose.dev.yml"
 
-# デフォルトは api。必要に応じて `make <target> SERVICE=web` のように上書き可能
 SERVICE ?= api
 API_SVC := api
 WEB_SVC := web

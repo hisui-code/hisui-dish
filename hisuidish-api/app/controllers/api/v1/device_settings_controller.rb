@@ -13,6 +13,11 @@ module Api
         render json: { error: "conflict", current_version: @setting.reload.lock_version }, status: :conflict
       end
 
+      # バリデーションNGは 422 にする
+      rescue_from ActiveRecord::RecordInvalid do |e|
+        render json: { error: "unprocessable_entity", messages: e.record.errors.full_messages }, status: :unprocessable_content
+      end
+
       # GET /api/v1/device_settings/:device_id
       # 指定デバイスの設定を返す。存在しなければ作成して返す。
       def show
@@ -38,14 +43,14 @@ module Api
       end
 
       def serialize(s)
-      # レスポンスとして返す項目だけを整形
-      {
-        device_id: s.device_id,
-        stable_duration_sec: s.stable_duration_sec,
-        max_session_sec: s.max_session_sec,
-        lock_version: s.lock_version,
-        updated_at: s.updated_at
-      }
+        # レスポンスとして返す項目だけを整形
+        {
+          device_id: s.device_id,
+          stable_duration_sec: s.stable_duration_sec,
+          max_session_sec: s.max_session_sec,
+          lock_version: s.lock_version,
+          updated_at: s.updated_at
+        }
       end
     end
   end
