@@ -1,15 +1,9 @@
 {
   "editor.formatOnSave": true,
-  "files.insertFinalNewline": true,
-  "files.trimTrailingWhitespace": true,
-
   "[ruby]": {
-    "editor.defaultFormatter": "Shopify.ruby-lsp"
+    "editor.defaultFormatter": "Shopify.ruby-lsp",
+    "editor.formatOnSave": true
   },
-
-  // Ruby LSP に RuboCop フォーマッタを使わせる
   "rubyLsp.formatter": "rubocop",
-
-  // Bundler経由でRubocopを実行
-  "rubocop.useBundler": true
+  "rubyLsp.rubyVersionManager": { "identifier": "rbenv" }
 }

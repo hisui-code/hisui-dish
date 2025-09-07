@@ -1,7 +1,7 @@
 # ---- Config ----------------------------------------------------
-COMPOSE := docker compose -f infra/docker/docker-compose.dev.yml
+ROOT := $(strip $(abspath ..))
+COMPOSE := docker compose -f "$(ROOT)/infra/docker/docker-compose.dev.yml"
 
-# デフォルトは api。必要に応じて `make <target> SERVICE=web` のように上書き可能
 SERVICE ?= api
 API_SVC := api
 WEB_SVC := web
@@ -98,11 +98,11 @@ routes: ## ルーティング表示
 	$(COMPOSE) run --rm $(API_SVC) bash -lc "bin/rails routes"
 
 # ---- Tests / Lint (api) ---------------------------------------
-test: ## (=rspec)
-	$(COMPOSE) run --rm $(API_SVC) bash -lc "bundle exec rspec"
+rspec: ## rspecのみ実行
+	$(RUN) "RAILS_ENV=test RACK_ENV=test bundle exec rspec"
 
-rspec: ## RSpec 実行のみ
-	$(COMPOSE) run --rm $(API_SVC) bash -lc "bundle exec rspec"
+test: ## rails test（無ければrspec）
+	$(COMPOSE) run --rm api bash -lc "RAILS_ENV=test RACK_ENV=test bundle exec rspec"
 
 rubocop: ## Lint チェック
 	$(COMPOSE) run --rm $(API_SVC) bash -lc "bundle exec rubocop"
