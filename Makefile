@@ -98,11 +98,11 @@ routes: ## ルーティング表示
 	$(COMPOSE) run --rm $(API_SVC) bash -lc "bin/rails routes"
 
 # ---- Tests / Lint (api) ---------------------------------------
-test: ## (=rspec)
-	$(COMPOSE) run --rm $(API_SVC) bash -lc "bundle exec rspec"
+rspec: ## rspecのみ実行
+	$(RUN) "RAILS_ENV=test RACK_ENV=test bundle exec rspec"
 
-rspec: ## RSpec 実行のみ
-	$(COMPOSE) run --rm $(API_SVC) bash -lc "bundle exec rspec"
+test: ## rails test（無ければrspec）
+	$(COMPOSE) run --rm api bash -lc "RAILS_ENV=test RACK_ENV=test bundle exec rspec"
 
 rubocop: ## Lint チェック
 	$(COMPOSE) run --rm $(API_SVC) bash -lc "bundle exec rubocop"
