@@ -1,7 +1,13 @@
 {
   "recommendations": [
+    // api
     "Shopify.ruby-lsp",
     "Shopify.ruby-lsp-rails",
-    "streetsidesoftware.code-spell-checker"
+    "streetsidesoftware.code-spell-checker",
+    // web
+    "dbaeumer.vscode-eslint", // ESLint
+    "esbenp.prettier-vscode", // Prettier
+    "bradlc.vscode-tailwindcss", // Tailwind CSS IntelliSense
+    "dsznajder.es7-react-js-snippets" // React Snippets
   ]
 }
