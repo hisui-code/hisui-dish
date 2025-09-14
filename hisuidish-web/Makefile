@@ -4,12 +4,13 @@ COMPOSE := docker compose -f $(ROOT)/infra/docker/docker-compose.dev.yml
 
 API := api
 WEB := web
+DB := db
 
 .PHONY: up down restart logs ps build install dev
 
 # api + web を一括で起動（バックグラウンド）
 up:
-	$(COMPOSE) up -d $(API) $(WEB)
+	$(COMPOSE) up -d $(API) $(WEB)  $(DB)
 
 # まとめて停止
 down:
@@ -38,3 +39,7 @@ install:
 # web を起動してログを追う（お好みで）
 dev:
 	$(COMPOSE) up -d $(WEB) && $(COMPOSE) logs -f $(WEB)
+
+# 疎通確認
+health:
+	curl -i http://localhost:3000/api/v1/health || true
