@@ -15,3 +15,5 @@ group :development, :test do
 end
 
 gem "rspec-rails", "~> 8.0", groups: [ :development, :test ]
+
+gem "rack-cors", "~> 3.0"
