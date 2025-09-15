@@ -23,7 +23,7 @@ export type DeviceSetting = {
 
 // 重量センサーの設定値を取得
 export const getDeviceSetting = (deviceId: string) =>
-  req<DeviceSetting>(`api/v1/settings/${deviceId}`)
+  req<DeviceSetting>(`/api/v1/device_settings/${deviceId}`)
 
 // 重量センサーの設定値を更新
 export const updateDeviceSetting = (

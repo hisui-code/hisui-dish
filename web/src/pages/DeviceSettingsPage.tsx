@@ -3,7 +3,7 @@ import { getDeviceSetting, updateDeviceSetting, type DeviceSetting } from '../li
 
 // デバイス設定ページ: 設定の取得・編集・保存を行う
 
-const DEVICE_ID = import.meta.env.VITE_DEVICE_ID!
+const DEVICE_ID = import.meta.env.VITE_DEVICE_ID as string
 
 export default function DeviceSettingsPage() {
   const [cur, setCur] = useState<DeviceSetting | null>(null) // 現在の設定
@@ -11,7 +11,7 @@ export default function DeviceSettingsPage() {
   const [maxSess, setMaxSess] = useState<number>(300) // セッション最大秒数
   const [msg, setMsg] = useState('') // 成功/失敗メッセージ
 
-  // マウント時に設定値を取得
+  // 設定値を取得
   useEffect(() => {
     getDeviceSetting(DEVICE_ID)
       .then((d) => {
