@@ -3,7 +3,7 @@ import { getDeviceSetting, updateDeviceSetting, type DeviceSetting } from '../li
 
 // デバイス設定ページ: 設定の取得・編集・保存を行う
 
-const DEVICE_ID = 'YOUR-DEVICE-UUID' // 対象デバイスのUUID（差し替え想定）
+const DEVICE_ID = import.meta.env.VITE_DEVICE_ID!
 
 export default function DeviceSettingsPage() {
   const [cur, setCur] = useState<DeviceSetting | null>(null) // 現在の設定
@@ -22,7 +22,7 @@ export default function DeviceSettingsPage() {
       .catch((e) => setMsg(`Load NG: ${String(e)}`))
   }, [])
 
-  // 設定をAPIへ保存（楽観ロック付き）
+  // 設定をAPIへ保存
   const onSave = async () => {
     if (!cur) return
     try {
@@ -66,7 +66,7 @@ export default function DeviceSettingsPage() {
             />
           </label>
 
-          {/* 競合制御のための lock_version と最終更新 */}
+          {/* version と最終更新 */}
           <div className="text-xs text-gray-500">
             lock_version: {cur.lock_version} / updated_at:{' '}
             {new Date(cur.updated_at).toLocaleString()}
