@@ -8,14 +8,16 @@ module Api
         render json: { error: "not_found" }, status: :not_found
       end
 
-      # 楽観的ロック競合などの更新衝突時に 409 を返す想定
+      # 楽観ロック競合などの更新衝突時に 409 を返す想定
       rescue_from ActiveRecord::StaleObjectError do
-        render json: { error: "conflict", current_version: @setting.reload.lock_version }, status: :conflict
+        device = Device.find(params[:device_id])
+        current = device.device_setting
+        render json: { error: "conflict", current_version: current&.lock_version }, status: :conflict
       end
 
       # バリデーションNGは 422 にする
       rescue_from ActiveRecord::RecordInvalid do |e|
-        render json: { error: "unprocessable_entity", messages: e.record.errors.full_messages }, status: :unprocessable_content
+        render json: { error: "unprocessable_entity", messages: e.record.errors.full_messages }, status: :unprocessable_entity
       end
 
       # GET /api/v1/device_settings/:device_id
@@ -39,7 +41,16 @@ module Api
 
       # Strong Parameters: 受け付けるキーを限定
       def device_setting_params
-        params.require(:device_setting).permit(:stable_duration_sec, :max_session_sec, :lock_version)
+        params.require(:device_setting).permit(
+          :stable_duration_sec,
+          :max_session_sec,
+          :lock_version,
+          :tare_weight,
+          :stability_epsilon_g,
+          :sampling_hz,
+          :moving_avg_window,
+          :gross_weight_limit_g
+          )
       end
 
       def serialize(s)
@@ -49,6 +60,11 @@ module Api
           stable_duration_sec: s.stable_duration_sec,
           max_session_sec: s.max_session_sec,
           lock_version: s.lock_version,
+          tare_weight: s.tare_weight,
+          stability_epsilon_g: s.stability_epsilon_g,
+          sampling_hz: s.sampling_hz,
+          moving_avg_window: s.moving_avg_window,
+          gross_weight_limit_g: s.gross_weight_limit_g,
           updated_at: s.updated_at
         }
       end
