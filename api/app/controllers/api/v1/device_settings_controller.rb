@@ -24,15 +24,16 @@ module Api
       # 指定デバイスの設定を返す。存在しなければ作成して返す。
       def show
         device = Device.find(params[:device_id])
-        setting = device.device_setting || device.create_device_setting!
+        setting = device.device_setting
+        return render json: { error: "not_found" }, status: :not_found unless setting
         render json: serialize(setting)
       end
 
       # PUT /api/v1/device_settings/:device_id
-      # 設定を作成（未作成時）または更新。`lock_version` による楽観的ロックを想定。
       def update
         device = Device.find(params[:device_id])
-        @setting = device.device_setting || device.create_device_setting!
+        @setting = device.device_setting
+        return render json: { error: "not_found" }, status: :not_found unless @setting
         @setting.update!(device_setting_params)
         render json: serialize(@setting)
       end
