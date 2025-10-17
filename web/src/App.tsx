@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getHealth } from './lib/api'
 import DeviceSettingsPage from './pages/DeviceSettingsPage'
-import DeviceSettingsDebugPage from './pages/DeviceSettingsDebugPage'
 
 export default function App() {
   const [status, setStatus] = useState<string>('(checking...)')
@@ -17,7 +16,6 @@ export default function App() {
       <h1 className="text-2xl font-bold">Health Check</h1>
       <p className="mt-4">{status}</p>
       <DeviceSettingsPage />
-      <DeviceSettingsDebugPage />
     </div>
   )
 }

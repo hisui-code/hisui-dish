@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { getDeviceSetting } from '../lib/api'
+import { getDeviceSetting } from '../api'
 
 const ID = 'dummy-device-id'
 
