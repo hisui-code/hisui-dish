@@ -1,17 +1,17 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { fetchDeviceSettings } from './deviceSettings'
+import { getDeviceSetting } from '../lib/api'
 
-const BASE = 'http://localhost:3000'
 const ID = 'dummy-device-id'
 
 afterEach(() => {
-  // 各テスト後にモックした関数をリセットする
+  // 各テスト後にモックを解除
   vi.restoreAllMocks()
 })
 
 // GETのテスト
 describe('fetchDeviceSettings', () => {
   it('200 なら JSON を返す', async () => {
+    // 正常系で使うデバイス設定のダミーデータ
     const payload = {
       device_id: ID,
       stable_duration_sec: 3,
@@ -25,24 +25,24 @@ describe('fetchDeviceSettings', () => {
       updated_at: '2025-01-01T00:00:00Z',
     }
 
-    // 正常応答としてデバイス設定JSONを返すfetchをモック
+    // 正常応答としてデバイス設定を返す fetch をモック
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
       new Response(JSON.stringify(payload), { status: 200 })
     )
 
-    // モックしたレスポンスがそのまま返却されることを検証
-    const data = await fetchDeviceSettings(BASE, ID)
+    // 正常レスポンスがそのまま返ることを確認
+    const data = await getDeviceSetting(ID)
     expect(data.device_id).toBe(ID)
     expect(data.max_session_sec).toBe(600)
   })
 
   it('404 なら not_found を投げる', async () => {
-    // 404とエラーメッセージを返すfetchをモック
+    // 404 応答とエラーメッセージを返す fetch をモック
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
       new Response(JSON.stringify({ error: 'not_found' }), { status: 404 })
     )
 
-    // エラーメッセージが例外として伝播することを確認
-    await expect(fetchDeviceSettings(BASE, ID)).rejects.toThrow('not_found')
+    // エラーメッセージが例外として伝わることを確認
+    await expect(getDeviceSetting(ID)).rejects.toThrow('not_found')
   })
 })

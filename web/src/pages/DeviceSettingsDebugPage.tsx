@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react'
-import { fetchDeviceSettings } from '../api/deviceSettings'
+import { getDeviceSetting } from '../lib/api'
 import type { DeviceSetting } from '../types/deviceSettings'
 
 export default function DeviceSettingsDebugPage() {
   const [data, setData] = useState<DeviceSetting | null>(null)
   const [error, setError] = useState<string>('')
 
-  const base = import.meta.env.VITE_API_BASE as string
   const id = import.meta.env.VITE_DEVICE_ID as string
 
   useEffect(() => {
@@ -14,14 +13,14 @@ export default function DeviceSettingsDebugPage() {
       setError('')
       setData(null)
       try {
-        const res = await fetchDeviceSettings(base, id)
+        const res = await getDeviceSetting(id)
         setData(res)
       } catch (e) {
         setError((e as Error).message)
       }
     }
     run()
-  }, [base, id])
+  }, [id])
 
   if (error) {
     return (

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { getDeviceSetting, updateDeviceSetting, type DeviceSetting } from '../lib/api'
+import { getDeviceSetting, updateDeviceSetting } from '../lib/api'
+import type { DeviceSetting } from '../types/deviceSettings'
 
 // デバイス設定ページ: 設定の取得・編集・保存を行う
 
