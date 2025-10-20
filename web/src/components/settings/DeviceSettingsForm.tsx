@@ -1,174 +1,297 @@
-import { useState } from 'react'
-import { useForm, Controller, type Resolver } from 'react-hook-form'
-import { updateDeviceSetting } from '../../lib/api'
+// web/src/components/settings/DeviceSettingsForm.tsx
+import { useMemo, useState } from 'react'
 import type { DeviceSetting } from '../../types/deviceSettings'
-import Field from '../ui/Field'
-import NumberBox from '../ui/NumberBox'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { deviceSettingsSchema } from '../../schemas/deviceSettings'
-import { z } from 'zod'
+import { updateDeviceSetting } from '../../lib/api'
+import { Button } from '@/components/ui/button'
+import { Card, CardHeader, CardContent, CardFooter, CardTitle } from '@/components/ui/card'
+import Field from '@/components/ui/Field'
+import NumberBox from '@/components/ui/NumberBox'
 
-type FormOutput = z.output<typeof deviceSettingsSchema> // Zodが返す型（coerce後＝number）
-const rhfResolver: Resolver<FormOutput> = zodResolver(
-  deviceSettingsSchema
-) as unknown as Resolver<FormOutput>
-
-export default function DeviceSettingsForm({
-  initial,
-  onReload,
-}: {
+type Props = {
   initial: DeviceSetting
-  onReload: () => void
-}) {
-  // 画面下部のメッセージのみローカルstateで管理
-  const [msg, setMsg] = useState('')
+  onReload: () => void // 保存後に再取得したい場合に呼ぶ（Settings 側で Suspense リロード）
+}
 
-  // React Hook Form セットアップ
-  const {
-    control,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<FormOutput>({
-    // NOTE: zodResolver は input(unknown) -> output(number) を扱う実装のため、
-    // RHF の型パラメータと厳密には一致しません。ここでは実装に沿って resolver を明示キャストします。
-    resolver: rhfResolver,
-    defaultValues: {
-      stable: initial.stable_duration_sec,
-      maxSess: initial.max_session_sec,
-      tare: initial.tare_weight,
-      eps: initial.stability_epsilon_g,
-      hz: initial.sampling_hz,
-      win: initial.moving_avg_window,
-      gross: initial.gross_weight_limit_g,
-    },
-    mode: 'onChange',
-  })
+export default function DeviceSettingsForm({ initial, onReload }: Props) {
+  // 初期値をメモ化（比較やResetに使う）
+  const base = useMemo(() => initial, [initial])
 
-  // 保存処理（submit）
-  const onSubmit = async (values: FormOutput) => {
+  // 入力ステート（まずは主要7項目）
+  const [stable, setStable] = useState<number>(base.stable_duration_sec)
+  const [maxSess, setMaxSess] = useState<number>(base.max_session_sec)
+  const [tare, setTare] = useState<number>(base.tare_weight)
+  const [eps, setEps] = useState<number>(base.stability_epsilon_g)
+  const [hz, setHz] = useState<number>(base.sampling_hz)
+  const [win, setWin] = useState<number>(base.moving_avg_window)
+  const [gross, setGross] = useState<number>(base.gross_weight_limit_g)
+
+  // メタ情報
+  const [lockVersion, setLockVersion] = useState<number>(base.lock_version)
+  const [updatedAt, setUpdatedAt] = useState<string>(base.updated_at)
+
+  // UI 状態
+  const [saving, setSaving] = useState(false)
+  const [msg, setMsg] = useState<string>('')
+
+  // 変更有無
+  const dirty =
+    stable !== base.stable_duration_sec ||
+    maxSess !== base.max_session_sec ||
+    tare !== base.tare_weight ||
+    eps !== base.stability_epsilon_g ||
+    hz !== base.sampling_hz ||
+    win !== base.moving_avg_window ||
+    gross !== base.gross_weight_limit_g
+
+  // サーバ想定の入力範囲（プレビュー準拠）
+  const ranges = {
+    stable: { min: 1, max: 300, unit: 'sec' },
+    maxSess: { min: 1, max: 3600, unit: 'sec' },
+    tare: { min: 1, max: 5000, unit: 'g' },
+    eps: { min: 1, max: 200, unit: 'g' },
+    hz: { min: 1, max: 200, unit: 'Hz' },
+    win: { min: 1, max: 300, unit: 'N' },
+    gross: { min: 1, max: 100000, unit: 'g' },
+  } as const
+
+  // バリデーション
+  function validateAll(values?: {
+    stable: number
+    maxSess: number
+    tare: number
+    eps: number
+    hz: number
+    win: number
+    gross: number
+  }) {
+    const v = values ?? { stable, maxSess, tare, eps, hz, win, gross }
+    const errs: Partial<Record<keyof typeof v, string>> = {}
+    ;(Object.keys(v) as (keyof typeof v)[]).forEach((k) => {
+      const n = v[k]
+      const { min, max } = ranges[k as keyof typeof ranges]
+      if (!Number.isInteger(n) || n < min || n > max) {
+        errs[k] = `${min}〜${max} の整数で入力してください`
+      }
+    })
+    return errs
+  }
+  const errors = validateAll()
+  const hasError = Object.keys(errors).length > 0
+
+  function reset() {
+    setStable(base.stable_duration_sec)
+    setMaxSess(base.max_session_sec)
+    setTare(base.tare_weight)
+    setEps(base.stability_epsilon_g)
+    setHz(base.sampling_hz)
+    setWin(base.moving_avg_window)
+    setGross(base.gross_weight_limit_g)
     setMsg('')
+  }
+
+  async function onSave() {
+    setMsg('')
+    const errs = validateAll()
+    if (Object.keys(errs).length) {
+      setMsg('入力値にエラーがあります')
+      return
+    }
+
+    setSaving(true)
     try {
-      const next = await updateDeviceSetting(initial.device_id, {
-        stable_duration_sec: values.stable,
-        max_session_sec: values.maxSess,
-        tare_weight: values.tare,
-        stability_epsilon_g: values.eps,
-        sampling_hz: values.hz,
-        moving_avg_window: values.win,
-        gross_weight_limit_g: values.gross,
-        lock_version: initial.lock_version, // 楽観ロック（必要であれば hidden で持たせる）
+      // lock_version を渡して楽観ロック（サーバ仕様）
+      const next = await updateDeviceSetting(base.device_id, {
+        stable_duration_sec: stable,
+        max_session_sec: maxSess,
+        tare_weight: tare,
+        stability_epsilon_g: eps,
+        sampling_hz: hz,
+        moving_avg_window: win,
+        gross_weight_limit_g: gross,
+        lock_version: lockVersion,
       })
-      setMsg(`保存しました（lock_version=${next.lock_version}）`)
-      // 必要に応じてサーバ値で再同期
-      // onReload()
-    } catch (e) {
-      const m = (e as Error).message
-      setMsg(
-        m === 'conflict'
-          ? '他の画面で更新されました。再読込してください。'
-          : m === 'unprocessable_content'
-            ? '入力値が不正です。'
-            : m === 'not_found'
-              ? '設定が存在しません。'
+
+      // サーバが返した最新状態で UI を更新
+      setLockVersion(next.lock_version)
+      setUpdatedAt(next.updated_at)
+      setMsg('保存しました')
+
+      // 画面全体の再取得が必要なら（Suspense リロード）
+      onReload()
+    } catch (e: unknown) {
+      // 重大系のみ人間向けに整形
+      const m = e instanceof Error ? e.message : String(e)
+      const human =
+        m === 'not_found'
+          ? '設定が存在しません（404）'
+          : m === 'conflict'
+            ? '他の画面で更新されました（409）。再読込してやり直してください。'
+            : m === 'unprocessable_content'
+              ? '入力値が不正です（422）。'
               : `保存エラー: ${m}`
-      )
+      setMsg(human)
+    } finally {
+      setSaving(false)
     }
   }
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-      <Field label="stable_duration_sec（安定判定までの秒数）" error={errors.stable?.message}>
-        <Controller
-          name="stable"
-          control={control}
-          render={({ field: { value, onChange } }) => (
-            <NumberBox value={value} onChange={onChange} />
-          )}
-        />
-      </Field>
+    <Card className="rounded-3xl border">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <div>
+          <CardTitle className="text-[15px] font-semibold tracking-tight">デバイス設定</CardTitle>
+          <div className="text-xs text-neutral-500">Device ID: {base.device_id}</div>
+        </div>
+        <div className="text-right text-xs text-neutral-500">
+          <div>lock_version: {lockVersion}</div>
+          <div>updated_at: {new Date(updatedAt).toLocaleString()}</div>
+        </div>
+      </CardHeader>
 
-      <Field label="max_session_sec（1セッションの最大計測時間）" error={errors.maxSess?.message}>
-        <Controller
-          name="maxSess"
-          control={control}
-          render={({ field: { value, onChange } }) => (
-            <NumberBox value={value} onChange={onChange} />
-          )}
-        />
-      </Field>
-
-      <Field label="tare_weight（器の重さ[g]）" error={errors.tare?.message}>
-        <Controller
-          name="tare"
-          control={control}
-          render={({ field: { value, onChange } }) => (
-            <NumberBox value={value} onChange={onChange} />
-          )}
-        />
-      </Field>
-
-      <Field label="stability_epsilon_g（安定とみなす変化量[g]）" error={errors.eps?.message}>
-        <Controller
-          name="eps"
-          control={control}
-          render={({ field: { value, onChange } }) => (
-            <NumberBox value={value} onChange={onChange} />
-          )}
-        />
-      </Field>
-
-      <Field
-        label="sampling_hz（計測の頻度[Hz] / 1秒あたりのサンプル数）"
-        error={errors.hz?.message}
-      >
-        <Controller
-          name="hz"
-          control={control}
-          render={({ field: { value, onChange } }) => (
-            <NumberBox value={value} onChange={onChange} />
-          )}
-        />
-      </Field>
-
-      <Field
-        label="moving_avg_window（計測の平均化範囲 / ノイズ除去の強さ）"
-        error={errors.win?.message}
-      >
-        <Controller
-          name="win"
-          control={control}
-          render={({ field: { value, onChange } }) => (
-            <NumberBox value={value} onChange={onChange} />
-          )}
-        />
-      </Field>
-
-      <Field label="gross_weight_limit_g（最大測定重量[g]）" error={errors.gross?.message}>
-        <Controller
-          name="gross"
-          control={control}
-          render={({ field: { value, onChange } }) => (
-            <NumberBox value={value} onChange={onChange} />
-          )}
-        />
-      </Field>
-
-      <div className="text-xs text-gray-500">lock_version: {initial.lock_version}</div>
-
-      <div className="mt-4 flex gap-2">
-        <button
-          type="submit"
-          className="rounded bg-black px-4 py-2 text-white disabled:opacity-50"
-          disabled={isSubmitting}
+      <CardContent className="grid gap-4 md:grid-cols-2">
+        <Field
+          label="stable_duration_sec（安定判定の秒数）"
+          help="安定とみなすための連続秒数"
+          error={errors.stable}
+          htmlFor="stable"
         >
-          {isSubmitting ? '保存中...' : '保存'}
-        </button>
-        <button type="button" className="rounded border px-3 py-2" onClick={onReload}>
-          再読込
-        </button>
-      </div>
+          <NumberBox
+            id="stable"
+            value={stable}
+            onChange={setStable}
+            min={ranges.stable.min}
+            max={ranges.stable.max}
+            unit={ranges.stable.unit}
+          />
+        </Field>
 
-      {msg && <div className="text-sm">{msg}</div>}
-    </form>
+        <Field
+          label="max_session_sec（セッション最大秒数）"
+          help="1回の計測セッションの上限"
+          error={errors.maxSess}
+          htmlFor="maxSess"
+        >
+          <NumberBox
+            id="maxSess"
+            value={maxSess}
+            onChange={setMaxSess}
+            min={ranges.maxSess.min}
+            max={ranges.maxSess.max}
+            unit={ranges.maxSess.unit}
+          />
+        </Field>
+
+        <Field
+          label="tare_weight（器の重さ）"
+          help="正味重量=総重量-器"
+          error={errors.tare}
+          htmlFor="tare"
+        >
+          <NumberBox
+            id="tare"
+            value={tare}
+            onChange={setTare}
+            min={ranges.tare.min}
+            max={ranges.tare.max}
+            unit={ranges.tare.unit}
+          />
+        </Field>
+
+        <Field
+          label="stability_epsilon_g（許容変動）"
+          help="この幅以内なら安定"
+          error={errors.eps}
+          htmlFor="eps"
+        >
+          <NumberBox
+            id="eps"
+            value={eps}
+            onChange={setEps}
+            min={ranges.eps.min}
+            max={ranges.eps.max}
+            unit={ranges.eps.unit}
+          />
+        </Field>
+
+        <Field
+          label="sampling_hz（サンプリング周波数）"
+          help="高すぎるとノイズ/負荷"
+          error={errors.hz}
+          htmlFor="hz"
+        >
+          <NumberBox
+            id="hz"
+            value={hz}
+            onChange={setHz}
+            min={ranges.hz.min}
+            max={ranges.hz.max}
+            unit={ranges.hz.unit}
+          />
+        </Field>
+
+        <Field
+          label="moving_avg_window（移動平均の窓）"
+          help="サンプル数（整数）"
+          error={errors.win}
+          htmlFor="win"
+        >
+          <NumberBox
+            id="win"
+            value={win}
+            onChange={setWin}
+            min={ranges.win.min}
+            max={ranges.win.max}
+            unit={ranges.win.unit}
+          />
+        </Field>
+
+        <Field
+          label="gross_weight_limit_g（総重量の上限）"
+          help="異常値ガード"
+          error={errors.gross}
+          htmlFor="gross"
+        >
+          <NumberBox
+            id="gross"
+            value={gross}
+            onChange={setGross}
+            min={ranges.gross.min}
+            max={ranges.gross.max}
+            unit={ranges.gross.unit}
+          />
+        </Field>
+      </CardContent>
+
+      <CardFooter className="flex items-center justify-between gap-3 border-t border-neutral-100">
+        <div className="text-sm text-neutral-600">
+          {msg ? (
+            <span>{msg}</span>
+          ) : hasError ? (
+            <span className="text-rose-600">未入力/不正な値があります</span>
+          ) : dirty ? (
+            <span className="text-amber-600">未保存の変更があります</span>
+          ) : (
+            <span className="text-neutral-500">すべての値は範囲内の整数</span>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="rounded-full"
+            onClick={reset}
+            disabled={!dirty && !hasError}
+          >
+            Reset
+          </Button>
+          <Button
+            className="rounded-full"
+            onClick={onSave}
+            disabled={hasError || (!dirty && !hasError) || saving}
+          >
+            {saving ? 'Saving...' : 'Save'}
+          </Button>
+        </div>
+      </CardFooter>
+    </Card>
   )
 }

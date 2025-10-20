@@ -17,8 +17,6 @@ export default function Settings() {
 
   return (
     <div className="p-6 max-w-2xl space-y-4">
-      <h1 className="text-xl font-bold">Device Settings</h1>
-
       {/* データ取得中は Skeletonを表示 */}
       <Suspense fallback={<SettingsSkeleton />}>
         <SettingsBody

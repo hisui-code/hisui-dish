@@ -1,0 +1,14 @@
+import { fontFamily } from 'tailwindcss/defaultTheme'
+
+module.exports = {
+  darkMode: ['class'],
+  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Inter', ...fontFamily.sans],
+      },
+    },
+  },
+  plugins: [require('tailwindcss-animate')],
+}
