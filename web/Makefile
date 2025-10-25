@@ -47,3 +47,11 @@ health:
 # web-dev（エイリアス）
 web-dev: dev
 	@echo "🚀 Starting web (Vite) in development mode..."
+
+# git
+diff:
+	@git diff
+
+# Web コンテナ内で diff
+diff-web:
+	@$(COMPOSE) exec web sh -lc "git diff || (apk add --no-cache git >/dev/null 2>&1 && git diff)"
