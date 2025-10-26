@@ -2,7 +2,7 @@ import { useState } from 'react'
 import Sidebar from '@/components/layout/Sidebar'
 import Header from './components/layout/Header'
 import Settings from './pages/Settings'
-import DashBoard from './pages/DashBoard'
+import DashBoard from './pages/Dashboard'
 import Logs from './pages/Logs'
 import Insights from './pages/Insights'
 

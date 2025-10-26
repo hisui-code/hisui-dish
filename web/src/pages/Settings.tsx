@@ -16,7 +16,7 @@ export default function Settings() {
   const resource = useMemo(() => makeDeviceSettingResource(DEVICE_ID), [ver])
 
   return (
-    <div className="p-6 max-w-2xl space-y-4">
+    <div className="max-w-2xl space-y-4">
       {/* データ取得中は Skeletonを表示 */}
       <Suspense fallback={<SettingsSkeleton />}>
         <SettingsBody

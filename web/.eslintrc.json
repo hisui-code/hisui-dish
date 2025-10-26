@@ -15,8 +15,8 @@
     "ecmaFeatures": { "jsx": true }
   },
   "plugins": ["react", "react-hooks", "jsx-a11y", "@typescript-eslint"],
+  "settings": { "react": { "version": "detect" } },
   "rules": {
     "react/react-in-jsx-scope": "off"
-  },
-  "settings": { "react": { "version": "detect" } }
+  }
 }
