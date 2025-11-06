@@ -5,6 +5,8 @@ Rails.application.routes.draw do
       get "device_settings/:device_id", to: "device_settings#show"
       put "device_settings/:device_id", to: "device_settings#update"
       patch "device_settings/:device_id", to: "device_settings#update"
+
+      resource :dashboard, only: [ :show ]
     end
   end
 end
