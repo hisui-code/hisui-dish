@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Kpis from '@/components/dashboard/Kpis'
 import type { DashboardData } from '@/types/dashboard'
 import { fetchDashboard } from '@/lib/fetchDashboard'
+import TodayList from '@/components/dashboard/TodayList'
 
 const fmtMonth = (d: Date): string => {
   const y = d.getFullYear()
@@ -16,12 +17,12 @@ export default function DashBoard() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    let alive = true // アンマウント後の setState を防止
+    let alive = true
     ;(async () => {
       setLoading(true)
       setError(null)
       try {
-        const d = await fetchDashboard(month) // API から取得（モックは使わない前提）
+        const d = await fetchDashboard(month)
         if (!alive) return
         setData(d)
       } catch {
@@ -74,7 +75,18 @@ export default function DashBoard() {
 
   return (
     <div className="p-6">
+      {/* KPI */}
       <Kpis data={{ todayTotal: data.todayTotal, bowlRemaining: data.bowlRemaining }} />
+      {/* エラー */}
+      {error && (
+        <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose">
+          取得に失敗しました: {error}
+        </div>
+      )}
+      {/* 今日の記録 */}
+      <div className="mt-6">
+        <TodayList events={data.todayEvents} />
+      </div>
     </div>
   )
 }

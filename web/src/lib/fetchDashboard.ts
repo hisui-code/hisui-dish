@@ -1,6 +1,5 @@
 import type { DashboardData } from '@/types/dashboard'
 
-// monthは "2025-11" のようなYYYY-MM
 export async function fetchDashboard(month: string): Promise<DashboardData> {
   const url = `/api/v1/dashboard?month=${encodeURIComponent(month)}`
   const res = await fetch(url)
@@ -10,6 +9,10 @@ export async function fetchDashboard(month: string): Promise<DashboardData> {
   }
 
   const json = (await res.json()) as DashboardData
-  // TODO: 必要ならキー変換・バリデーションを追加
+
+  if (!Array.isArray(json.todayEvents)) {
+    throw new Error(`invalid payload: todayEvents`)
+  }
+
   return json
 }
