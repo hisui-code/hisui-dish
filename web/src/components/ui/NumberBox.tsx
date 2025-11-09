@@ -1,5 +1,15 @@
 import { Input } from './input'
 
+type Props = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'type'> & {
+  id?: string
+  value: number
+  onChange: (value: number) => void
+  min?: number
+  max?: number
+  step?: number
+  unit?: string
+}
+
 export default function NumberBox({
   id,
   value,
@@ -8,16 +18,9 @@ export default function NumberBox({
   max,
   step = 1,
   unit,
-}: {
-  id?: string
-  value: number
-  onChange: (n: number) => void
-  min?: number
-  max?: number
-  step?: number
-  unit?: string
-}) {
-  const hasUnit = Boolean(unit)
+  className,
+  ...props
+}: Props) {
   return (
     <div className="relative">
       <Input
@@ -28,11 +31,20 @@ export default function NumberBox({
         min={min}
         {...(max !== undefined ? { max } : {})}
         step={step}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className={hasUnit ? 'rounded-2xl pr-16' : 'rounded-2xl'}
+        onChange={(e) => {
+          const raw = e.target.value
+          // 空文字なら NaN を親に渡し、表示は空欄を維持
+          if (raw === '') {
+            onChange(Number.NaN)
+            return
+          }
+          onChange(Number(raw))
+        }}
+        className={`rounded-2xl pr-16 ${className ?? ''}`}
+        {...props}
       />
       {unit && (
-        <span className="pointer-events-none absolute inset-y-0 right-3 grid place-items-center text-xs text-neutral-500 ">
+        <span className="pointer-events-none absolute inset-y-0 right-3 grid place-items-center text-xs text-neutral-500">
           {unit}
         </span>
       )}
