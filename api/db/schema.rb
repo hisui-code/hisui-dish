@@ -10,10 +10,21 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_17_143606) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_10_025315) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
+
+  create_table "bowl_snapshots", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "device_id", null: false
+    t.integer "weight_g", null: false
+    t.datetime "recorded_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["device_id", "recorded_at"], name: "index_bowl_snapshots_on_device_id_and_recorded_at"
+    t.index ["device_id"], name: "index_bowl_snapshots_on_device_id"
+    t.index ["recorded_at"], name: "index_bowl_snapshots_on_recorded_at"
+  end
 
   create_table "device_settings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "device_id", null: false
@@ -44,5 +55,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_17_143606) do
     t.index ["code"], name: "index_devices_on_code", unique: true
   end
 
+  add_foreign_key "bowl_snapshots", "devices"
   add_foreign_key "device_settings", "devices", on_delete: :cascade
 end
