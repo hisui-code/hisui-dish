@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import Kpis from '@/components/dashboard/Kpis'
+import TodayList from '@/components/dashboard/TodayList'
 import type { DashboardData } from '@/types/dashboard'
 import { fetchDashboard } from '@/lib/fetchDashboard'
-import TodayList from '@/components/dashboard/TodayList'
 
+// 月を "YYYY-MM" 形式にフォーマット
 const fmtMonth = (d: Date): string => {
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
@@ -17,10 +18,13 @@ export default function DashBoard() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // 非同期中にアンマウントされた場合に setState しないためのフラグ
     let alive = true
+
     ;(async () => {
       setLoading(true)
       setError(null)
+
       try {
         const d = await fetchDashboard(month)
         if (!alive) return
@@ -33,13 +37,15 @@ export default function DashBoard() {
         if (alive) setLoading(false)
       }
     })()
+
+    // クリーンアップ時にフラグを折る
     return () => {
       alive = false
     }
   }, [month])
 
-  //Loading中
-  if (loading || !data) {
+  // ローディング中
+  if (loading) {
     return (
       <div className="p-6">
         <div className="grid gap-4 md:grid-cols-3">
@@ -51,7 +57,7 @@ export default function DashBoard() {
     )
   }
 
-  //エラー表示
+  // エラー
   if (error) {
     return (
       <div className="p-6">
@@ -62,7 +68,7 @@ export default function DashBoard() {
     )
   }
 
-  //データなし
+  // データなし（404などで空配列が返ったケースも将来考慮）
   if (!data) {
     return (
       <div className="p-6">
@@ -73,16 +79,12 @@ export default function DashBoard() {
     )
   }
 
+  // 通常表示
   return (
     <div className="p-6">
       {/* KPI */}
       <Kpis data={{ todayTotal: data.todayTotal, bowlRemaining: data.bowlRemaining }} />
-      {/* エラー */}
-      {error && (
-        <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose">
-          取得に失敗しました: {error}
-        </div>
-      )}
+
       {/* 今日の記録 */}
       <div className="mt-6">
         <TodayList events={data.todayEvents} />
