@@ -7,7 +7,7 @@ type Props = {
 export default function TodayList({ events }: Props) {
   const total = events.reduce((s, e) => s + e.g, 0)
   return (
-    <div className="rounded-3xl bg-white ring-1 ring-black/5 overflow-hidden">
+    <div className="mt-6 rounded-3xl bg-white ring-1 ring-black/5 overflow-hidden">
       <div className="flex items-center justify-between p-4">
         <h3 className="text-[15px] font-medium text-neutral-800">🍽️ 今日の記録</h3>
         <div className="text-xs text-neutral-500">{events.length}回</div>

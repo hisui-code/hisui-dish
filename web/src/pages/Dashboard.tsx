@@ -4,6 +4,7 @@ import TodayList from '@/components/dashboard/TodayList'
 import type { DashboardData } from '@/types/dashboard'
 import { fetchDashboard } from '@/lib/fetchDashboard'
 import MonthlyChart from '@/components/dashboard/MonthlyChart'
+import TodayTimeline from '@/components/dashboard/TodayTimeline'
 
 // 月を "YYYY-MM" 形式にフォーマット
 const fmtMonth = (d: Date): string => {
@@ -87,11 +88,10 @@ export default function DashBoard() {
       <Kpis data={{ todayTotal: data.todayTotal, bowlRemaining: data.bowlRemaining }} />
 
       {/* 今日の記録 */}
-      <div className="mt-6">
-        <TodayList events={data.todayEvents} />
-        {/* 今月の日別合計グラフ */}
-        <MonthlyChart series={data.dailySeries} />
-      </div>
+      <TodayTimeline events={data.todayEvents} />
+      <TodayList events={data.todayEvents} />
+      {/* 今月の日別合計グラフ */}
+      <MonthlyChart series={data.dailySeries} />
     </div>
   )
 }
