@@ -8,6 +8,8 @@ Rails.application.routes.draw do
 
       get "dashboard", to: "dashboard#index"
       get :dashboard, to: "dashboard#show"
+
+      post "/login", to: "sessions#create"
     end
   end
 end

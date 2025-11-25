@@ -1,4 +1,4 @@
-class Api::V1::DashboardController < ApplicationController
+class Api::V1::DashboardController < Api::V1::BaseController
   def index
     # 例: "2025-11"
     month = params[:month].presence || Time.zone.today.strftime("%Y-%m")

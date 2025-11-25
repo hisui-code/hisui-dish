@@ -2,6 +2,18 @@
 
 puts "🧪 Seeding bowl_snapshots for 2 months..."
 
+puts "🧪 Seeding users..."
+
+User.delete_all
+
+User.create!(
+  email: ENV["ADMIN_EMAIL"],
+  password: ENV["ADMIN_PASSWORD"],
+  auth_token: SecureRandom.hex(32)
+)
+
+puts "✅ Done: User.count=#{User.count}"
+
 ActiveRecord::Base.transaction do
   # 1) 参照テーブルの用意（先にスナップショット削除）
   BowlSnapshot.delete_all
