@@ -4,6 +4,21 @@ require 'rails_helper'
 
 RSpec.describe "DeviceSettings API (normal case)", type: :request do
   let!(:device) { Device.create!(id: SecureRandom.uuid, code: 'rpi5-hisui-01', name: 'hisui') }
+
+  let!(:user) do
+    User.create!(
+      email: "device-settings@example.com",
+      password: "password",
+      password_confirmation: "password"
+    )
+  end
+
+  let(:headers) do
+    # ランダムトークンを発行し、HTTPヘッダー(Authorization ヘッダー)を作成
+    user.regenerate_auth_token if user.auth_token.blank?
+    { "Authorization" => "Bearer #{user.auth_token}" }
+  end
+
   let(:path) { "/api/v1/device_settings/#{device.id}" }
 
   def json!
@@ -27,7 +42,7 @@ RSpec.describe "DeviceSettings API (normal case)", type: :request do
       end
 
       it "200 を返し、設定内容を返す" do
-        get path
+        get path, headers: headers
         expect(response).to have_http_status(:ok)
         body = json!
         expect(body["device_id"]).to eq(device.id)
@@ -40,7 +55,7 @@ RSpec.describe "DeviceSettings API (normal case)", type: :request do
       it "404 を返し、エラーキーを含む" do
         # 念のため該当デバイスの設定をクリア
         DeviceSetting.where(device: device).delete_all
-        get path
+        get path, headers: headers
         expect(response).to have_http_status(:not_found)
         body = json!
         expect(body).to include("error" => "not_found")
@@ -63,7 +78,7 @@ RSpec.describe "DeviceSettings API (normal case)", type: :request do
           }
         }
 
-        put path, params: payload, as: :json
+        put path, params: payload, headers: headers, as: :json
         expect(response).to have_http_status(:not_found)
         body = json!
         expect(body).to include("error" => "not_found")
@@ -96,7 +111,7 @@ RSpec.describe "DeviceSettings API (normal case)", type: :request do
             lock_version: @setting.lock_version
           }
         }
-        put path, params: payload, as: :json
+        put path, params: payload, headers: headers, as: :json
         expect(response).to have_http_status(:ok)
         body = json!
         expect(body["lock_version"]).to eq(@setting.lock_version + 1)
@@ -132,7 +147,7 @@ RSpec.describe "DeviceSettings API (normal case)", type: :request do
           }
         }
 
-        put path, params: payload, as: :json
+        put path, params: payload, headers: headers, as: :json
         expect(response).to have_http_status(:unprocessable_content)
         body = json!
         expect(body["error"]).to eq("unprocessable_entity")
@@ -167,7 +182,7 @@ RSpec.describe "DeviceSettings API (normal case)", type: :request do
           }
         }
 
-        put path, params: payload, as: :json
+        put path, params: payload, headers: headers, as: :json
         expect(response).to have_http_status(:conflict)
         body = json!
         expect(body["error"]).to eq("conflict")

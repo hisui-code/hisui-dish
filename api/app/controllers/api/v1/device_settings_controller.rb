@@ -3,9 +3,6 @@ module Api
   module V1
     # デバイス設定の取得・更新用コントローラ
     class DeviceSettingsController < Api::V1::BaseController
-      # ログイン確認
-      # before_action :require_login
-
       # レコード未検出時に 404 を返す想定
       rescue_from ActiveRecord::RecordNotFound do
         render json: { error: "not_found" }, status: :not_found
