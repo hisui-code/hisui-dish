@@ -2,7 +2,7 @@
 module Api
   module V1
     # デバイス設定の取得・更新用コントローラ
-    class DeviceSettingsController < ApplicationController
+    class DeviceSettingsController < Api::V1::BaseController
       # ログイン確認
       # before_action :require_login
 

@@ -21,7 +21,7 @@ ActiveRecord::Base.transaction do
 
   # 3) Device の作成
   device = Device.find_or_create_by!(id: device_id) do |d|
-    d.code = "hisuidish-rpi5"   # <-- ★追加（必須）
+    d.code = "hisuidish-rpi5"
     d.name = "HisuiDish Pi 1" if d.respond_to?(:name)
   end
 
