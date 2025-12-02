@@ -21,7 +21,7 @@ RSpec.describe "DeviceSettings API (normal case)", type: :request do
 
   let(:path) { "/api/v1/device_settings/#{device.id}" }
 
-  def json!
+  def json_response
     JSON.parse(response.body)
   end
 
@@ -44,7 +44,7 @@ RSpec.describe "DeviceSettings API (normal case)", type: :request do
       it "200 を返し、設定内容を返す" do
         get path, headers: headers
         expect(response).to have_http_status(:ok)
-        body = json!
+        body = json_response
         expect(body["device_id"]).to eq(device.id)
         expect(body["stable_duration_sec"]).to eq(3)
         expect(body["max_session_sec"]).to eq(600)
@@ -57,7 +57,7 @@ RSpec.describe "DeviceSettings API (normal case)", type: :request do
         DeviceSetting.where(device: device).delete_all
         get path, headers: headers
         expect(response).to have_http_status(:not_found)
-        body = json!
+        body = json_response
         expect(body).to include("error" => "not_found")
       end
     end
@@ -80,7 +80,7 @@ RSpec.describe "DeviceSettings API (normal case)", type: :request do
 
         put path, params: payload, headers: headers, as: :json
         expect(response).to have_http_status(:not_found)
-        body = json!
+        body = json_response
         expect(body).to include("error" => "not_found")
       end
     end
@@ -113,7 +113,7 @@ RSpec.describe "DeviceSettings API (normal case)", type: :request do
         }
         put path, params: payload, headers: headers, as: :json
         expect(response).to have_http_status(:ok)
-        body = json!
+        body = json_response
         expect(body["lock_version"]).to eq(@setting.lock_version + 1)
         expect(body["tare_weight"]).to eq(260)
         expect(body["sampling_hz"]).to eq(12)
@@ -149,7 +149,7 @@ RSpec.describe "DeviceSettings API (normal case)", type: :request do
 
         put path, params: payload, headers: headers, as: :json
         expect(response).to have_http_status(:unprocessable_content)
-        body = json!
+        body = json_response
         expect(body["error"]).to eq("unprocessable_entity")
       end
     end
@@ -178,15 +178,41 @@ RSpec.describe "DeviceSettings API (normal case)", type: :request do
             sampling_hz: 12,
             moving_avg_window: 6,
             gross_weight_limit_g: 12_000,
-            lock_version: @setting.lock_version - 1 # ← 古いバージョン
+            lock_version: @setting.lock_version - 1 # 古いバージョン
           }
         }
 
         put path, params: payload, headers: headers, as: :json
         expect(response).to have_http_status(:conflict)
-        body = json!
+        body = json_response
         expect(body["error"]).to eq("conflict")
         expect(body["current_version"]).to be >= @setting.lock_version
+      end
+    end
+
+    context "認証なしの場合" do
+      let(:no_auth_headers) { {} }
+
+      it "GET /api/v1/device_settings/:device_id は 401 を返す" do
+        get path, headers: no_auth_headers
+        expect(response).to have_http_status(:unauthorized)
+        body = json_response
+        expect(body["error"]).to eq("unauthorized")
+      end
+
+      it "PUT /api/v1/device_settings/:device_id は 401 を返す" do
+        payload = {
+          device_setting: {
+            stable_duration_sec: 5,
+            max_session_sec: 600,
+            lock_version: 0
+          }
+        }
+
+        put path, params: payload, headers: no_auth_headers, as: :json
+        expect(response).to have_http_status(:unauthorized)
+        body = json_response
+        expect(body["error"]).to eq("unauthorized")
       end
     end
   end
