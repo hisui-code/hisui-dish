@@ -1,5 +1,5 @@
 import createResource from '../suspense'
-import { getDeviceSetting } from '../api'
+import { getDeviceSetting } from '../api/deviceSettings'
 import type { DeviceSetting } from '../../types/deviceSettings'
 
 // DeviceSetting用の Suspense Resource を生成する

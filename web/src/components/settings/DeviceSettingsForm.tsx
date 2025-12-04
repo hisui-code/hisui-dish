@@ -1,7 +1,6 @@
-// src/components/settings/DeviceSettingsForm.tsx
 import { useMemo, useState } from 'react'
 import type { DeviceSetting } from '@/types/deviceSettings'
-import { updateDeviceSetting } from '@/lib/api'
+import { updateDeviceSetting } from '@/lib/api/deviceSettings'
 import SettingsHeader from './SettingsHeader'
 import SettingsFields from './SettingsFields'
 import StatusLine from './StatusLine'

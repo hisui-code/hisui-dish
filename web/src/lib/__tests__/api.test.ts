@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { getDeviceSetting, setAuthToken } from '../api'
+import { getDeviceSetting, setAuthToken } from '../api/api'
+
+// getDeviceSetting のリクエスト～レスポンスの流れを通して検証する統合的なテスト群
 
 const ID = 'dummy-device-id'
 
@@ -30,7 +32,7 @@ describe('fetchDeviceSettings', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
       new Response(JSON.stringify(payload), { status: 200 })
     )
-
+    // 認証
     setAuthToken('dummy-token')
     // 正常レスポンスがそのまま返ることを確認
     const data = await getDeviceSetting(ID)
