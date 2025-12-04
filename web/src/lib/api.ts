@@ -3,12 +3,16 @@
 
 import type { DeviceSetting } from '../types/deviceSettings'
 
-// APIのベースURLを環境変数から取得
 const BASE = import.meta.env.VITE_API_BASE as string
 
-// --- 共通関数群 -------------------------------------------------
+// --- 認証用トークン ------------------------------------
+let authToken: string | null = null
 
-// JSONパースを安全に行う
+export function setAuthToken(token: string | null) {
+  authToken = token
+}
+
+// --- JSONパース ------------------------------------
 async function parseJsonSafely(res: Response) {
   try {
     return await res.json()
@@ -17,12 +21,21 @@ async function parseJsonSafely(res: Response) {
   }
 }
 
-// 共通のリクエスト関数
-// 成功時はパース済みJSONを返し、エラー時は body.error または HTTPステータスを例外として投げる
+// --- 共通関数群 -------------------------------------------------
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers)
+  // JSON ペイロードを送るため Content-Type をデフォルト指定する
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json')
+  }
+
+  // 🔸 ログインしている場合は Authorization を自動で付与
+  if (authToken) {
+    headers.set('Authorization', `Bearer ${authToken}`)
+  }
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
     ...init,
+    headers,
   })
 
   const body = await parseJsonSafely(res)
@@ -38,7 +51,7 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
 
 // --- API呼び出し関数 ---------------------------------------------
 
-// HealthチェックAPI（Rails側の /api/v1/health）
+// HealthチェックAPI
 export type Health = { status: string }
 export function getHealth() {
   return req<Health>('/api/v1/health')

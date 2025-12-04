@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { getDeviceSetting } from '../api'
+import { getDeviceSetting, setAuthToken } from '../api'
 
 const ID = 'dummy-device-id'
 
 afterEach(() => {
   // 各テスト後にモックを解除
   vi.restoreAllMocks()
+  setAuthToken(null)
 })
 
 // GETのテスト
@@ -30,6 +31,7 @@ describe('fetchDeviceSettings', () => {
       new Response(JSON.stringify(payload), { status: 200 })
     )
 
+    setAuthToken('dummy-token')
     // 正常レスポンスがそのまま返ることを確認
     const data = await getDeviceSetting(ID)
     expect(data.device_id).toBe(ID)
@@ -44,5 +46,16 @@ describe('fetchDeviceSettings', () => {
 
     // エラーメッセージが例外として伝わることを確認
     await expect(getDeviceSetting(ID)).rejects.toThrow('not_found')
+  })
+
+  it('認証トークンがない場合 unauthorized を投げる', async () => {
+    // 認証トークンなしの状態にする
+    setAuthToken(null)
+
+    // 401応答とエラーメッセージを返 fetchをモック
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401 })
+    )
+    await expect(getDeviceSetting(ID)).rejects.toThrow('unauthorized')
   })
 })
