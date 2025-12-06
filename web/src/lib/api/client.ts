@@ -1,6 +1,5 @@
 import { getAuthToken } from './auth'
-
-const BASE = import.meta.env.VITE_API_BASE as string
+import { API_BASE } from './config'
 
 async function parseJsonSafely(res: Response) {
   try {
@@ -11,7 +10,7 @@ async function parseJsonSafely(res: Response) {
 }
 
 export async function req<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const url = `${BASE}${path}`
+  const url = `${API_BASE}${path}`
 
   const headers = new Headers(init?.headers)
 

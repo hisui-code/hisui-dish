@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { getDeviceSetting, setAuthToken } from '../api/api'
+import { getDeviceSetting } from '../api/deviceSettings'
+import { setAuthToken } from '../api/auth'
 
 // getDeviceSetting のリクエスト～レスポンスの流れを通して検証する統合的なテスト群
 

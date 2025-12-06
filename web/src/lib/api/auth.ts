@@ -11,6 +11,7 @@ export function getAuthToken(): string | null {
 export function setAuthToken(token: string | null) {
   authToken = token
 
+  // ブラウザ以外（テスト・SSRなど）では localStorage を触らない
   if (typeof window === 'undefined') return
 
   if (token) {
@@ -24,9 +25,10 @@ export function setAuthToken(token: string | null) {
 
 // 初期表示時に localStorage からトークンを読み込む
 export function initAuthTokenFromStorage() {
+  // ブラウザ以外（テスト・SSRなど）では localStorage を触らない
   if (typeof window === 'undefined') return
 
-  const stored = localStorage.getItem('authToken')
+  const stored = localStorage.getItem('auth_token')
   authToken = stored ?? null
 }
 
@@ -38,6 +40,7 @@ export async function login(email: string, password: string) {
     body: JSON.stringify({ email, password }),
   })
 
+  //レスポンスがjsonでなければnull
   const body = await res.json().catch(() => null)
 
   if (!res.ok) {
