@@ -1,3 +1,5 @@
+import { API_BASE } from './config'
+
 let authToken: string | null = null
 
 // 現在のトークンを取得
@@ -26,4 +28,30 @@ export function initAuthTokenFromStorage() {
 
   const stored = localStorage.getItem('authToken')
   authToken = stored ?? null
+}
+
+// --- log in ---
+export async function login(email: string, password: string) {
+  const res = await fetch(`${API_BASE}/api/v1/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  })
+
+  const body = await res.json().catch(() => null)
+
+  if (!res.ok) {
+    throw new Error(body?.error ?? 'Login failed')
+  }
+
+  const token = body.auth_token
+  if (!token) throw new Error('No token returned')
+
+  setAuthToken(token)
+  return body
+}
+
+// --- log out ---
+export default function logout() {
+  setAuthToken(null)
 }
