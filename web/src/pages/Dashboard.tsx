@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import Kpis from '@/components/dashboard/Kpis'
 import TodayList from '@/components/dashboard/TodayList'
 import type { DashboardData } from '@/types/dashboard'
-import { fetchDashboard } from '@/lib/fetchDashboard'
+import { fetchDashboard } from '@/lib/api/dashboardApi'
 import MonthlyChart from '@/components/dashboard/MonthlyChart'
 import TodayTimeline from '@/components/dashboard/TodayTimeline'
 

@@ -55,6 +55,6 @@ export async function login(email: string, password: string) {
 }
 
 // --- log out ---
-export default function logout() {
+export function logout() {
   setAuthToken(null)
 }
