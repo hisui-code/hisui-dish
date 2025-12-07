@@ -27,6 +27,22 @@ ActiveRecord::Base.transaction do
 
   puts "  Device created: id=#{device.id}, code=#{device.code}"
 
+  # 4) DeviceSetting の作成（存在しない場合のみ）
+  if defined?(DeviceSetting)
+    DeviceSetting.find_or_create_by!(device_id: device.id) do |s|
+      # ここでカラムが存在するものだけ安全に初期化する
+      s.stable_duration_sec = 180 if s.respond_to?(:stable_duration_sec=)
+      s.max_session_sec     = 600 if s.respond_to?(:max_session_sec=)
+
+      # 追加で扱っているカラムがあれば、存在チェック付きで初期値を入れておく
+      s.sampling_hz          = 10   if s.respond_to?(:sampling_hz=)
+      s.moving_avg_window    = 5    if s.respond_to?(:moving_avg_window=)
+      s.gross_weight_limit_g = 2000 if s.respond_to?(:gross_weight_limit_g=)
+    end
+
+    puts "  DeviceSetting ensured for device_id=#{device.id}"
+  end
+
   # ===== BowlSnapshot の生成 =====
 
   tz_today = Time.zone.today
