@@ -17,7 +17,8 @@ export default function LoginForm({ onLoggedIn }: LoginFormProps) {
     setLoading(true)
 
     try {
-      const token = await login(email, password)
+      const body = await login(email, password)
+      const token = body.auth_token
       onLoggedIn(token)
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'ログインに失敗しました'
