@@ -16,14 +16,14 @@ export default function App() {
     <div className="min-h-screen w-full bg-neutral-50">
       {/* Header */}
       <Header setMobileOpen={setMobileOpen} />
-      <div className="mx-auto flex max-w-6xl">
+      <div className="mx-auto flex w-full max-w-6xl">
         {/* サイドバー（デスクトップ：常時表示 / モバイル：非表示） */}
         <aside className="hidden w-[260px] shrink-0 border-r bg-white md:block">
           <Sidebar current={page} onNav={setPage} />
         </aside>
 
         {/* メイン */}
-        <main className="flex-1 p-4 md:p-6">
+        <main className="flex-1 p-4 md:p-6 min-w-0 w-full">
           {page === 'dashboard' && <DashBoard />}
           {page === 'settings' && <Settings />}
           {page === 'logs' && <Logs />}

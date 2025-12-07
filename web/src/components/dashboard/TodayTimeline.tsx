@@ -22,10 +22,10 @@ const toChartData = (events: DashboardData['todayEvents']) => {
 export default function TodayTimeline({ events }: TodayTimelineProps) {
   const data = toChartData(events)
   return (
-    <section className="mt-6 rounded-3xl bg-white p-4 ring-1 ring-black/5">
+    <section className="mt-6 rounded-3xl bg-white p-4 ring-1 ring-black/5 min-w-0">
       <h3 className="text-[15px] font-medium text-neutral-800">⏰ 今日の食事タイムライン</h3>
-      <div className="mt-3 h-[240px]">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="mt-3 h-[240px]  w-full min-w-0">
+        <ResponsiveContainer width="100%" height={240} minWidth={0} minHeight={0}>
           <BarChart data={data} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={COLORS.grid} />
             <XAxis

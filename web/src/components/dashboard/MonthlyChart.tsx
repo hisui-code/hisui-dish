@@ -13,10 +13,10 @@ const COLORS = {
 
 export default function MonthlyChart({ series }: MonthlyChartProps) {
   return (
-    <section className="mt-6 rounded-3xl bg-white p-4 ring-1 ring-black/5">
+    <section className="mt-6 rounded-3xl bg-white p-4 ring-1 ring-black/5 min-w-0">
       <h3 className="text-[15px] font-medium text-neutral-800">📊 今月の日別合計</h3>
-      <div className="mt-2 h-[240px]">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="mt-2 w-full min-w-0">
+        <ResponsiveContainer width="100%" height={240} minWidth={0} minHeight={0}>
           <BarChart data={series} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={COLORS.grid} />
             <XAxis

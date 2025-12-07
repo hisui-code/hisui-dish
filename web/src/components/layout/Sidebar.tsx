@@ -5,7 +5,6 @@ import { FaHome, FaCog, FaBook, FaChartBar, FaSignOutAlt } from 'react-icons/fa'
 type Props = {
   current: 'dashboard' | 'settings' | 'logs' | 'insights'
   onNav: (page: Props['current']) => void
-  onLogout?: () => void
 }
 
 export default function Sidebar({ current, onNav }: Props) {
@@ -41,20 +40,21 @@ export default function Sidebar({ current, onNav }: Props) {
               </Button>
             )
           })}
+          <div className="border-t mt-6">
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-3 rounded-xl px-3.5 py-5 text-left text-[15px] text-neutral-600 hover:bg-neutral-100 hover:text-neutral-800"
+              onClick={logout}
+            >
+              <FaSignOutAlt size={16} />
+              ログアウト
+            </Button>
+          </div>
         </nav>
       </div>
 
       {/* 下部 */}
       <div className="border-t px-2 pb-5 pt-3 space-y-3 text-xs text-neutral-400">
-        <Button
-          variant="ghost"
-          className="w-full justify-start gap-3 rounded-xl px-3.5 py-5 text-left text-[15px] text-neutral-600 hover:bg-neutral-100 hover:text-neutral-800"
-          onClick={logout}
-        >
-          <FaSignOutAlt size={16} />
-          ログアウト
-        </Button>
-
         <div className="text-neutral-400 px-1">
           <div>v1.0.0</div>
           <div>© 2025 HisuiDish</div>
