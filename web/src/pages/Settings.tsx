@@ -38,8 +38,15 @@ function SettingsBody({
   onReload: () => void
 }) {
   // Suspenseの仕組みにより、ここでデータが未取得ならthrowされ、fallbackが表示される
-  const data = resource.read()
+  try {
+    const data = resource.read()
+    // データ取得後にフォームを表示
+    return <DeviceSettingsForm initial={data} onReload={onReload} />
+  } catch (e) {
+    if (e instanceof Promise) {
+      throw e
+    }
 
-  // データ取得後にフォームを表示
-  return <DeviceSettingsForm initial={data} onReload={onReload} />
+    return <SettingsSkeleton />
+  }
 }
