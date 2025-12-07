@@ -52,13 +52,6 @@ export default function Sidebar() {
           </div>
         </nav>
       </div>
-
-      <div className="space-y-3 border-t px-2 pb-5 pt-3 text-xs text-neutral-400">
-        <div className="px-1 text-neutral-400">
-          <div>v1.0.0</div>
-          <div>© 2025 HisuiDish</div>
-        </div>
-      </div>
     </aside>
   )
 }
