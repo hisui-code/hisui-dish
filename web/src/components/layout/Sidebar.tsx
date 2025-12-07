@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button'
+import { useAuth } from '@/contexts/AuthContext'
 import { FaHome, FaCog, FaBook, FaChartBar, FaSignOutAlt } from 'react-icons/fa'
 
 type Props = {
@@ -7,13 +8,15 @@ type Props = {
   onLogout?: () => void
 }
 
-export default function Sidebar({ current, onNav, onLogout }: Props) {
+export default function Sidebar({ current, onNav }: Props) {
   const items = [
     { key: 'dashboard', label: 'ダッシュボード', icon: <FaHome /> },
     { key: 'settings', label: '設定', icon: <FaCog /> },
     { key: 'logs', label: 'ログ', icon: <FaBook /> },
     { key: 'insights', label: 'インサイト', icon: <FaChartBar /> },
   ] as const
+
+  const { logout } = useAuth()
 
   return (
     <aside className="flex h-full flex-col justify-between bg-white">
@@ -46,7 +49,7 @@ export default function Sidebar({ current, onNav, onLogout }: Props) {
         <Button
           variant="ghost"
           className="w-full justify-start gap-3 rounded-xl px-3.5 py-5 text-left text-[15px] text-neutral-600 hover:bg-neutral-100 hover:text-neutral-800"
-          onClick={onLogout}
+          onClick={logout}
         >
           <FaSignOutAlt size={16} />
           ログアウト
