@@ -1,50 +1,50 @@
+import { NavLink, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/AuthContext'
 import { FaHome, FaCog, FaBook, FaChartBar, FaSignOutAlt } from 'react-icons/fa'
 
-type Props = {
-  current: 'dashboard' | 'settings' | 'logs' | 'insights'
-  onNav: (page: Props['current']) => void
-}
+type NavItemKey = 'dashboard' | 'settings' | 'logs' | 'insights'
 
-export default function Sidebar({ current, onNav }: Props) {
-  const items = [
-    { key: 'dashboard', label: 'ダッシュボード', icon: <FaHome /> },
-    { key: 'settings', label: '設定', icon: <FaCog /> },
-    { key: 'logs', label: 'ログ', icon: <FaBook /> },
-    { key: 'insights', label: 'インサイト', icon: <FaChartBar /> },
-  ] as const
+const items: { key: NavItemKey; label: string; icon: React.ReactNode; path: string }[] = [
+  { key: 'dashboard', label: 'ダッシュボード', icon: <FaHome />, path: '/dashboard' },
+  { key: 'settings', label: '設定', icon: <FaCog />, path: '/settings' },
+  { key: 'logs', label: 'ログ', icon: <FaBook />, path: '/logs' },
+  { key: 'insights', label: 'インサイト', icon: <FaChartBar />, path: '/insights' },
+]
 
+export default function Sidebar() {
   const { logout } = useAuth()
+  const navigate = useNavigate()
 
   return (
     <aside className="flex h-full flex-col justify-between bg-white">
       <div>
-        {/* ナビゲーション */}
         <nav className="mt-4 space-y-1 px-2">
-          {items.map((item) => {
-            const active = current === item.key
-            return (
-              <Button
-                key={item.key}
-                variant={active ? 'secondary' : 'ghost'}
-                onClick={() => onNav(item.key)}
-                className={`w-full justify-start gap-3 rounded-xl px-3.5 py-5 text-left text-[15px] ${
-                  active
+          {items.map((item) => (
+            <NavLink
+              key={item.key}
+              to={item.path}
+              className={({ isActive }) =>
+                `block w-full rounded-xl px-3.5 py-2 text-left text-[15px] ${
+                  isActive
                     ? 'bg-emerald-50 text-emerald-800 shadow-sm'
                     : 'text-neutral-700 hover:bg-neutral-100'
-                }`}
-              >
-                <span className="text-[16px]">{item.icon}</span>
-                {item.label}
-              </Button>
-            )
-          })}
-          <div className="border-t mt-6">
+                }`
+              }
+            >
+              <span className="mr-3 inline-block text-[16px]">{item.icon}</span>
+              {item.label}
+            </NavLink>
+          ))}
+
+          <div className="mt-6 border-t pt-4">
             <Button
               variant="ghost"
               className="w-full justify-start gap-3 rounded-xl px-3.5 py-5 text-left text-[15px] text-neutral-600 hover:bg-neutral-100 hover:text-neutral-800"
-              onClick={logout}
+              onClick={() => {
+                logout()
+                navigate('/login')
+              }}
             >
               <FaSignOutAlt size={16} />
               ログアウト
@@ -53,9 +53,8 @@ export default function Sidebar({ current, onNav }: Props) {
         </nav>
       </div>
 
-      {/* 下部 */}
-      <div className="border-t px-2 pb-5 pt-3 space-y-3 text-xs text-neutral-400">
-        <div className="text-neutral-400 px-1">
+      <div className="space-y-3 border-t px-2 pb-5 pt-3 text-xs text-neutral-400">
+        <div className="px-1 text-neutral-400">
           <div>v1.0.0</div>
           <div>© 2025 HisuiDish</div>
         </div>

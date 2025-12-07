@@ -20,25 +20,32 @@ const toChartData = (events: DashboardData['todayEvents']) => {
 }
 
 export default function TodayTimeline({ events }: TodayTimelineProps) {
-  const data = toChartData(events)
+  const hasEvents = events.length > 0
+  const data = hasEvents ? toChartData(events) : [{ time: '00:00', g: 0, hour: 0 }]
   return (
     <section className="mt-6 rounded-3xl bg-white p-4 ring-1 ring-black/5 min-w-0">
       <h3 className="text-[15px] font-medium text-neutral-800">⏰ 今日の食事タイムライン</h3>
-      <div className="mt-3 h-[240px]  w-full min-w-0">
-        <ResponsiveContainer width="100%" height={240} minWidth={0} minHeight={0}>
+      <div className="mt-3 h-[350x]  w-full min-w-0">
+        <ResponsiveContainer width="100%" height={350} minWidth={0} minHeight={0}>
           <BarChart data={data} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={COLORS.grid} />
             <XAxis
               type="number"
               dataKey="hour"
               domain={[0, 24]}
-              ticks={[0, 3, 6, 9, 12, 15, 18, 21, 24]}
-              tickFormatter={(v) => `${String(v).padStart(2, '0')}:00`}
+              ticks={[
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+                23, 24,
+              ]}
+              tickFormatter={(v) => String(v).padStart(2, '0')}
               tick={{ fill: '#6b7280', fontSize: 12 }}
               axisLine={false}
               tickLine={false}
             />
             <YAxis
+              type="number"
+              domain={[0, 100]}
+              ticks={[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
               tick={{ fill: '#6b7280', fontSize: 12 }}
               axisLine={false}
               tickLine={false}
