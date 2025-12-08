@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useNavigate } from 'react-router-dom'
 import Sidebar from '@/components/layout/Sidebar'
 import Header from './components/layout/Header'
 import Settings from './pages/Settings'
@@ -8,6 +8,27 @@ import Logs from './pages/Logs'
 import Insights from './pages/Insights'
 import Login from './pages/Login'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+
+function ProtectedRoute() {
+  const { ready, loggedIn } = useAuth()
+  if (!ready) return null
+  return loggedIn ? <Outlet /> : <Navigate to="/login" replace />
+}
+
+function LoginRoute() {
+  const navigate = useNavigate()
+  const { ready, loggedIn, loginWithToken } = useAuth()
+  if (!ready) return null
+  if (loggedIn) return <Navigate to="/" replace />
+  return (
+    <Login
+      onLoginSuccess={(token) => {
+        loginWithToken(token)
+        navigate('/', { replace: true })
+      }}
+    />
+  )
+}
 
 /**
  * ログイン済みユーザー向けのレイアウト（サイドバー + ヘッダー + ルーティング）
@@ -28,14 +49,7 @@ function AppLayout() {
 
         {/* メイン */}
         <main className="flex-1 min-w-0 w-full p-4 md:p-6">
-          <Routes>
-            <Route path="/" element={<DashBoard />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/logs" element={<Logs />} />
-            <Route path="/insights" element={<Insights />} />
-            {/* 不正なパスに来たらダッシュボードへリダイレクト */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <Outlet />
         </main>
       </div>
 
@@ -62,26 +76,22 @@ function AppLayout() {
   )
 }
 
-/**
- * 認証状態をみて Login or AppLayout を出し分けるコンポーネント
- */
-function AppInner() {
-  const { ready, loggedIn, loginWithToken } = useAuth()
-
-  if (!ready) return null
-
-  if (!loggedIn) {
-    return <Login onLoginSuccess={loginWithToken} />
-  }
-
-  return <AppLayout />
-}
-
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <AppInner />
+        <Routes>
+          <Route path="/login" element={<LoginRoute />} />
+          <Route element={<ProtectedRoute />}>
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<DashBoard />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/logs" element={<Logs />} />
+              <Route path="/insights" element={<Insights />} />
+            </Route>
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </BrowserRouter>
     </AuthProvider>
   )
