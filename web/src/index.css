@@ -115,6 +115,8 @@
     @apply border-border outline-ring/50;
   }
   body {
+    font-family: 'M PLUS Rounded 1c', 'Hiragino Maru Gothic ProN', 'Hiragino Sans', 'Helvetica Neue',
+      Helvetica, Arial, sans-serif;
     @apply bg-background text-foreground;
   }
 }

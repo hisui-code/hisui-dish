@@ -82,7 +82,7 @@ export default function DashBoard() {
 
   // 通常表示
   return (
-    <div className="p-6 min-w-0">
+    <div className="p-3 min-w-0">
       {/* KPI */}
       <Kpis data={{ todayTotal: data.todayTotal, bowlRemaining: data.bowlRemaining }} />
 

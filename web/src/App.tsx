@@ -48,7 +48,7 @@ function AppLayout() {
         </aside>
 
         {/* メイン */}
-        <main className="flex-1 min-w-0 w-full p-4 md:p-6">
+        <main className="flex-1 min-w-0 w-full md:p-6">
           <Outlet />
         </main>
       </div>
