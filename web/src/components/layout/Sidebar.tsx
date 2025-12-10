@@ -1,7 +1,6 @@
-import { NavLink, useNavigate } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
-import { useAuth } from '@/contexts/AuthContext'
-import { FaHome, FaCog, FaBook, FaChartBar, FaSignOutAlt } from 'react-icons/fa'
+import { NavLink } from 'react-router-dom'
+import { FaHome, FaCog, FaBook, FaChartBar } from 'react-icons/fa'
+import LogoutButton from './LogoutButton'
 
 type NavItemKey = 'dashboard' | 'settings' | 'logs' | 'insights'
 
@@ -13,9 +12,6 @@ const items: { key: NavItemKey; label: string; icon: React.ReactNode; path: stri
 ]
 
 export default function Sidebar() {
-  const { logout } = useAuth()
-  const navigate = useNavigate()
-
   return (
     <aside className="flex h-full flex-col justify-between bg-white">
       <div>
@@ -38,19 +34,7 @@ export default function Sidebar() {
           ))}
 
           <div className="border-t my-2" />
-          <div>
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 rounded-xl px-3.5 mb-2  text-left text-[15px] text-neutral-600 hover:bg-neutral-100 hover:text-neutral-800"
-              onClick={() => {
-                logout()
-                navigate('/login')
-              }}
-            >
-              <FaSignOutAlt size={16} />
-              ログアウト
-            </Button>
-          </div>
+          <LogoutButton />
         </nav>
       </div>
     </aside>
