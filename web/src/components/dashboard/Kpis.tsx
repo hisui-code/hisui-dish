@@ -56,6 +56,13 @@ export default function Kpis({ data }: KpisProps) {
         unit="g"
         color="#14b8a6"
       />
+      <Stat
+        icon={<FaFish className="text-emerald-500" />}
+        label="平均食事量"
+        value={0}
+        unit="g"
+        color="#14b8a6"
+      />
       <div className="hidden md:block"></div>
     </div>
   )
