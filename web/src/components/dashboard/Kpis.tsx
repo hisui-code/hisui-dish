@@ -36,7 +36,7 @@ function Stat({
 }
 
 type KpisProps = {
-  data: Pick<DashboardData, 'todayTotal' | 'bowlRemaining'>
+  data: Pick<DashboardData, 'todayTotal' | 'bowlRemaining' | 'averageDailyIntakeLast3Months'>
 }
 
 export default function Kpis({ data }: KpisProps) {
@@ -59,11 +59,10 @@ export default function Kpis({ data }: KpisProps) {
       <Stat
         icon={<FaFish className="text-emerald-500" />}
         label="平均食事量"
-        value={0}
+        value={data.averageDailyIntakeLast3Months.toFixed(1)}
         unit="g"
         color="#14b8a6"
       />
-      <div className="hidden md:block"></div>
     </div>
   )
 }

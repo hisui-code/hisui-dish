@@ -19,7 +19,13 @@ function DashboardInner() {
   return (
     <div className="p-3 min-w-0">
       {/* KPI */}
-      <Kpis data={{ todayTotal: data.todayTotal, bowlRemaining: data.bowlRemaining }} />
+      <Kpis
+        data={{
+          todayTotal: data.todayTotal,
+          bowlRemaining: data.bowlRemaining,
+          averageDailyIntakeLast3Months: data.averageDailyIntakeLast3Months,
+        }}
+      />
       {/* 今日の記録 */}
       <TodayList events={data.todayEvents} />
       {/* 今月の日別合計グラフ */}
