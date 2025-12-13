@@ -6,8 +6,7 @@ Rails.application.routes.draw do
       put "device_settings/:device_id", to: "device_settings#update"
       patch "device_settings/:device_id", to: "device_settings#update"
 
-      get "dashboard", to: "dashboard#index"
-      get :dashboard, to: "dashboard#show"
+      get "dashboard", to: "dashboard#show"
 
       post "/login", to: "sessions#create"
     end
