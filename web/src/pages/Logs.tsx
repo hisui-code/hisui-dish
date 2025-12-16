@@ -7,10 +7,11 @@ import { filterLogs, groupLogsByDay, getDefaultMonth } from '@/lib/resources/log
 
 function LogsContent() {
   const [month, setMonth] = useState<string>(getDefaultMonth())
-  const [query, setQuery] = useState<string>('')
+  const [query, setQuery] = useState<string>('') // 検索文字列
   const [timeBand, setTimeBand] = useState<TimeBand>('all')
-
+  // 指定した月のログを取得
   const rawLogs = useLogsData(month)
+  // フィルター
   const filteredLogs = filterLogs(rawLogs, month, query, timeBand)
   const groups = groupLogsByDay(filteredLogs)
 

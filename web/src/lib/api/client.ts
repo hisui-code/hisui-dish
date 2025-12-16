@@ -9,9 +9,9 @@ async function parseJsonSafely(res: Response) {
   }
 }
 
+// Web側から Rails API を呼ぶときの共有HTTPクライアント
 export async function req<T>(path: string, init: RequestInit = {}): Promise<T> {
   const url = `${API_BASE}${path}`
-
   const headers = new Headers(init?.headers)
 
   // JSON ペイロードを送るため Content-Type をデフォルト指定する
@@ -24,6 +24,7 @@ export async function req<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (token) {
     headers.set('Authorization', `Bearer ${token}`)
   }
+
   const res = await fetch(url, {
     ...init,
     headers,

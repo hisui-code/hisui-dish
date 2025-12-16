@@ -58,12 +58,14 @@ export function filterLogs(
       : monthFiltered.filter((x) => getTimeBand(x.recordedAtIso) === timeBand)
 
   // 3. 日の検索
+
+  // 日付けの入力がなければ処理しない
   if (!q) return bandFiltered
 
   const dayNumber = Number(q)
 
   return bandFiltered.filter((x) => {
-    const isoDate = x.recordedAtIso.slice(0, 10) // 例: "2025-12-13"
+    const isoDate = x.recordedAtIso.slice(0, 10) // 例: "2025-12-13"の部分だけを切り出す
 
     if (!Number.isNaN(dayNumber)) {
       // 数値として解釈できる場合は「日」を優先して判定（1〜31）
@@ -85,20 +87,25 @@ export function filterLogs(
 export function groupLogsByDay(logs: LogItem[]): LogGroup[] {
   const map = new Map<string, LogGroup>()
 
-  for (const item of logs.slice().sort((a, b) => (a.recordedAtIso < b.recordedAtIso ? 1 : -1))) {
+  // ログの配列を降順に並び替え
+  const sortedLogs = [...logs].sort((a, b) => b.recordedAtIso.localeCompare(a.recordedAtIso))
+
+  for (const item of sortedLogs) {
     const dayKey = item.recordedAtIso.slice(0, 10)
-    const group = map.get(dayKey)
 
-    if (group) {
-      group.items.push(item)
-      continue
-    }
+    const group =
+      map.get(dayKey) ??
+      (() => {
+        const newGroup = {
+          dayKey,
+          dayLabel: formatDayLabel(item.recordedAtIso),
+          items: [] as LogItem[],
+        }
+        map.set(dayKey, newGroup)
+        return newGroup
+      })()
 
-    map.set(dayKey, {
-      dayKey,
-      dayLabel: formatDayLabel(item.recordedAtIso),
-      items: [item],
-    })
+    group.items.push(item)
   }
 
   return Array.from(map.values())
