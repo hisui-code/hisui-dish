@@ -9,6 +9,8 @@ Rails.application.routes.draw do
       get "dashboard", to: "dashboard#show"
 
       post "/login", to: "sessions#create"
+
+      get "/logs", to: "logs#index"
     end
   end
 end
