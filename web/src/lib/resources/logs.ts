@@ -11,7 +11,7 @@ export const timeBandLabels: Record<TimeBand, string> = {
   morning: '朝',
   daytime: '昼',
   evening: '夕方',
-  night: '夜・深夜',
+  night: '夜',
 }
 
 // ISO文字列をHH:mmに変換

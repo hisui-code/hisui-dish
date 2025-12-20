@@ -21,13 +21,11 @@ function LogsContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/40">
-      <div className="mx-auto w-full max-w-3xl px-1 py-3 sm:py-10">
+      <div className="mx-auto w-full max-w-3xl px-1 sm:py-10">
         {/* ヘッダー */}
-        <div className="mb-3 flex items-start justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-semibold tracking-tight">ログ</h1>
-            </div>
+        <div className="pl-2 mb-3 flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight">ログ</h1>
           </div>
         </div>
 

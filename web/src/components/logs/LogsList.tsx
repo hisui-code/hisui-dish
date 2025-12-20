@@ -20,23 +20,23 @@ export default function LogsList({ groups, onDelete, month }: LogsListProps) {
             <div className="text-sm font-medium text-muted-foreground">{g.dayLabel}</div>
           </div>
 
-          <div className="pt-1">
-            <div className="space-y-2">
-              <AnimatePresence initial={false}>
-                {g.items.map((item) => (
-                  <motion.div
-                    key={item.id}
-                    layout
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.15 }}
-                  >
+          <div className="pt-1 bg-muted/30 p-2">
+            <AnimatePresence initial={false}>
+              {g.items.map((item) => (
+                <motion.div
+                  key={item.id}
+                  layout
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <div className="px-1 mb-2">
                     <LogRow item={item} onDelete={onDelete} />
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         </div>
       ))}

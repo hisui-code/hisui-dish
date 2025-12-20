@@ -27,7 +27,7 @@ export default function LogRow(props: LogRowProps) {
   const TimeIcon = timeBandIcons[band]
 
   return (
-    <div className="group mx-1 flex items-center gap-3 rounded-2xl bg-card px-4 py-3 transition-colors cursor-pointer hover:bg-accent hover:shadow-sm">
+    <div className="flex w-full items-center gap-4 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm transition-shadow hover:shadow-md">
       {/* アイコン */}
       <div className="flex h-11 w-11 items-center justify-center rounded-2xl">
         <Utensils className="h-5 w-5" aria-hidden="true" />
@@ -46,9 +46,9 @@ export default function LogRow(props: LogRowProps) {
 
       {/*時間帯アイコン＋時間 */}
       <div>
-        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-muted px-2.5 py-1.5 text-sm font-semibold tabular-nums tracking-tight">
+        <span className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1.5 text-sm font-semibold tabular-nums tracking-tight">
           <TimeIcon className="h-3.5 w-3.5" aria-hidden="true" />
-          <span>{time}</span>
+          <span className="text-muted-foreground">{time}</span>
         </span>
       </div>
       {/* 削除ボタン */}
@@ -56,11 +56,11 @@ export default function LogRow(props: LogRowProps) {
         type="button"
         variant="ghost"
         size="icon"
-        className="h-10 w-10 rounded-full text-muted-foreground "
+        className="h-10 w-10 rounded-full text-muted-foreground hover:text-destructive"
         onClick={() => onDelete(item.id)}
         aria-label="削除"
       >
-        <Trash2 className="h-4 w-4 transition-colors" aria-hidden="true" />
+        <Trash2 className="h-4 w-4" aria-hidden="true" />
       </Button>
     </div>
   )
