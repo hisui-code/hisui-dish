@@ -92,3 +92,36 @@ export function calcTodayVsPrevWeekInsight(args: {
     diffPct,
   }
 }
+
+/**
+ * 今週（月〜日）の合計gを表示するためのデータ。
+ */
+export type ThisWeekTotalInsight = {
+  weekStartIso: string
+  weekEndIso: string
+  weekTotalGrams: number
+}
+
+/**
+ * 日別合計Mapから「今週（月〜日）の合計g」を計算して返す。
+ */
+export function calcThisWeekTotalInsight(args: {
+  todayIso: string
+  dailyTotals: Map<string, number>
+}): ThisWeekTotalInsight {
+  const { todayIso, dailyTotals } = args
+  const weekStart = getWeekStartIsoJst(todayIso)
+  const weekEnd = addDaysIsoJst(weekStart, 6)
+
+  let total = 0
+  for (let i = 0; i < 7; i++) {
+    const k = addDaysIsoJst(weekStart, i)
+    total += dailyTotals.get(k) ?? 0
+  }
+
+  return {
+    weekStartIso: weekStart,
+    weekEndIso: weekEnd,
+    weekTotalGrams: total,
+  }
+}

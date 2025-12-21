@@ -4,34 +4,34 @@ import { jst } from '@/lib/date'
 import {
   addDaysIsoJst,
   buildDailyTotals,
-  calcTodayVsPrevWeekInsight,
+  calcThisWeekTotalInsight,
   getWeekStartIsoJst,
 } from '@/lib/resources/insightsResource'
 import { logsQueryKey, monthOf } from '@/lib/resources/logsQuery'
 
 import type { LogItem } from '@/types/logs'
-import type { TodayVsPrevWeekInsight } from '@/lib/resources/insightsResource'
+import type { ThisWeekTotalInsight } from '@/lib/resources/insightsResource'
 
 /**
- * 「今日の合計」と「前週(月〜日)の1日平均」の比較データを返すHook。
- * 月またぎ（前週が別月）に備えて、必要な月ログを最大2ヶ月分だけ取得する。
+ * 今週（月〜日）の合計gを返すHook。
+ * 週が月をまたぐ場合に備えて、必要な月ログを最大2ヶ月分だけ取得する。
  */
 
 /**
- * インサイト用の比較データを返す。
+ * 今週（月〜日）の合計gを返す。
  */
-export function useTodayVsPrevWeekInsight(): TodayVsPrevWeekInsight {
+export function useThisWeekTotalInsight(): ThisWeekTotalInsight {
   // 今日（JST）
   const todayIso = jst().format('YYYY-MM-DD')
 
   // 今週の開始（月曜）
-  const thisWeekStart = getWeekStartIsoJst(todayIso)
+  const weekStart = getWeekStartIsoJst(todayIso)
 
-  // 前週の開始（月曜）
-  const prevWeekStart = addDaysIsoJst(thisWeekStart, -7)
+  // 今週の終了（日曜）
+  const weekEnd = addDaysIsoJst(weekStart, 6)
 
-  // 取得対象の月（前週が別月になるケースに対応）
-  const months = Array.from(new Set([monthOf(todayIso), monthOf(prevWeekStart)]))
+  // 取得対象の月（週が別月になるケースに対応）
+  const months = Array.from(new Set([monthOf(weekStart), monthOf(weekEnd)]))
 
   // 月ごとのログを取得（monthsの順で結果が返る）
   const results = useSuspenseQueries({
@@ -53,8 +53,8 @@ export function useTodayVsPrevWeekInsight(): TodayVsPrevWeekInsight {
     }))
   )
 
-  // 今日の合計g と 前週(月〜日)の1日平均g を比較して返す
-  return calcTodayVsPrevWeekInsight({
+  // 今週（月〜日）の合計gを返す
+  return calcThisWeekTotalInsight({
     todayIso,
     dailyTotals,
   })

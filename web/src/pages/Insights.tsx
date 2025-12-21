@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import TodayVsPrevWeekCard from '@/components/insights/TodayVsPrevWeekCard'
+import ThisWeekTotalCard from '@/components/insights/ThisWeekTotalCard'
 
 function InsightsContent() {
   return (
@@ -17,6 +18,7 @@ export default function Insights() {
   return (
     <Suspense fallback={<div className="p-4 text-muted-foreground">Loading...</div>}>
       <InsightsContent />
+      <ThisWeekTotalCard />
     </Suspense>
   )
 }
