@@ -31,7 +31,7 @@ export type TodayVsPrevWeekInsight = {
 export function buildDailyTotals(logs: InsightLogLite[]): Map<string, number> {
   const map = new Map<string, number>()
 
-  // なぜ: recordedAtIso が +09:00 を含む想定なので slice(0,10) でJST日付キーが安定する
+  //recordedAtIso が +09:00 を含む想定なので slice(0,10) でJST日付キーが安定する
   for (const x of logs) {
     const dayKey = x.recordedAtIso.slice(0, 10)
     map.set(dayKey, (map.get(dayKey) ?? 0) + x.grams)
