@@ -125,3 +125,32 @@ export function calcThisWeekTotalInsight(args: {
     weekTotalGrams: total,
   }
 }
+
+/**
+ * 月の合計gを表示するためのデータ。
+ */
+export type MonthTotalInsight = {
+  month: string // "YYYY-MM"
+  monthTotalGrams: number
+}
+
+/**
+ * 指定月のログから「月の合計g」を計算して返す。
+ */
+export function calcMonthTotalInsight(args: {
+  month: string
+  logs: InsightLogLite[]
+}): MonthTotalInsight {
+  const { month, logs } = args
+
+  let total = 0
+  for (const x of logs) {
+    if (x.recordedAtIso.slice(0, 7) !== month) continue
+    total += x.grams
+  }
+
+  return {
+    month,
+    monthTotalGrams: total,
+  }
+}
