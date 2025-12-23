@@ -154,3 +154,59 @@ export function calcMonthTotalInsight(args: {
     monthTotalGrams: total,
   }
 }
+
+/**
+ * 今月合計と前月合計を比較するためのデータ
+ */
+export type MonthTotalVsPrevInsight = {
+  month: string // "YYYY-MM"
+  monthTotalGrams: number
+
+  prevMonth: string // "YYYY-MM"
+  prevMonthTotalGrams: number
+
+  diffGrams: number
+  diffPct: number | null
+}
+
+/**
+ * 指定月ログの合計gを返す（集計の共通処理）
+ */
+export function calcMonthTotalGrams(args: { month: string; logs: InsightLogLite[] }): number {
+  const { month, logs } = args
+
+  let total = 0
+  for (const x of logs) {
+    if (x.recordedAtIso.slice(0, 7) !== month) continue
+    total += x.grams
+  }
+
+  return total
+}
+
+/**
+ * 今月合計と前月合計を計算して比較結果を返す。
+ */
+export function calcMonthTotalVsPrevInsight(args: {
+  month: string
+  monthLogs: InsightLogLite[]
+  prevMonth: string
+  prevMonthLogs: InsightLogLite[]
+}): MonthTotalVsPrevInsight {
+  const { month, monthLogs, prevMonth, prevMonthLogs } = args
+
+  const monthTotal = calcMonthTotalGrams({ month, logs: monthLogs })
+  const prevTotal = calcMonthTotalGrams({ month: prevMonth, logs: prevMonthLogs })
+
+  const diff = monthTotal - prevTotal
+  const diffPct = prevTotal > 0 ? diff / prevTotal : null
+
+  return {
+    month,
+    monthTotalGrams: monthTotal,
+    prevMonth,
+    prevMonthTotalGrams: prevTotal,
+    diffGrams: diff,
+    diffPct,
+  }
+}
