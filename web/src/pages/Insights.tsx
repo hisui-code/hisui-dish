@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import TodayVsPrevWeekCard from '@/components/insights/TodayVsPrevWeekCard'
 import ThisWeekTotalCard from '@/components/insights/ThisWeekTotalCard'
 import MonthTotalCard from '@/components/insights/MonthTotalCard'
+import YearMonthlyTotalsCard from '@/components/insights/YearMonthlyTotalsCard'
 
 function InsightsContent() {
   return (
@@ -21,6 +22,7 @@ export default function Insights() {
       <InsightsContent />
       <ThisWeekTotalCard />
       <MonthTotalCard />
+      <YearMonthlyTotalsCard />
     </Suspense>
   )
 }
