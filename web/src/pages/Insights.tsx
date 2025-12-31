@@ -3,6 +3,7 @@ import TodayVsPrevWeekCard from '@/components/insights/TodayVsPrevWeekCard'
 import ThisWeekTotalCard from '@/components/insights/ThisWeekTotalCard'
 import MonthTotalCard from '@/components/insights/MonthTotalCard'
 import YearMonthlyTotalsCard from '@/components/insights/YearMonthlyTotalsCard'
+import WeeklyTotalsCard from '@/components/insights/WeeklyTotalsCard'
 
 function InsightsContent() {
   return (
@@ -21,6 +22,7 @@ export default function Insights() {
     <Suspense fallback={<div className="p-4 text-muted-foreground">Loading...</div>}>
       <InsightsContent />
       <ThisWeekTotalCard />
+      <WeeklyTotalsCard />
       <MonthTotalCard />
       <YearMonthlyTotalsCard />
     </Suspense>

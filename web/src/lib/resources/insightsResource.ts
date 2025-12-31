@@ -316,3 +316,80 @@ export function calcMonthTotalVsPrevInsight(args: {
     diffPct,
   }
 }
+
+export type WeeklyTotalRow = {
+  weekStartIso: string
+  weekLabel: string
+  totalGrams: number
+}
+
+/**
+ * @description
+ * 指定日の「iso週キー」を返す
+ * 表示や集計のグループキー用途で使う
+ *
+ * @param isoDate - 対象日（YYYY-MM-DD）
+ * @returns 週キー（例 "2025-W03"）
+ */
+export function getIsoWeekKeyJst(isoDate: string): string {
+  const d = jst(`${isoDate}T00:00:00`)
+  const y = d.isoWeekYear()
+  const w = String(d.isoWeek()).padStart(2, '0')
+  return `${y}-W${w}`
+}
+
+/**
+ * @description
+ * 週ラベルを返す
+ * 開始日を基準にした表示にする
+ *
+ * @param weekStartIso - 週の開始日（月曜 YYYY-MM-DD）
+ * @returns 表示用ラベル（例 "12/02"）
+ */
+export function formatWeekLabel(weekStartIso: string): string {
+  return jst(`${weekStartIso}T00:00:00`).format('MM/DD')
+}
+
+/**
+ * @description
+ * 指定した週開始日からN週分の「週別合計」を作る
+ *
+ * - 週は isoWeek（月曜始まり）
+ * - ログがない週も 0g を入れて配列長を安定させる
+ *
+ * @param args - 入力
+ * @param args.weekStartIso - 先頭週の開始日（月曜 YYYY-MM-DD）
+ * @param args.weeks - 週数（例 8）
+ * @param args.dailyTotals - 日別合計Map（key=YYYY-MM-DD, value=合計g）
+ * @returns 週別合計配列（週数ぶん）
+ */
+export function buildWeeklyTotals(args: {
+  weekStartIso: string
+  weeks: number
+  dailyTotals: Map<string, number>
+}): WeeklyTotalRow[] {
+  const { weekStartIso, weeks, dailyTotals } = args
+  const rows: WeeklyTotalRow[] = []
+
+  for (let w = 0; w < weeks; w++) {
+    const start = jst(`${weekStartIso}T00:00:00`)
+      .add(w * 7, 'day')
+      .format('YYYY-MM-DD')
+
+    let total = 0
+    for (let i = 0; i < 7; i++) {
+      const dayKey = jst(`${start}T00:00:00`)
+        .add(w * 7, 'day')
+        .format('YYYY-MM-DD')
+      total += dailyTotals.get(dayKey) ?? 0
+    }
+
+    rows.push({
+      weekStartIso: start,
+      weekLabel: formatWeekLabel(start),
+      totalGrams: total,
+    })
+  }
+
+  return rows
+}
