@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-puts "🧪 Seeding bowl_snapshots for 2 months..."
+puts "🧪 Seeding bowl_snapshots for past 2 months, current month, and next 2 months..."
 puts "🧪 Seeding users..."
 
 # ===== Users =====
@@ -46,10 +46,17 @@ ActiveRecord::Base.transaction do
   # ===== BowlSnapshot の生成 =====
 
   tz_today = Time.zone.today
-  months = [
-    tz_today.beginning_of_month,
-    (tz_today - 1.month).beginning_of_month
-  ]
+
+  # 過去2ヶ月〜先2ヶ月（今月含む）の月初を列挙する
+  start_month = (tz_today - 2.months).beginning_of_month
+  end_month = (tz_today + 2.months).beginning_of_month
+
+  months = []
+  cur_month = start_month
+  while cur_month <= end_month
+    months << cur_month
+    cur_month = (cur_month + 1.month).beginning_of_month
+  end
 
   months.each do |month_begin|
     month_end = month_begin.end_of_month
