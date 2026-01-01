@@ -9,7 +9,7 @@ type Props = {
 export default function Header({ setMobileOpen }: Props) {
   return (
     <header className="sticky top-0 z-20 border-b bg-white/80 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+      <div className=" flex max-w-6xl items-center justify-between pl-8 py-3">
         {/* 左: ハンバーガー（モバイルのみ）+ ブランド */}
         <div className="flex items-center gap-3">
           <button
