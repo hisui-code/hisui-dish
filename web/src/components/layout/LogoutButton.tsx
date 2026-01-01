@@ -28,7 +28,7 @@ export default function LogoutButton() {
     <>
       <Button
         variant="ghost"
-        className="w-full justify-start gap-3 rounded-xl px-3.5 mb-2  text-left text-[15px] text-neutral-600 hover:bg-neutral-100 hover:text-neutral-800"
+        className="w-full justify-start gap-3 rounded-xl px-3.5 mb-2  text-left text-[15px]  hover:bg-neutral-100 hover:text-neutral-800"
         onClick={handleClick}
       >
         <FaSignOutAlt size={16} />

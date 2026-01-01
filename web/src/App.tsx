@@ -41,7 +41,7 @@ function AppLayout() {
       {/* Header */}
       <Header setMobileOpen={setMobileOpen} />
 
-      <div className="mx-auto flex w-full max-w-6xl">
+      <div className="flex w-full">
         {/* サイドバー（デスクトップ：常時表示 / モバイル：非表示） */}
         <aside className="hidden w-[260px] shrink-0 border-r bg-white md:block">
           <Sidebar />
