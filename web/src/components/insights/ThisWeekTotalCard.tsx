@@ -1,11 +1,10 @@
 import { Card } from '../ui/card'
-import { useThisWeekTotalInsight } from '@/hooks/useThisWeekTotalInsight'
-
+import { useThisWeekTotal } from '@/hooks/useThisWeekTotalInsight'
 /**
  * 今週（月〜日）の合計gを表示するカード。
  */
 export default function ThisWeekTotalCard() {
-  const x = useThisWeekTotalInsight()
+  const x = useThisWeekTotal()
 
   return (
     <Card className="p-4">

@@ -10,7 +10,7 @@ import {
 import { logsQueryKey, monthOf } from '@/lib/resources/logsQuery'
 
 import type { LogItem } from '@/types/logs'
-import type { ThisWeekTotalInsight } from '@/lib/resources/insightsResource'
+import type { ThisWeekTotal } from '@/lib/resources/insightsResource'
 
 /**
  * 今週（月〜日）の合計gを返すHook。
@@ -20,7 +20,7 @@ import type { ThisWeekTotalInsight } from '@/lib/resources/insightsResource'
 /**
  * 今週（月〜日）の合計gを返す。
  */
-export function useThisWeekTotalInsight(): ThisWeekTotalInsight {
+export function useThisWeekTotal(): ThisWeekTotal {
   // 今日（JST）
   const todayIso = jst().format('YYYY-MM-DD')
 

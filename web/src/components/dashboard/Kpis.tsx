@@ -36,12 +36,14 @@ function Stat({
 }
 
 type KpisProps = {
-  data: Pick<DashboardData, 'todayTotal' | 'bowlRemaining' | 'averageDailyIntakeLast3Months'>
+  data: Pick<DashboardData, 'todayTotal' | 'bowlRemaining' | 'averageDailyIntakeLast3Months'> & {
+    thisWeekTotal: number
+  }
 }
 
 export default function Kpis({ data }: KpisProps) {
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-5">
       <Stat
         icon={<FaPaw className="text-emerald-500" />}
         label="今日食べたごはん"
@@ -60,6 +62,13 @@ export default function Kpis({ data }: KpisProps) {
         icon={<FaFish className="text-emerald-500" />}
         label="平均食事量"
         value={data.averageDailyIntakeLast3Months.toFixed(1)}
+        unit="g"
+        color="#14b8a6"
+      />
+      <Stat
+        icon={<FaFish className="text-emerald-500" />}
+        label="今週の合計"
+        value={data.thisWeekTotal.toFixed(1)}
         unit="g"
         color="#14b8a6"
       />

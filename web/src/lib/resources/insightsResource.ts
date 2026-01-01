@@ -148,7 +148,7 @@ export function calcTodayVsPrevWeekInsight(args: {
  * 今週（月〜日）の合計gを表示するためのデータ
  * `isoWeek`（月曜始まり）を前提にする
  */
-export type ThisWeekTotalInsight = {
+export type ThisWeekTotal = {
   /** @description 週の開始日（月曜, YYYY-MM-DD, JST） */
   weekStartIso: string
   /** @description 週の終了日（日曜, YYYY-MM-DD, JST） */
@@ -172,7 +172,7 @@ export type ThisWeekTotalInsight = {
 export function calcThisWeekTotalInsight(args: {
   todayIso: string
   dailyTotals: Map<string, number>
-}): ThisWeekTotalInsight {
+}): ThisWeekTotal {
   const { todayIso, dailyTotals } = args
   const weekStart = getWeekStartIsoJst(todayIso)
   const weekEnd = addDaysIsoJst(weekStart, 6)

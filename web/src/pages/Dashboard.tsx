@@ -5,6 +5,8 @@ import MonthlyChart from '@/components/dashboard/MonthlyChart'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton'
 
+import { useThisWeekTotal } from '@/hooks/useThisWeekTotalInsight'
+
 // 月を "YYYY-MM" 形式にフォーマット
 const fmtMonth = (d: Date): string => {
   const y = d.getFullYear()
@@ -15,6 +17,8 @@ const fmtMonth = (d: Date): string => {
 function DashboardInner() {
   const [month] = useState<string>(() => fmtMonth(new Date()))
   const data = useDashboardData(month)
+  // 今週の合計
+  const thisWeekTotal = useThisWeekTotal()
 
   return (
     <div className="p-3 min-w-0">
@@ -24,6 +28,7 @@ function DashboardInner() {
           todayTotal: data.todayTotal,
           bowlRemaining: data.bowlRemaining,
           averageDailyIntakeLast3Months: data.averageDailyIntakeLast3Months,
+          thisWeekTotal: thisWeekTotal.weekTotalGrams,
         }}
       />
       {/* 今日の記録 */}
