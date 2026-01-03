@@ -1,6 +1,6 @@
 import { Card } from '../ui/card'
 import { jst } from '@/lib/date'
-import { useTodayVsPrevWeekInsight } from '@/hooks/useTodayVsPrevWeekInsight'
+import { useTodayVsPrevWeekInsight } from '@/hooks/useTodayVsPrevWeek'
 
 function formatGrams(value: number): string {
   return Math.round(value).toLocaleString('ja-JP')

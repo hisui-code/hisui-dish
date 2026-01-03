@@ -1,5 +1,5 @@
 import { Card } from '../ui/card'
-import { useThisWeekTotal } from '@/hooks/useThisWeekTotalInsight'
+import { useThisWeekTotal } from '@/hooks/useThisWeekTotal'
 /**
  * 今週（月〜日）の合計gを表示するカード。
  */

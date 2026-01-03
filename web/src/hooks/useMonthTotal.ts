@@ -1,6 +1,6 @@
 import { fetchLogs } from '@/lib/api/logsApi'
 import { jst } from '@/lib/date'
-import { calcMonthTotalInsight, type MonthTotalInsight } from '@/lib/resources/insightsResource'
+import { calcMonthTotalInsight, type MonthTotalInsight } from '@/lib/resources/metricsResource'
 import { logsQueryKey } from '@/lib/resources/logsQuery'
 import type { LogItem } from '@/types/logs'
 import { useSuspenseQuery } from '@tanstack/react-query'

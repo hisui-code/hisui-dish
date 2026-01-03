@@ -1,5 +1,5 @@
 import { Card } from '@/components/ui/card'
-import { useMonthTotalVsPrevInsight } from '@/hooks/useMonthTotalVsPrevInsight'
+import { useMonthTotalVsPrevInsight } from '@/hooks/useMonthTotalVsPrev'
 
 /**
  * 今月の合計gと前月比較を表示するカード。

@@ -3,11 +3,11 @@ import { useSuspenseQueries } from '@tanstack/react-query'
 
 import { fetchLogs } from '@/lib/api/logsApi'
 import { logsQueryKey } from '@/lib/resources/logsQuery'
-import { buildDailyTotals, buildWeeklyTotals } from '@/lib/resources/insightsResource'
+import { buildDailyTotals, buildWeeklyTotals } from '@/lib/resources/metricsResource'
 import { jst } from '@/lib/date'
 
 import type { LogItem } from '@/types/logs'
-import type { WeeklyTotalRow } from '@/lib/resources/insightsResource'
+import type { WeeklyTotalRow } from '@/lib/resources/metricsResource'
 
 /**
  * @description

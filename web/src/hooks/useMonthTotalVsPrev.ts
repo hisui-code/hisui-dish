@@ -2,10 +2,10 @@ import { useSuspenseQueries } from '@tanstack/react-query'
 import { fetchLogs } from '@/lib/api/logsApi'
 import { jst } from '@/lib/date'
 import { logsQueryKey } from '@/lib/resources/logsQuery'
-import { calcMonthTotalVsPrevInsight } from '@/lib/resources/insightsResource'
+import { calcMonthTotalVsPrevInsight } from '@/lib/resources/metricsResource'
 
 import type { LogItem } from '@/types/logs'
-import type { MonthTotalVsPrevInsight } from '@/lib/resources/insightsResource'
+import type { MonthTotalVsPrevInsight } from '@/lib/resources/metricsResource'
 
 function toInsightLogs(items: LogItem[]) {
   return items.map((x) => ({

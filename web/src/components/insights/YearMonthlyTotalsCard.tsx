@@ -5,7 +5,7 @@ import { jst } from '@/lib/date'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import SimpleBarChart from '@/components/charts/SimpleBarChart'
-import { useYearMonthlyTotalsInsight } from '@/hooks/useYearMonthlyTotalsInsight'
+import { useYearMonthlyTotalsInsight } from '@/hooks/useYearMonthlyTotals'
 
 type ChartRow = {
   month: string
