@@ -378,9 +378,7 @@ export function buildWeeklyTotals(args: {
 
     let total = 0
     for (let i = 0; i < 7; i++) {
-      const dayKey = jst(`${start}T00:00:00`)
-        .add(w * 7, 'day')
-        .format('YYYY-MM-DD')
+      const dayKey = jst(`${start}T00:00:00`).add(i, 'day').format('YYYY-MM-DD')
       total += dailyTotals.get(dayKey) ?? 0
     }
 
