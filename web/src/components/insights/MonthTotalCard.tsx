@@ -1,11 +1,11 @@
 import { Card } from '@/components/ui/card'
-import { useMonthTotalVsPrevInsight } from '@/hooks/useMonthTotalVsPrev'
+import { useMonthTotalVsPrev } from '@/hooks/useMonthTotalVsPrev'
 
 /**
  * 今月の合計gと前月比較を表示するカード。
  */
 export default function MonthTotalCard() {
-  const x = useMonthTotalVsPrevInsight()
+  const x = useMonthTotalVsPrev()
 
   const diffSign = x.diffGrams >= 0 ? '+' : ''
   const diffPctLabel = x.diffPct == null ? '—' : `${diffSign}${Math.round(x.diffPct * 100)}%`

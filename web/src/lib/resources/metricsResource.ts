@@ -239,7 +239,7 @@ export function calcMonthTotalInsight(args: {
  * - `diffPct` は `diffGrams / prevMonthTotalGrams`
  *   - 前月合計が 0 の場合は `null`
  */
-export type MonthTotalVsPrevInsight = {
+export type MonthTotalVsPrev = {
   /** @description 対象月（"YYYY-MM"） */
   month: string
   /** @description 対象月の合計（g） */
@@ -293,12 +293,12 @@ export function calcMonthTotalGrams(args: { month: string; logs: InsightLogLite[
  * @param args.prevMonthLogs - 前月ログ配列
  * @returns 月次比較表示用データ（今月/前月/差分/差分率）
  */
-export function calcMonthTotalVsPrevInsight(args: {
+export function calcMonthTotalVsPrev(args: {
   month: string
   monthLogs: InsightLogLite[]
   prevMonth: string
   prevMonthLogs: InsightLogLite[]
-}): MonthTotalVsPrevInsight {
+}): MonthTotalVsPrev {
   const { month, monthLogs, prevMonth, prevMonthLogs } = args
 
   const monthTotal = calcMonthTotalGrams({ month, logs: monthLogs })
