@@ -24,7 +24,10 @@ function DashboardInner() {
           todayTotal: data.todayTotal,
           bowlRemaining: data.bowlRemaining,
           averageDailyIntakeLast3Months: data.averageDailyIntakeLast3Months,
-          thisWeekTotal: data.thisWeekTotalGrams,
+          thisWeekTotalGrams: data.thisWeekTotalGrams,
+          thisMonthTotalGrams: data.thisMonthTotalGrams,
+          thisMonthDiffGrams: data.thisMonthDiffGrams,
+          thisMonthDiffPct: data.thisMonthDiffPct,
         }}
       />
       {/* 今日の記録 */}
