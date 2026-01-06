@@ -136,6 +136,6 @@ class DashboardController extends Controller
             'todayTotal' => $todayTotal,
             'bowlRemaining' => $bowlRemaining,
             'averageDailyIntakeLast3Months' => $averageDailyIntakeLast3Months,
-        ]);
+        ], 200, [], JSON_PRESERVE_ZERO_FRACTION);
     }
 }

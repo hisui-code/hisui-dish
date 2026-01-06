@@ -91,6 +91,34 @@ class DashboardTest extends TestCase
         ]);
     }
 
+    public function test_dashboard_returns_zero_as_float_when_no_data(): void
+    {
+        $token = $this->seedUser();
+        $deviceId = $this->seedDevice();
+
+        CarbonImmutable::setTestNow(
+            CarbonImmutable::create(2026, 2, 10, 12, 0, 0, 'Asia/Tokyo')
+        );
+
+        DB::table('bowl_snapshots')->where('device_id', $deviceId)->delete();
+
+        $response = $this->get('/api/v1/dashboard?device_id=' . $deviceId, [
+            'Authorization' => 'Bearer ' . $token,
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'todayEvents' => [],
+            'todayTotal' => 0.0,
+            'bowlRemaining' => 0.0,
+            'averageDailyIntakeLast3Months' => 0.0,
+        ]);
+
+        $this->assertIsFloat($response->json('todayTotal'));
+        $this->assertIsFloat($response->json('bowlRemaining'));
+        $this->assertIsFloat($response->json('averageDailyIntakeLast3Months'));
+    }
+
     public function test_dashboard_requires_authentication(): void
     {
         $response = $this->get('/api/v1/dashboard');
