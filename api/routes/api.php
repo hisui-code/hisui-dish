@@ -1,7 +1,8 @@
 <?php
 
-use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\DeviceSettingsController;
+use App\Http\Controllers\Api\V1\HealthController;
+use App\Http\Controllers\Api\V1\LogsController;
 use App\Http\Controllers\Api\V1\SessionsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -33,4 +34,5 @@ Route::prefix('v1')
     ->group(function () {
         Route::get('device_settings/{device_id}', [DeviceSettingsController::class, 'show']);
         Route::put('device_settings/{device_id}', [DeviceSettingsController::class, 'update']);
+        Route::get('logs', [LogsController::class, 'index']);
     });
