@@ -218,6 +218,7 @@ curl -s -X PUT http://localhost:3000/api/v1/device_settings/<device_id> \
   - `device_id` (optional, default `Device.first.id`)
 
 Notes:
+
 - `month` is not validated; invalid strings can raise an error (no explicit 400 handler).
 - If no device exists and `device_id` is missing, response is 404.
 
@@ -225,12 +226,10 @@ Success (200):
 
 ```json
 {
-  "todayEvents": [
-    {"time":"09:10","g":12.5}
-  ],
+  "todayEvents": [{ "time": "09:10", "g": 12.5 }],
   "dailySeries": [
-    {"day":"1","total":0},
-    {"day":"2","total":24}
+    { "day": "1", "total": 0 },
+    { "day": "2", "total": 24 }
   ],
   "todayTotal": 36.5,
   "bowlRemaining": 120.0,
@@ -312,4 +311,28 @@ Curl (failure - invalid month):
 ```bash
 curl -s 'http://localhost:3000/api/v1/logs?month=invalid' \
   -H 'Authorization: Bearer <auth_token>'
+```
+
+## 補足仕様：日時フォーマット（updated_at）
+
+### device_settings の updated_at
+
+以下のエンドポイントで返却される `updated_at` は **UTC（Z）表記**とする。
+
+- `GET /api/v1/device_settings/:device_id`
+- `PUT /api/v1/device_settings/:device_id`
+
+#### フォーマット仕様
+
+- ISO8601
+- タイムゾーン：UTC
+- サフィックス：`Z`
+- 小数秒：ミリ秒 3 桁
+
+#### 例
+
+```json
+{
+  "updated_at": "2025-12-09T14:13:29.635Z"
+}
 ```
