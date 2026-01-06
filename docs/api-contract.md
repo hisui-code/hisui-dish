@@ -313,6 +313,30 @@ curl -s 'http://localhost:3000/api/v1/logs?month=invalid' \
   -H 'Authorization: Bearer <auth_token>'
 ```
 
+## BowlSnapshots endpoints (not present in Rails)
+
+No BowlSnapshots endpoints are defined in Rails routes:
+
+- `api-archive/config/routes.rb` does not include `/api/v1/bowl_snapshots`
+- No `Api::V1::BowlSnapshotsController` or request specs exist
+- BowlSnapshot is only used internally by `/api/v1/logs` and `/api/v1/dashboard`
+
+Therefore, there is **no Rails API contract** to replicate for BowlSnapshots endpoints.
+
+Curl (route not defined; expect router 404 status, body not specified):
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/api/v1/bowl_snapshots
+```
+
+Success / unauthorized / validation / 403 examples: **N/A** (endpoint not defined).
+
+Verification checklist:
+
+- Confirm no routes exist in `api-archive/config/routes.rb`
+- Confirm no controller/specs exist under `api-archive/app/controllers` and `api-archive/spec`
+- Optionally confirm router 404 status with the curl above
+
 ## 補足仕様：日時フォーマット（updated_at）
 
 ### device_settings の updated_at
