@@ -2,11 +2,11 @@ name: hisuidish-dev
 services:
   db:
     image: postgres:16
+    command: ["postgres", "-c", "timezone=UTC"]
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: hisuidish_development
-      TZ: Asia/Tokyo
     ports:
       - "15432:5432"
     volumes:
@@ -24,7 +24,7 @@ services:
       RAILS_ENV: development
       TZ: Asia/Tokyo
       CORS_ORIGINS: http://localhost:5173,http://localhost:3001
-      DATABASE_URL: postgres://postgres:postgres@db:5432/hisuidish_development
+      DATABASE_URL: postgres://postgres:postgres@db:5432/hisuidish_rails_development
     volumes:
       - ../../api-archive:/app # ← ルートの hisuidish-api を /app にマウント
       - bundle_cache:/usr/local/bundle
@@ -51,7 +51,7 @@ services:
       DB_DATABASE: hisuidish_development
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
-      TZ: Asia/Tokyo
+      TZ: UTC
     volumes:
       - ../../api:/app
       - composer_cache:/composer
