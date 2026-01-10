@@ -110,8 +110,8 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(255),
   password_digest VARCHAR(255),
   auth_token VARCHAR(255),
-  created_at TIMESTAMP,
-  updated_at TIMESTAMP
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ
 )
 SQL);
     }

@@ -83,7 +83,7 @@ class DashboardController extends Controller
             ->get(['recorded_at', 'weight_g']);
 
         $todayEvents = $todayEventsRows->map(function ($row) {
-            $time = CarbonImmutable::parse($row->recorded_at)
+            $time = CarbonImmutable::parse($row->recorded_at, 'UTC')
                 ->setTimezone('Asia/Tokyo')
                 ->format('H:i');
 

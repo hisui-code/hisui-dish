@@ -194,8 +194,8 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(255),
   password_digest VARCHAR(255),
   auth_token VARCHAR(255),
-  created_at TIMESTAMP,
-  updated_at TIMESTAMP
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ
 )
 SQL);
     }
@@ -214,8 +214,8 @@ CREATE TABLE IF NOT EXISTS devices (
   id VARCHAR(255) PRIMARY KEY,
   code VARCHAR(255) NOT NULL,
   name VARCHAR(255),
-  created_at TIMESTAMP,
-  updated_at TIMESTAMP
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ
 )
 SQL);
     }
@@ -234,9 +234,9 @@ CREATE TABLE IF NOT EXISTS bowl_snapshots (
   id VARCHAR(255) PRIMARY KEY,
   device_id VARCHAR(255) NOT NULL,
   weight_g INTEGER NOT NULL,
-  recorded_at TIMESTAMP NOT NULL,
-  created_at TIMESTAMP,
-  updated_at TIMESTAMP
+  recorded_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ
 )
 SQL);
     }
@@ -262,8 +262,8 @@ CREATE TABLE IF NOT EXISTS device_settings (
   sampling_hz INTEGER NOT NULL,
   moving_avg_window INTEGER NOT NULL,
   gross_weight_limit_g INTEGER NOT NULL,
-  created_at TIMESTAMP,
-  updated_at TIMESTAMP
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ
 )
 SQL);
     }
