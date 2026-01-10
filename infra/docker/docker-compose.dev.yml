@@ -42,8 +42,8 @@ services:
     depends_on:
       - db
     environment:
-      APP_ENV: local
-      APP_DEBUG: "true"
+      APP_ENV: ${LARAVEL_APP_ENV:-local}
+      APP_DEBUG: ${LARAVEL_APP_DEBUG:-true}
       APP_URL: http://localhost:8000
       DB_CONNECTION: pgsql
       DB_HOST: db

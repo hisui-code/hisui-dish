@@ -42,13 +42,13 @@ class DashboardController extends Controller
         $bowlRemaining = $lastSnapshot ? (float) $lastSnapshot->weight_g : 0.0;
 
         $rawDaily = DB::table('bowl_snapshots')
-            ->selectRaw('DATE(recorded_at) AS d, SUM(weight_g) AS total')
+            ->selectRaw("DATE(timezone('Asia/Tokyo', recorded_at)) AS d, SUM(weight_g) AS total")
             ->where('device_id', $deviceId)
             ->whereBetween('recorded_at', [
                 $monthStartUtc->format('Y-m-d H:i:s.u'),
                 $monthEndUtc->format('Y-m-d H:i:s.u'),
             ])
-            ->groupByRaw('DATE(recorded_at)')
+            ->groupByRaw("DATE(timezone('Asia/Tokyo', recorded_at))")
             ->orderBy('d')
             ->get();
 
@@ -83,7 +83,7 @@ class DashboardController extends Controller
             ->get(['recorded_at', 'weight_g']);
 
         $todayEvents = $todayEventsRows->map(function ($row) {
-            $time = CarbonImmutable::parse($row->recorded_at, 'UTC')
+            $time = CarbonImmutable::parse($row->recorded_at)
                 ->setTimezone('Asia/Tokyo')
                 ->format('H:i');
 
@@ -107,13 +107,13 @@ class DashboardController extends Controller
         $periodEndUtc = $periodEnd->setTimezone('UTC');
 
         $dailyTotals = DB::table('bowl_snapshots')
-            ->selectRaw('DATE(recorded_at) AS d, SUM(weight_g) AS total')
+            ->selectRaw("DATE(timezone('Asia/Tokyo', recorded_at)) AS d, SUM(weight_g) AS total")
             ->where('device_id', $deviceId)
             ->whereBetween('recorded_at', [
                 $periodStartUtc->format('Y-m-d H:i:s.u'),
                 $periodEndUtc->format('Y-m-d H:i:s.u'),
             ])
-            ->groupByRaw('DATE(recorded_at)')
+            ->groupByRaw("DATE(timezone('Asia/Tokyo', recorded_at))")
             ->get();
 
         if ($dailyTotals->isEmpty()) {

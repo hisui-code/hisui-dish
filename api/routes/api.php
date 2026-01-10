@@ -23,18 +23,17 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::prefix('v1')
-    ->middleware('api.token')
-    ->group(function () {
-        Route::get('health', [HealthController::class, 'show']);
-        Route::post('login', [SessionsController::class, 'create']);
-    });
+Route::prefix('v1')->group(function () {
+    Route::get('health', [HealthController::class, 'show']);
+    Route::post('login', [SessionsController::class, 'create']);
+});
 
 Route::prefix('v1')
-    ->middleware(['api.token', 'api.auth'])
+  ->middleware(['api.token', 'api.auth'])
     ->group(function () {
         Route::get('device_settings/{device_id}', [DeviceSettingsController::class, 'show']);
         Route::put('device_settings/{device_id}', [DeviceSettingsController::class, 'update']);
+        Route::patch('device_settings/{device_id}', [DeviceSettingsController::class, 'update']);
         Route::get('logs', [LogsController::class, 'index']);
         Route::get('dashboard', [DashboardController::class, 'show']);
     });

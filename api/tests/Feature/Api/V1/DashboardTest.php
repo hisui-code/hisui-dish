@@ -63,13 +63,13 @@ class DashboardTest extends TestCase
 
         $response->assertJson([
             'todayEvents' => [
-                ['time' => '09:15', 'g' => 30.0],
-                ['time' => '18:45', 'g' => 20.0],
+                ['time' => '09:15', 'g' => 30],
+                ['time' => '18:45', 'g' => 20],
             ],
             'dailySeries' => $dailySeries,
-            'todayTotal' => 50.0,
-            'bowlRemaining' => 77.0,
-            'averageDailyIntakeLast3Months' => 60.0,
+            'todayTotal' => 50,
+            'bowlRemaining' => 77,
+            'averageDailyIntakeLast3Months' => 60,
         ]);
     }
 
@@ -91,7 +91,7 @@ class DashboardTest extends TestCase
         ]);
     }
 
-    public function test_dashboard_returns_zero_as_float_when_no_data(): void
+    public function test_dashboard_returns_zero_as_int_when_no_data(): void
     {
         $token = $this->seedUser();
         $deviceId = $this->seedDevice();
@@ -109,14 +109,14 @@ class DashboardTest extends TestCase
         $response->assertStatus(200);
         $response->assertJson([
             'todayEvents' => [],
-            'todayTotal' => 0.0,
-            'bowlRemaining' => 0.0,
-            'averageDailyIntakeLast3Months' => 0.0,
+            'todayTotal' => 0,
+            'bowlRemaining' => 0,
+            'averageDailyIntakeLast3Months' => 0,
         ]);
 
-        $this->assertIsFloat($response->json('todayTotal'));
-        $this->assertIsFloat($response->json('bowlRemaining'));
-        $this->assertIsFloat($response->json('averageDailyIntakeLast3Months'));
+        $this->assertIsInt($response->json('todayTotal'));
+        $this->assertIsInt($response->json('bowlRemaining'));
+        $this->assertIsInt($response->json('averageDailyIntakeLast3Months'));
     }
 
     public function test_dashboard_requires_authentication(): void
