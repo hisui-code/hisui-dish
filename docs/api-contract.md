@@ -317,7 +317,7 @@ curl -s 'http://localhost:3000/api/v1/logs?month=invalid' \
 
 No BowlSnapshots endpoints are defined in Rails routes:
 
-- `api-archive/config/routes.rb` does not include `/api/v1/bowl_snapshots`
+- `backend-archive/config/routes.rb` does not include `/api/v1/bowl_snapshots`
 - No `Api::V1::BowlSnapshotsController` or request specs exist
 - BowlSnapshot is only used internally by `/api/v1/logs` and `/api/v1/dashboard`
 
@@ -333,8 +333,8 @@ Success / unauthorized / validation / 403 examples: **N/A** (endpoint not define
 
 Verification checklist:
 
-- Confirm no routes exist in `api-archive/config/routes.rb`
-- Confirm no controller/specs exist under `api-archive/app/controllers` and `api-archive/spec`
+- Confirm no routes exist in `backend-archive/config/routes.rb`
+- Confirm no controller/specs exist under `backend-archive/app/controllers` and `backend-archive/spec`
 - Optionally confirm router 404 status with the curl above
 
 ## 補足仕様：日時フォーマット（updated_at）

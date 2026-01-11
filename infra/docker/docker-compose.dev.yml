@@ -26,7 +26,7 @@ services:
       CORS_ORIGINS: http://localhost:5173,http://localhost:3001
       DATABASE_URL: postgres://postgres:postgres@db:5432/hisuidish_rails_development
     volumes:
-      - ../../api-archive:/app # ← ルートの hisuidish-api を /app にマウント
+      - ../../backend-archive:/app # ← ルートの hisuidish-api を /app にマウント
       - bundle_cache:/usr/local/bundle
     ports:
       - "3000:3000"
@@ -53,7 +53,7 @@ services:
       DB_PASSWORD: postgres
       TZ: UTC
     volumes:
-      - ../../api:/app
+      - ../../backend:/app
       - composer_cache:/composer
     ports:
       - "8000:8000"
@@ -61,7 +61,7 @@ services:
       - ../../.env
   web:
     build:
-      context: ../../web
+      context: ../../frontend
       dockerfile: ../infra/docker/web.Dockerfile
     working_dir: /app
     ports:
@@ -71,7 +71,7 @@ services:
       WATCHPACK_POLLING: "true"
       NODE_ENV: development
     volumes:
-      - ../../web:/app:cached
+      - ../../frontend:/app:cached
     command: npm run dev -- --host 0.0.0.0 --port 5173
     depends_on:
       - api

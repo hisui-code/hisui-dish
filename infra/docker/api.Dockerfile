@@ -17,7 +17,7 @@ RUN apt-get update -qq && apt-get install -y --no-install-recommends \
  && rm -rf /var/lib/apt/lists/*
 
 # Gem のキャッシュを効かせる（存在しなくても OK）
-COPY api-archive/Gemfile api-archive/Gemfile.lock ./
+COPY backend-archive/Gemfile backend-archive/Gemfile.lock ./
 RUN gem install bundler -v "~> 2.6" \
  && bundle config set path '/usr/local/bundle' \
  && bundle lock --add-platform ruby || true \
@@ -25,7 +25,7 @@ RUN gem install bundler -v "~> 2.6" \
  && bundle install || true
 
 # アプリ全体
-COPY api-archive/ .
+COPY backend-archive/ .
 
 # 起動前に bundle / db:prepare を済ませてから Puma を起動
 COPY infra/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
