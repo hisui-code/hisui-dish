@@ -4,6 +4,7 @@ import TodayList from '@/components/dashboard/TodayList'
 import MonthlyChart from '@/components/dashboard/MonthlyChart'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton'
+import WeeklyTotalsCard from '@/components/dashboard/charts/WeeklyTotalsCard'
 
 // 月を "YYYY-MM" 形式にフォーマット
 const fmtMonth = (d: Date): string => {
@@ -32,6 +33,8 @@ function DashboardInner() {
       />
       {/* 今日の記録 */}
       <TodayList events={data.todayEvents} />
+      {/* 週ごとの合計 */}
+      <WeeklyTotalsCard />
       {/* 今月の日別合計グラフ */}
       <MonthlyChart series={data.dailySeries} />
     </div>

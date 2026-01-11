@@ -10,6 +10,8 @@ import WeeklyBarChart from '@/components/charts/WeeklyBarChart'
 
 import type { WeeklyBarChartRow } from '@/components/charts/WeeklyBarChart'
 
+import { FaChartLine } from 'react-icons/fa6'
+
 // 表示用に ISO日付（YYYY-MM-DD）を MM/DD に変換する
 function formatMd(isoDate: string): string {
   return jst(`${isoDate}T00:00:00`).format('MM/DD')
@@ -90,10 +92,13 @@ export default function WeeklyTotalsCard() {
   }
 
   return (
-    <Card className="rounded-xl shadow-sm">
+    <Card className="mt-6 rounded-xl shadow-sm">
       <CardHeader className="pb-1">
         <CardTitle className="flex items-center justify-between gap-2 text-base">
-          <span>📈 週ごとの合計</span>
+          <h3 className="flex items-center gap-2 text-[15px] font-medium text-neutral-800">
+            <FaChartLine className="text-emerald-500" aria-hidden="true" />
+            <span>週ごとの合計</span>
+          </h3>
 
           <div className="flex items-center gap-2">
             <Button
