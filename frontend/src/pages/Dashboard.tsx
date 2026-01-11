@@ -31,10 +31,12 @@ function DashboardInner() {
           thisMonthDiffPct: data.thisMonthDiffPct,
         }}
       />
-      {/* 今日の記録 */}
-      <TodayList events={data.todayEvents} />
-      {/* 週ごとの合計 */}
-      <WeeklyTotalsCard />
+      <div className="lg:grid lg:grid-cols-2 lg:gap-3">
+        {/* 今日の記録 */}
+        <TodayList events={data.todayEvents} />
+        {/* 週ごとの合計 */}
+        <WeeklyTotalsCard />
+      </div>
       {/* 今月の日別合計グラフ */}
       <MonthlyChart series={data.dailySeries} />
     </div>

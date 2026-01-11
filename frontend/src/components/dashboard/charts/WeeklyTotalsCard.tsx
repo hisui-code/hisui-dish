@@ -19,7 +19,7 @@ function formatMd(isoDate: string): string {
 
 /**
  * @description
- * インサイトの「週ごとの合計」棒グラフ
+ * 「週ごとの合計」棒グラフ
  *
  * - 表示は直近6週
  * - X軸は W00 を今週として W01, W02… を過去方向に付ける
