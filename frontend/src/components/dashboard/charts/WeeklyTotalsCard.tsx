@@ -92,7 +92,7 @@ export default function WeeklyTotalsCard() {
   }
 
   return (
-    <Card className="mt-6 rounded-xl shadow-sm">
+    <Card className="rounded-xl shadow-sm">
       <CardHeader className="pb-1">
         <CardTitle className="flex items-center justify-between gap-2 text-base">
           <h3 className="flex items-center gap-2 text-[15px] font-medium text-neutral-800">

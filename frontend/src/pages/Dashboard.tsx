@@ -5,6 +5,7 @@ import MonthlyChart from '@/components/dashboard/MonthlyChart'
 import { useDashboardData } from '@/hooks/useDashboardData'
 import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton'
 import WeeklyTotalsCard from '@/components/dashboard/charts/WeeklyTotalsCard'
+import YearMonthlyTotalsCard from '@/components/dashboard/charts/YearMonthlyTotalsCard'
 
 // 月を "YYYY-MM" 形式にフォーマット
 const fmtMonth = (d: Date): string => {
@@ -31,14 +32,17 @@ function DashboardInner() {
           thisMonthDiffPct: data.thisMonthDiffPct,
         }}
       />
-      <div className="lg:grid lg:grid-cols-2 lg:gap-3">
-        {/* 今日の記録 */}
-        <TodayList events={data.todayEvents} />
-        {/* 週ごとの合計 */}
-        <WeeklyTotalsCard />
-      </div>
+      {/* 今日の記録 */}
+      <TodayList events={data.todayEvents} />
       {/* 今月の日別合計グラフ */}
       <MonthlyChart series={data.dailySeries} />
+
+      <div className="lg:grid lg:grid-cols-2 lg:gap-3 mt-6">
+        {/* 週ごとの合計 */}
+        <WeeklyTotalsCard />
+        {/* 月ごとの合計 */}
+        <YearMonthlyTotalsCard />
+      </div>
     </div>
   )
 }

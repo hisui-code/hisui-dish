@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import SimpleBarChart from '@/components/charts/SimpleBarChart'
 import { useYearMonthlyTotalsInsight } from '@/hooks/useYearMonthlyTotals'
 
+import { FaChartLine } from 'react-icons/fa6'
+
 type ChartRow = {
   month: string
   total: number
@@ -35,8 +37,10 @@ export default function YearMonthlyTotalsCard() {
     <Card className="rounded-xl shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center justify-between gap-2 text-base">
-          <span>📊 月ごとの合計</span>
-
+          <div className="flex items-center gap-2 text-[15px] font-medium text-neutral-800">
+            <FaChartLine className="text-emerald-500" aria-hidden="true" />
+            <span>月ごとの合計</span>
+          </div>
           <div className="flex items-center gap-2">
             <Button
               type="button"
