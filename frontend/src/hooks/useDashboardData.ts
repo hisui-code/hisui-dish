@@ -17,7 +17,16 @@ export type DashboardMergedData = DashboardData & {
   thisMonthDiffPct: number | null
 }
 
-export function useDashboardData(month: string): DashboardMergedData {
+export function useDashboardData(): DashboardMergedData {
+  // 月を "YYYY-MM" 形式にフォーマット
+  const fmtMonth = (d: Date): string => {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    return `${y}-${m}`
+  }
+
+  const month = fmtMonth(new Date())
+
   const { data } = useSuspenseQuery<DashboardData>({
     queryKey: ['dashboard', month],
     queryFn: () => fetchDashboard(month),

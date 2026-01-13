@@ -6,6 +6,7 @@ import { useDashboardData } from '@/hooks/useDashboardData'
 import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton'
 import WeeklyTotalsCard from '@/components/dashboard/charts/WeeklyTotalsCard'
 import YearMonthlyTotalsCard from '@/components/dashboard/charts/YearMonthlyTotalsCard'
+import { useMonthlyDailySeries } from '@/hooks/useMonthlyDailySeries'
 
 // 月を "YYYY-MM" 形式にフォーマット
 const fmtMonth = (d: Date): string => {
@@ -15,8 +16,11 @@ const fmtMonth = (d: Date): string => {
 }
 
 function DashboardInner() {
-  const [month] = useState<string>(() => fmtMonth(new Date()))
-  const data = useDashboardData(month)
+  const data = useDashboardData()
+
+  // 日別ごとの合計用（切り替え用）
+  const [month, setMonth] = useState<string>(() => fmtMonth(new Date()))
+  const dailySeries = useMonthlyDailySeries(month)
 
   return (
     <div className="p-3 min-w-0">
@@ -34,8 +38,8 @@ function DashboardInner() {
       />
       {/* 今日の記録 */}
       <TodayList events={data.todayEvents} />
-      {/* 今月の日別合計グラフ */}
-      <MonthlyChart series={data.dailySeries} />
+      {/* 日別ごとの合計*/}
+      <MonthlyChart month={month} setMonth={setMonth} series={dailySeries} />
 
       <div className="lg:grid lg:grid-cols-2 lg:gap-3 mt-6">
         {/* 週ごとの合計 */}
