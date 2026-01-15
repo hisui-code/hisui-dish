@@ -21,6 +21,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'password_digest',
+        'auth_token',
     ];
 
     /**
@@ -30,6 +32,8 @@ class User extends Authenticatable
      */
     protected $hidden = [
         'password',
+        'password_digest',
+        'auth_token',
         'remember_token',
     ];
 
@@ -40,6 +44,11 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'password' => 'hashed',
+        'password_digest' => 'hashed',
     ];
+
+    public function getAuthPasswordName(): string
+    {
+        return 'password_digest';
+    }
 }
