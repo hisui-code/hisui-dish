@@ -10,9 +10,12 @@ class EnsureApiToken
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (app()->environment('production')) {
-            $expected = (string) config('app.api_token', '');
-            $provided = (string) $request->header('X-Api-Token', '');
+        if (config('app.env') !== 'production') {
+            return $next($request);
+        }
+
+        $expected = (string) config('app.api_token', '');
+        $provided = (string) $request->header('X-Api-Token', '');
 
             if ($expected === '' || $provided === '' || !hash_equals($expected, $provided)) {
                 return response()->json(['error' => 'forbidden'], 403);

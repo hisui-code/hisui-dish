@@ -39,7 +39,7 @@ class DashboardController extends Controller
             ->orderByDesc('recorded_at')
             ->first();
 
-        $bowlRemaining = $lastSnapshot ? (float) $lastSnapshot->weight_g : 0.0;
+        $bowlRemaining = $lastSnapshot ? (int) $lastSnapshot->weight_g : 0;
 
         $rawDaily = DB::table('bowl_snapshots')
             ->selectRaw("DATE(timezone('Asia/Tokyo', recorded_at)) AS d, SUM(weight_g) AS total")
@@ -93,7 +93,7 @@ class DashboardController extends Controller
             ];
         })->all();
 
-        $todayTotal = (float) DB::table('bowl_snapshots')
+        $todayTotal = (int) DB::table('bowl_snapshots')
             ->where('device_id', $deviceId)
             ->whereBetween('recorded_at', [
                 $todayStartUtc->format('Y-m-d H:i:s.u'),
@@ -117,7 +117,7 @@ class DashboardController extends Controller
             ->get();
 
         if ($dailyTotals->isEmpty()) {
-            $averageDailyIntakeLast3Months = 0.0;
+            $averageDailyIntakeLast3Months = 0;
         } else {
             $totalGrams = 0.0;
             foreach ($dailyTotals as $row) {
@@ -126,8 +126,13 @@ class DashboardController extends Controller
 
             $daysWithMeals = $dailyTotals->count();
             $averageDailyIntakeLast3Months = $daysWithMeals === 0
-                ? 0.0
+                ? 0
                 : round($totalGrams / $daysWithMeals, 1);
+
+            if (is_float($averageDailyIntakeLast3Months) &&
+                floor($averageDailyIntakeLast3Months) === $averageDailyIntakeLast3Months) {
+                $averageDailyIntakeLast3Months = (int) $averageDailyIntakeLast3Months;
+            }
         }
 
         return response()->json([
