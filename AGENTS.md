@@ -1,47 +1,150 @@
-# AGENTS.md
+# AGENTS.md（HisuiDish / 学習用）
 
-## Repository Rules for Code Agents
+このリポジトリは学習目的です。
 
-### Development Environment
+## ルール（最優先）
 
-- All development and execution must be done using Docker.
-- Do NOT run services directly on the host machine.
-- The repository must remain runnable via docker-compose (or the standard Makefile commands).
+1. **依存関係やフレームワークの“更新（バージョンアップ）”はしない**
 
-### Directory Conventions
+   - 例：npm / composer のパッケージ更新、Laravel/React のメジャーアップデート、lockfile 更新だけの PR は禁止
+   - どうしても必要な場合は、まず「なぜ必要か」を説明し、最小差分で行う
 
-- The active backend API must live under `backend/`.
-- Legacy or archived backends may live under directories such as `backend-archive/`.
-- Do NOT remove archived code unless explicitly instructed.
+2. **コードを書くときはドキュメントコメント必須**
 
-### Scope of Changes
+   - JS/TS：**JSDoc**
+   - PHP：**PHPDoc**
+   - それぞれ **`@description` `@param` `@returns`** を必ず書く（該当がある場合）
+   - 例外：型だけで自明な極小のワンライナー（ただし可能な限り書く）
 
-- The frontend directory (`frontend/`) must NOT be modified unless explicitly instructed.
-- Avoid unnecessary changes outside the assigned task.
-- Prefer minimal, reversible changes.
+3. **わかりやすい・シンプルなコードを優先して提案する**
 
-### Database Rules
+   - 最短・最小の実装で「読めること」を最優先にする
+   - 過度な抽象化（不要なクラス化、汎用化、メタプログラミング）は避ける
+   - 将来拡張のための“先回り設計”は最小限にする（必要になったら追加）
 
-- Do NOT modify the database schema unless explicitly instructed.
-- No destructive or speculative migrations are allowed.
+4. **処理コメント（何をしているか）を付ける**
 
-### API Compatibility
+   - 複雑な条件分岐、境界（タイムゾーン/日付）、集計、例外処理には必ずコメントを入れる
+   - コメントは「なぜ（意図）」も書けるとなお良い（JSDoc/PHPDoc は意図、処理コメントは流れ）
 
-- When replacing or migrating APIs, compatibility takes priority over framework conventions.
-- Match existing behavior exactly when required:
-  - URL structure
-  - HTTP status codes
-  - JSON response shape
-  - Error formats
+5. **既存の挙動を壊さない（後方互換）**
 
-### Coding Principles
+   - 変更が必要なら、影響範囲・代替案・移行手順を先に提示する
+   - 動作確認手順（どう確認したか）を必ず残す
 
-- Prefer clarity over abstraction.
-- Avoid premature refactoring.
-- Keep responsibilities clearly separated.
+6. **“仕様”が絡む変更は docs/spec を先に直す**
 
-### Commits
+   - 実装より先でも OK。迷子防止を優先する
 
-- Use commit messages with prefix: `API: ...`
-- One logical change per commit.
-- Do not commit broken or non-runnable states.
+7. **指示がない限りコードは更新しない（学習優先）**
+
+   - こちらからの提案は「設計・方針・改善点・差分の説明」までに留める
+   - ユーザーから明確に依頼がある場合のみ、実ファイルの変更（パッチ）を行う
+
+8. **コードはユーザーが手打ちする**
+   - 私はコードの提案・指摘・レビューは行うが、完成コードの貼り付けで置き換えさせない
+   - 必要なら「この関数のここをこう直す」という最小の断片例は提示してよい
+
+---
+
+## ドキュメントコメントの書き方
+
+### JSDoc（JS/TS）
+
+- 関数・API 呼び出し・重要なユーティリティに付ける
+- TS でも **意図（なぜ存在するか）** を `@description` で書く
+
+例：
+
+```ts
+/**
+ * @description 指定期間（JST境界）をUTCに変換してAPIクエリ用の範囲を作る。
+ * @param startJst JSTの開始日時
+ * @param endJst JSTの終了日時
+ * @returns UTCに変換した開始/終了のISO文字列
+ */
+export function buildUtcRange(
+  startJst: Date,
+  endJst: Date
+): { startUtc: string; endUtc: string } {
+  // 1) JSTのDateを受け取り、UTCのISO文字列に変換する
+  // 2) API/DBクエリはUTCで扱う前提
+  // ...
+}
+```
+
+### PHPDoc（PHP）
+
+- Controller / Service / Action / Job / Query / Utility に付ける
+- 配列や戻り値の形が重要な場合は具体的に書く
+
+例：
+
+```php
+/**
+ * @description JST境界の期間をUTCに変換して、DBクエリ用の範囲を返す。
+ * @param \\DateTimeImmutable $startJst JST開始
+ * @param \\DateTimeImmutable $endJst JST終了
+ * @returns array{startUtc:\\DateTimeImmutable,endUtc:\\DateTimeImmutable} UTC範囲
+ */
+function buildUtcRange(\\DateTimeImmutable $startJst, \\DateTimeImmutable $endJst): array {
+    // 1) JSTの境界を受け取り、UTCに変換する
+    // 2) DBはUTC保存なので、この範囲でクエリする
+    // ...
+}
+```
+
+---
+
+## 作業の進め方（推奨）
+
+1. 目的を 1〜3 行で宣言（何を・なぜ）
+2. 影響範囲を列挙（API/DB/UI/計測）
+3. 最小差分で実装（読みやすさ優先）
+4. 動作確認（手順と結果）を残す
+5. 必要なら docs/spec と 90_decisions を更新
+
+---
+
+## コーディング規約（最低限）
+
+### フロント（React / TS）
+
+- コンポーネントは **`function` 宣言** を使う
+- コンポーネント内部の小関数は **アロー関数**
+- 型は可能な限り明示（境界・API レスポンスなど）
+
+### バックエンド（Laravel / PHP）
+
+- “何を返すか” が重要な箇所は PHPDoc で形を固定する
+- バリデーションとエラーレスポンスの一貫性を優先する
+
+### 命名
+
+- 省略しすぎない（読みやすさ優先）
+- “時間” “単位” は名前に含める（例：`*_sec`, `*_g`, `*_hz`）
+
+---
+
+## テスト・確認
+
+- 変更した機能に対して最低 1 つは確認を追加する
+  - 自動テストが難しければ手動確認手順を README/PR コメントに明記
+- “時間/タイムゾーン” は必ず境界（JST の 0 時付近）で確認する
+
+---
+
+## Git / コミット
+
+- コミットは意味単位で小さく
+- メッセージ例：
+  - `docs(spec): 仕様ドキュメント雛形を追加`
+  - `fix(api): JST境界の集計ずれを修正`
+  - `feat(web): デバイス設定の項目を追加`
+
+---
+
+## 禁止事項（よくある事故）
+
+- 仕様に反する“ついで変更”（リファクタついでの挙動変更）
+- 不明点を推測で埋めて実装（仕様 or 90_decisions に書いてから）
