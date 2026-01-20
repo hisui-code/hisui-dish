@@ -3,26 +3,39 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet, useNavigate } from 'rea
 import Sidebar from '@/components/layout/Sidebar'
 import Header from './components/layout/Header'
 import Settings from './pages/Settings'
-import DashBoard from './pages/Dashboard'
+import Dashboard from './pages/Dashboard'
 import Logs from './pages/Logs'
 import Insights from './pages/Insights'
 import Login from './pages/Login'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 
+/**
+ * @description 認証状態に応じて保護ルートを制御する。
+ * @returns 認証済みなら子ルート、未認証ならログインへ遷移
+ */
 function ProtectedRoute() {
   const { ready, loggedIn } = useAuth()
+  // 認証状態が確定するまでは描画を止める
   if (!ready) return null
+  // 未ログインならログイン画面にリダイレクトする
   return loggedIn ? <Outlet /> : <Navigate to="/login" replace />
 }
 
+/**
+ * @description ログイン画面の制御と成功時の遷移を行う。
+ * @returns ログイン画面、またはトップへのリダイレクト
+ */
 function LoginRoute() {
   const navigate = useNavigate()
   const { ready, loggedIn, loginWithToken } = useAuth()
+  // 認証状態が確定するまでは描画を止める
   if (!ready) return null
+  // 既にログイン済みならトップへ戻す
   if (loggedIn) return <Navigate to="/" replace />
   return (
     <Login
       onLoginSuccess={(token) => {
+        // トークンを保持してからトップに遷移する
         loginWithToken(token)
         navigate('/', { replace: true })
       }}
@@ -31,7 +44,8 @@ function LoginRoute() {
 }
 
 /**
- * ログイン済みユーザー向けのレイアウト（サイドバー + ヘッダー + ルーティング）
+ * @description ログイン済みユーザー向けのレイアウトを表示する。
+ * @returns サイドバーとヘッダーを含むアプリの骨組み
  */
 function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState<boolean>(false)
@@ -76,6 +90,10 @@ function AppLayout() {
   )
 }
 
+/**
+ * @description 認証プロバイダとルーティングを組み立てる。
+ * @returns アプリ全体のルート構成
+ */
 export default function App() {
   return (
     <AuthProvider>
@@ -84,7 +102,7 @@ export default function App() {
           <Route path="/login" element={<LoginRoute />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
-              <Route path="/" element={<DashBoard />} />
+              <Route path="/" element={<Dashboard />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/logs" element={<Logs />} />
               <Route path="/insights" element={<Insights />} />

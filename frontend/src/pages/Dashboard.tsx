@@ -8,18 +8,18 @@ import WeeklyTotalsCard from '@/components/dashboard/charts/WeeklyTotalsCard'
 import YearMonthlyTotalsCard from '@/components/dashboard/charts/YearMonthlyTotalsCard'
 import { useMonthlyDailySeries } from '@/hooks/useMonthlyDailySeries'
 
-// 月を "YYYY-MM" 形式にフォーマット
-const fmtMonth = (d: Date): string => {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  return `${y}-${m}`
-}
+import { jst } from '@/lib/date'
 
+/**
+ * @description ダッシュボードの主要セクションを表示する。
+ * @returns ダッシュボードのメイン画面
+ */
 function DashboardInner() {
   const data = useDashboardData()
 
-  // 日別ごとの合計用（切り替え用）
-  const [month, setMonth] = useState<string>(() => fmtMonth(new Date()))
+  // 日別集計の対象月をJST基準で初期化し、切り替えに使う
+  const [month, setMonth] = useState<string>(() => jst(new Date()).format('YYYY-MM'))
+  // 選択中の月に紐づく日別系列を取得する
   const dailySeries = useMonthlyDailySeries(month)
 
   return (
@@ -51,7 +51,11 @@ function DashboardInner() {
   )
 }
 
-export default function DashBoard() {
+/**
+ * @description ダッシュボード画面をサスペンス付きで表示する。
+ * @returns ダッシュボード画面
+ */
+export default function Dashboard() {
   // 通常表示
   return (
     <Suspense fallback={<DashboardSkeleton />}>
