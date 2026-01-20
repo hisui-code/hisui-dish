@@ -1,14 +1,13 @@
 import { NavLink } from 'react-router-dom'
-import { FaHome, FaCog, FaBook, FaChartBar } from 'react-icons/fa'
+import { FaHome, FaCog, FaBook } from 'react-icons/fa'
 import LogoutButton from './LogoutButton'
 
-type NavItemKey = 'dashboard' | 'settings' | 'logs' | 'insights'
+type NavItemKey = 'dashboard' | 'settings' | 'logs'
 
 const items: { key: NavItemKey; label: string; icon: React.ReactNode; path: string }[] = [
   { key: 'dashboard', label: 'ダッシュボード', icon: <FaHome />, path: '/dashboard' },
   { key: 'settings', label: '設定', icon: <FaCog />, path: '/settings' },
   { key: 'logs', label: 'ログ', icon: <FaBook />, path: '/logs' },
-  { key: 'insights', label: 'インサイト', icon: <FaChartBar />, path: '/insights' },
 ]
 
 export default function Sidebar() {

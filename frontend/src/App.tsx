@@ -5,7 +5,6 @@ import Header from './components/layout/Header'
 import Settings from './pages/Settings'
 import Dashboard from './pages/Dashboard'
 import Logs from './pages/Logs'
-import Insights from './pages/Insights'
 import Login from './pages/Login'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 
@@ -105,7 +104,6 @@ export default function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/logs" element={<Logs />} />
-              <Route path="/insights" element={<Insights />} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

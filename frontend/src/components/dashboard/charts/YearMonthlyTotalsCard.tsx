@@ -5,7 +5,7 @@ import { jst } from '@/lib/date'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import SimpleBarChart from '@/components/charts/SimpleBarChart'
-import { useYearMonthlyTotalsInsight } from '@/hooks/useYearMonthlyTotals'
+import { useYearMonthlyTotals } from '@/hooks/useYearMonthlyTotals'
 
 import { FaChartLine } from 'react-icons/fa6'
 
@@ -16,7 +16,7 @@ type ChartRow = {
 
 /**
  * @description
- * インサイトの「年別：月ごとの合計（1〜12）」棒グラフ
+ * 「年別：月ごとの合計（1〜12）」棒グラフ
  */
 export default function YearMonthlyTotalsCard() {
   const [year, setYear] = useState<string>(() => jst().format('YYYY'))
@@ -24,7 +24,7 @@ export default function YearMonthlyTotalsCard() {
   const currentYear = Number(jst().format('YYYY'))
   const canNext = Number(year) < currentYear
 
-  const totals = useYearMonthlyTotalsInsight(year)
+  const totals = useYearMonthlyTotals(year)
 
   const series: ChartRow[] = useMemo(() => {
     return totals.map((x) => ({

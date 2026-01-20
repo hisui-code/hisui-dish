@@ -2,7 +2,7 @@ import { jst } from '../date'
 
 /**
  * @description
- * インサイト集計用のユーティリティ群
+ * メトリクス集計用のユーティリティ群
  *
  * - 日付キーは `YYYY-MM-DD`（JST基準）で扱う
  * - 週は `isoWeek`（月曜始まり）で扱う
@@ -11,11 +11,11 @@ import { jst } from '../date'
 
 /**
  * @description
- * インサイト計算に必要な最小のログ表現
+ * 集計計算に必要な最小のログ表現
  * `recordedAtIso` は `+09:00` を含む ISO 文字列を想定し、
  * `slice(0, 10)` で JST 日付（YYYY-MM-DD）キーが安定する前提
  */
-export type InsightLogLite = {
+export type MetricsLogLite = {
   /** @description 記録時刻（ISO文字列、例: "2025-12-24T10:11:12+09:00"） */
   recordedAtIso: string
   /** @description 記録量（g）減少量の合計を扱う想定 */
@@ -30,7 +30,7 @@ export type InsightLogLite = {
  * - `diffPct` は `diffGrams / prevWeekAvgPerDayGrams`
  *   - 前週平均が 0 の場合は `null`
  */
-export type TodayVsPrevWeekInsight = {
+export type TodayVsPrevWeekMetrics = {
   /** @description 対象日（YYYY-MM-DD, JST） */
   todayIso: string
   /** @description 今日の合計（g） */
@@ -61,7 +61,7 @@ export type TodayVsPrevWeekInsight = {
  * @param logs - 集計対象ログ配列（最小表現）
  * @returns 日別合計Map（key=YYYY-MM-DD, value=合計g）
  */
-export function buildDailyTotals(logs: InsightLogLite[]): Map<string, number> {
+export function buildDailyTotals(logs: MetricsLogLite[]): Map<string, number> {
   const map = new Map<string, number>()
 
   // recordedAtIso が +09:00 を含む想定なので slice(0,10) でJST日付キーが安定する
@@ -108,10 +108,10 @@ export function addDaysIsoJst(isoDate: string, days: number): string {
  * @param args.dailyTotals - 日別合計Map（key=YYYY-MM-DD, value=合計g）
  * @returns 比較用データ（今日合計・前週平均・差分/差分率）
  */
-export function calcTodayVsPrevWeekInsight(args: {
+export function calcTodayVsPrevWeekMetrics(args: {
   todayIso: string
   dailyTotals: Map<string, number>
-}): TodayVsPrevWeekInsight {
+}): TodayVsPrevWeekMetrics {
   const { todayIso, dailyTotals } = args
 
   const todayTotal = dailyTotals.get(todayIso) ?? 0
@@ -169,7 +169,7 @@ export type ThisWeekTotal = {
  * @param args.dailyTotals - 日別合計Map（key=YYYY-MM-DD, value=合計g）
  * @returns 今週合計表示用データ
  */
-export function calcThisWeekTotalInsight(args: {
+export function calcThisWeekTotalMetrics(args: {
   todayIso: string
   dailyTotals: Map<string, number>
 }): ThisWeekTotal {
@@ -194,7 +194,7 @@ export function calcThisWeekTotalInsight(args: {
  * @description
  * 月の合計gを表示するためのデータ
  */
-export type MonthTotalInsight = {
+export type MonthTotalMetrics = {
   /** @description 対象月（"YYYY-MM"） */
   month: string
   /** @description 月の合計（g） */
@@ -213,10 +213,10 @@ export type MonthTotalInsight = {
  * @param args.logs - ログ配列
  * @returns 月合計表示用データ
  */
-export function calcMonthTotalInsight(args: {
+export function calcMonthTotalMetrics(args: {
   month: string
-  logs: InsightLogLite[]
-}): MonthTotalInsight {
+  logs: MetricsLogLite[]
+}): MonthTotalMetrics {
   const { month, logs } = args
 
   let total = 0
@@ -268,7 +268,7 @@ export type MonthTotalVsPrev = {
  * @param args.logs - ログ配列
  * @returns 対象月の合計（g）
  */
-export function calcMonthTotalGrams(args: { month: string; logs: InsightLogLite[] }): number {
+export function calcMonthTotalGrams(args: { month: string; logs: MetricsLogLite[] }): number {
   const { month, logs } = args
 
   let total = 0
@@ -295,9 +295,9 @@ export function calcMonthTotalGrams(args: { month: string; logs: InsightLogLite[
  */
 export function calcMonthTotalVsPrev(args: {
   month: string
-  monthLogs: InsightLogLite[]
+  monthLogs: MetricsLogLite[]
   prevMonth: string
-  prevMonthLogs: InsightLogLite[]
+  prevMonthLogs: MetricsLogLite[]
 }): MonthTotalVsPrev {
   const { month, monthLogs, prevMonth, prevMonthLogs } = args
 

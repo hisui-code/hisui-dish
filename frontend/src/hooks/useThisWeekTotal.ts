@@ -4,7 +4,7 @@ import { jst } from '@/lib/date'
 import {
   addDaysIsoJst,
   buildDailyTotals,
-  calcThisWeekTotalInsight,
+  calcThisWeekTotalMetrics,
   getWeekStartIsoJst,
 } from '@/lib/resources/metricsResource'
 import { logsQueryKey, monthOf } from '@/lib/resources/logsQuery'
@@ -54,7 +54,7 @@ export function useThisWeekTotal(): ThisWeekTotal {
   )
 
   // 今週（月〜日）の合計gを返す
-  return calcThisWeekTotalInsight({
+  return calcThisWeekTotalMetrics({
     todayIso,
     dailyTotals,
   })

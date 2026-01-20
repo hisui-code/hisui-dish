@@ -7,7 +7,12 @@ import { calcMonthTotalVsPrev } from '@/lib/resources/metricsResource'
 import type { LogItem } from '@/types/logs'
 import type { MonthTotalVsPrev } from '@/lib/resources/metricsResource'
 
-function toInsightLogs(items: LogItem[]) {
+/**
+ * @description LogItem配列をメトリクス計算用の最小形式に変換する。
+ * @param items ログ配列
+ * @returns recordedAtIso と grams だけを持つ配列
+ */
+function toMetricsLogs(items: LogItem[]) {
   return items.map((x) => ({
     recordedAtIso: x.recordedAtIso,
     grams: x.grams,
@@ -15,8 +20,10 @@ function toInsightLogs(items: LogItem[]) {
 }
 
 /**
- * 今月合計と前月合計の比較データを返すHook。
+ * @description 今月合計と前月合計の比較メトリクスを返すHook。
  * month未指定の場合は今月（JST）を使う。
+ * @param month 対象月（YYYY-MM）。未指定の場合は今月（JST）
+ * @returns 今月と前月の合計g比較結果
  */
 export function useMonthTotalVsPrev(month?: string): MonthTotalVsPrev {
   const targetMonth = month ?? jst().format('YYYY-MM')
@@ -34,8 +41,8 @@ export function useMonthTotalVsPrev(month?: string): MonthTotalVsPrev {
 
   return calcMonthTotalVsPrev({
     month: targetMonth,
-    monthLogs: toInsightLogs(monthLogs),
+    monthLogs: toMetricsLogs(monthLogs),
     prevMonth,
-    prevMonthLogs: toInsightLogs(prevLogs),
+    prevMonthLogs: toMetricsLogs(prevLogs),
   })
 }

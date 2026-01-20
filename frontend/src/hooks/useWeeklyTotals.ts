@@ -49,7 +49,7 @@ function buildMonthKeysInRange(args: { startIso: string; endIso: string }): stri
  * @param args.weeks - 表示する週数
  * @returns 週別合計配列（週数ぶん）
  */
-export function useWeeklyTotalsInsight(args: {
+export function useWeeklyTotalsMetrics(args: {
   weekStartIso: string
   weeks: number
 }): WeeklyTotalRow[] {

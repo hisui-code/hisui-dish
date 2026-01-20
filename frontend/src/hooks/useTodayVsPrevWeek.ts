@@ -4,23 +4,20 @@ import { jst } from '@/lib/date'
 import {
   addDaysIsoJst,
   buildDailyTotals,
-  calcTodayVsPrevWeekInsight,
+  calcTodayVsPrevWeekMetrics,
   getWeekStartIsoJst,
 } from '@/lib/resources/metricsResource'
 import { logsQueryKey, monthOf } from '@/lib/resources/logsQuery'
 
 import type { LogItem } from '@/types/logs'
-import type { TodayVsPrevWeekInsight } from '@/lib/resources/metricsResource'
+import type { TodayVsPrevWeekMetrics } from '@/lib/resources/metricsResource'
 
 /**
- * 「今日の合計」と「前週(月〜日)の1日平均」の比較データを返すHook。
- * 月またぎ（前週が別月）に備えて、必要な月ログを最大2ヶ月分だけ取得する。
+ * @description 「今日の合計」と「前週(月〜日)の1日平均」の比較メトリクスを返すHook
+ * 月またぎ（前週が別月）に備えて、必要な月ログを最大2ヶ月分だけ取得する
+ * @returns 今日合計と前週平均の比較結果
  */
-
-/**
- * インサイト用の比較データを返す。
- */
-export function useTodayVsPrevWeekInsight(): TodayVsPrevWeekInsight {
+export function useTodayVsPrevWeekMetrics(): TodayVsPrevWeekMetrics {
   // 今日（JST）
   const todayIso = jst().format('YYYY-MM-DD')
 
@@ -54,7 +51,7 @@ export function useTodayVsPrevWeekInsight(): TodayVsPrevWeekInsight {
   )
 
   // 今日の合計g と 前週(月〜日)の1日平均g を比較して返す
-  return calcTodayVsPrevWeekInsight({
+  return calcTodayVsPrevWeekMetrics({
     todayIso,
     dailyTotals,
   })

@@ -20,7 +20,7 @@ const COLORS = {
 
 /**
  * @description
- * ダッシュボード/インサイト共通で使うシンプルな棒グラフ
+ * 共通で使うシンプルな棒グラフ
  *
  * - 軸やTooltipの見た目を統一する
  * - dataKey は xKey / yKey で切り替える

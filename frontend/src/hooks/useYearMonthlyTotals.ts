@@ -22,7 +22,7 @@ export type YearMonthlyTotalsRow = {
  * @param year - 対象年（"YYYY"）
  * @returns 月別合計の配列（12件）
  */
-export function useYearMonthlyTotalsInsight(year: string): YearMonthlyTotalsRow[] {
+export function useYearMonthlyTotals(year: string): YearMonthlyTotalsRow[] {
   /**
    * @description
    * 取得対象の月キー配列（"YYYY-MM"）

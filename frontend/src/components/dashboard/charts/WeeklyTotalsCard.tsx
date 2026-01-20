@@ -5,7 +5,7 @@ import { jst } from '@/lib/date'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { getWeekStartIsoJst } from '@/lib/resources/metricsResource'
-import { useWeeklyTotalsInsight } from '@/hooks/useWeeklyTotals'
+import { useWeeklyTotalsMetrics } from '@/hooks/useWeeklyTotals'
 import WeeklyBarChart from '@/components/charts/WeeklyBarChart'
 
 import type { WeeklyBarChartRow } from '@/components/charts/WeeklyBarChart'
@@ -54,7 +54,7 @@ export default function WeeklyTotalsCard() {
   const canNext = weekStartIso < thisWeekStartIso
 
   // 表示範囲（先頭週から weeks 週）に対する週別合計
-  const rows = useWeeklyTotalsInsight({ weekStartIso, weeks })
+  const rows = useWeeklyTotalsMetrics({ weekStartIso, weeks })
 
   const series: WeeklyBarChartRow[] = useMemo(() => {
     return rows.map((x) => {
