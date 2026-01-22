@@ -72,13 +72,13 @@ class DashboardController extends Controller
         // 指定月の日別合計（dailySeries）
         // recorded_at（UTC）を JST に変換して日付で groupBy する
         $rawDaily = DB::table('bowl_snapshots')
-            ->selectRaw("DATE((recorded_at AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Tokyo') AS d, SUM(weight_g) AS total")
+            ->selectRaw("DATE(recorded_at AT TIME ZONE 'Asia/Tokyo') AS d, SUM(weight_g) AS total")
             ->where('device_id', $deviceId)
             ->whereBetween('recorded_at', [
                 $monthStartUtc->format('Y-m-d H:i:s.u'),
                 $monthEndUtc->format('Y-m-d H:i:s.u'),
             ])
-            ->groupByRaw("DATE((recorded_at AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Tokyo')")
+            ->groupByRaw("DATE(recorded_at AT TIME ZONE 'Asia/Tokyo')")
             ->orderBy('d')
             ->get();
 
