@@ -146,13 +146,13 @@ class DashboardController extends Controller
 
         // 直近3ヶ月の各日合計を取得（JST 日付で groupBy）
         $dailyTotals = DB::table('bowl_snapshots')
-            ->selectRaw("DATE((recorded_at AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Tokyo') AS d, SUM(weight_g) AS total")
+            ->selectRaw("DATE(recorded_at AT TIME ZONE 'Asia/Tokyo') AS d, SUM(weight_g) AS total")
             ->where('device_id', $deviceId)
             ->whereBetween('recorded_at', [
                 $periodStartUtc->format('Y-m-d H:i:s.u'),
                 $periodEndUtc->format('Y-m-d H:i:s.u'),
             ])
-            ->groupByRaw("DATE((recorded_at AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Tokyo')")
+            ->groupByRaw("DATE(recorded_at AT TIME ZONE 'Asia/Tokyo')")
             ->get();
 
         // ログが無い場合は 0 を返す
