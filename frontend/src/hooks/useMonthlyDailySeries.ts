@@ -3,6 +3,8 @@ import { fetchDailySeries } from '@/lib/api/dashboardApi'
 
 import type { DashboardData } from '@/types/dashboard'
 
+import { jst } from '@/lib/date'
+
 /**
  * @description
  * 指定月の「日ごとの合計（dailySeries）」を取得する。
@@ -12,8 +14,14 @@ import type { DashboardData } from '@/types/dashboard'
  * @returns 日別合計（dailySeries）
  */
 export function useMonthlyDailySeries(month: string): DashboardData['dailySeries'] {
+  const todayJst = jst().format('YYYY-MM-DD')
+  const currentMonth = jst().format('YYYY-MM')
+  // 当月は日ごとに再取得され、過去月はキャッシュ
+  const queryKey =
+    month === currentMonth ? ['dailySeries', month, todayJst] : ['dailySeries', month]
+
   const { data } = useSuspenseQuery<DashboardData['dailySeries']>({
-    queryKey: ['dailySeries', month],
+    queryKey: queryKey,
     queryFn: () => fetchDailySeries(month),
   })
   return data
