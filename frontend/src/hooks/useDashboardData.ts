@@ -1,8 +1,9 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { fetchDashboard, resolveDashboardDeviceId } from '@/lib/api/dashboardApi'
+import { fetchDashboard } from '@/lib/api/dashboardApi'
 import { useThisWeekTotal } from '@/hooks/useThisWeekTotal'
 import { useMonthTotalVsPrev } from '@/hooks/useMonthTotalVsPrev'
 
+import { resolveDeviceId } from '@/lib/api/config'
 import { jst } from '@/lib/date'
 
 import type { DashboardData } from '@/types/dashboard'
@@ -24,7 +25,7 @@ export function useDashboardData(): DashboardMergedData {
   const todayJst = jst().format('YYYY-MM-DD')
 
   // deviceId は API 側で `.env` から解決する（キャッシュキー用に同じ値を参照）
-  const deviceId = resolveDashboardDeviceId()
+  const deviceId = resolveDeviceId()
 
   const { data } = useSuspenseQuery<DashboardData>({
     queryKey: ['dashboard', deviceId, month, todayJst],

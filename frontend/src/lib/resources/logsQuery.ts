@@ -1,8 +1,13 @@
+import { resolveDeviceId } from '../api/config'
+
 /**
  * React Query のキャッシュキー。
  * 月単位でログを共有する。
  */
-export const logsQueryKey = (month: string) => ['logs', month] as const
+export const logsQueryKey = (month: string) => {
+  const deviceId = resolveDeviceId()
+  return ['logs', deviceId, month] as const
+}
 
 /**
  * YYYY-MM-DD → YYYY-MM。

@@ -1,17 +1,6 @@
 import type { DashboardData } from '@/types/dashboard'
-import { DEVICE_ID, requireEnv } from '@/lib/api/config'
 import { req } from './client'
-
-/**
- * @description
- * ダッシュボード取得に使う deviceId を `.env` から解決する。
- * 未設定なら即エラーにして、静かに別デバイスに向く事故を防ぐ。
- *
- * @returns deviceId
- */
-export function resolveDashboardDeviceId(): string {
-  return requireEnv('VITE_DEVICE_ID', DEVICE_ID)
-}
+import { resolveDeviceId } from './config'
 
 /**
  * @description
@@ -21,7 +10,7 @@ export function resolveDashboardDeviceId(): string {
  * @returns DashboardData
  */
 export async function fetchDashboard(month: string): Promise<DashboardData> {
-  const resolvedDeviceId = resolveDashboardDeviceId()
+  const resolvedDeviceId = resolveDeviceId()
 
   const searchParams = new URLSearchParams({ month, device_id: resolvedDeviceId })
   const path = `/api/v1/dashboard?${searchParams.toString()}`
