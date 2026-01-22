@@ -1,4 +1,4 @@
-import { jst } from '../date'
+import { jst } from '@/lib/date'
 
 /**
  * @description
@@ -12,8 +12,6 @@ import { jst } from '../date'
 /**
  * @description
  * 集計計算に必要な最小のログ表現
- * `recordedAtIso` は `+09:00` を含む ISO 文字列を想定し、
- * `slice(0, 10)` で JST 日付（YYYY-MM-DD）キーが安定する前提
  */
 export type MetricsLogLite = {
   /** @description 記録時刻（ISO文字列、例: "2025-12-24T10:11:12+09:00"） */
@@ -64,9 +62,8 @@ export type TodayVsPrevWeekMetrics = {
 export function buildDailyTotals(logs: MetricsLogLite[]): Map<string, number> {
   const map = new Map<string, number>()
 
-  // recordedAtIso が +09:00 を含む想定なので slice(0,10) でJST日付キーが安定する
   for (const x of logs) {
-    const dayKey = x.recordedAtIso.slice(0, 10)
+    const dayKey = jst(x.recordedAtIso).format('YYYY-MM-DD')
     map.set(dayKey, (map.get(dayKey) ?? 0) + x.grams)
   }
   return map
@@ -205,9 +202,6 @@ export type MonthTotalMetrics = {
  * @description
  * 指定月のログから「月の合計g」を計算して返す
  *
- * - 月判定は `recordedAtIso.slice(0, 7) === month` による
- * - `recordedAtIso` は ISO 文字列を想定（先頭7文字が "YYYY-MM"）
- *
  * @param args - 入力
  * @param args.month - 対象月（"YYYY-MM"）
  * @param args.logs - ログ配列
@@ -221,7 +215,7 @@ export function calcMonthTotalMetrics(args: {
 
   let total = 0
   for (const x of logs) {
-    if (x.recordedAtIso.slice(0, 7) !== month) continue
+    if (jst(x.recordedAtIso).format('YYYY-MM') !== month) continue
     total += x.grams
   }
 
@@ -273,7 +267,7 @@ export function calcMonthTotalGrams(args: { month: string; logs: MetricsLogLite[
 
   let total = 0
   for (const x of logs) {
-    if (x.recordedAtIso.slice(0, 7) !== month) continue
+    if (jst(x.recordedAtIso).format('YYYY-MM') !== month) continue
     total += x.grams
   }
 
