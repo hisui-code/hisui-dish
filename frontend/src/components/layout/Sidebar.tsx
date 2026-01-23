@@ -12,7 +12,7 @@ const items: { key: NavItemKey; label: string; icon: React.ReactNode; path: stri
 
 export default function Sidebar() {
   return (
-    <aside className="flex h-full flex-col justify-between bg-emerald-600 text-white">
+    <aside className="flex h-full flex-col justify-between  text-white">
       <div>
         <nav className="mt-4 space-y-1 px-2">
           {items.map((item) => (
@@ -27,7 +27,7 @@ export default function Sidebar() {
                 }`
               }
             >
-              <span className="mr-3 inline-block text-[16px] text-white/80">{item.icon}</span>
+              <span className="mr-3 inline-block text-[16px]">{item.icon}</span>
               {item.label}
             </NavLink>
           ))}

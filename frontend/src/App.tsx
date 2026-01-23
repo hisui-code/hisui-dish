@@ -56,7 +56,7 @@ function AppLayout() {
 
       <div className="flex w-full">
         {/* サイドバー（デスクトップ：常時表示 / モバイル：非表示） */}
-        <aside className="hidden w-[260px] shrink-0 border-r bg-white md:block">
+        <aside className="hidden w-[260px] shrink-0 border-r bg-emerald-600 md:block">
           <Sidebar />
         </aside>
 
@@ -72,8 +72,8 @@ function AppLayout() {
           {/* 背景オーバーレイ */}
           <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
           {/* ドロワーパネル */}
-          <div className="absolute inset-y-0 left-0 w-[84%] max-w-[320px] bg-white shadow-xl">
-            <div className="p-4">
+          <div className="absolute inset-y-0 left-0 w-[84%] max-w-[320px]  bg-emerald-600 shadow-xl min-h-screen">
+            <div className="">
               <Sidebar />
             </div>
           </div>
