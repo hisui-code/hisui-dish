@@ -4,7 +4,7 @@ import type { DashboardData } from '@/types/dashboard'
 
 import SimpleBarChart from '@/components/charts/SimpleBarChart'
 import { FaChartLine } from 'react-icons/fa6'
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card'
 
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
