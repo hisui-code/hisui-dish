@@ -33,12 +33,12 @@ export default function SimpleBarChart<T extends Record<string, unknown>>({
   height = 240,
 }: SimpleBarChartProps<T>) {
   return (
-    <section className="rounded-3xl bg-white p-4 ring-1 ring-black/5 min-w-0">
+    <section className="bg-white sm:p-1 min-w-0">
       <h3 className="text-[15px] font-medium text-neutral-800">{title}</h3>
 
       <div className="mt-2 w-full min-w-0">
         <ResponsiveContainer width="100%" height={height} minWidth={0} minHeight={0}>
-          <BarChart data={data} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+          <BarChart data={data} margin={{ left: -10, right: 0, top: 8, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={COLORS.grid} />
             <XAxis
               dataKey={xKey}

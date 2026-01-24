@@ -30,7 +30,7 @@ export default function WeeklyBarChart(args: { data: WeeklyBarChartRow[]; height
   return (
     <div className="w-full min-w-0">
       <ResponsiveContainer width="100%" height={height} minWidth={0} minHeight={0}>
-        <BarChart data={data} margin={{ left: 8, right: 8, top: 8, bottom: 18 }}>
+        <BarChart data={data} margin={{ left: -10, right: 8, top: 8, bottom: 18 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis
             dataKey="week"

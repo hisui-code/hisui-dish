@@ -62,7 +62,7 @@ export default function MonthlyChart({ month, setMonth, series }: MonthlyChartPr
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-0.5 sm:px-6">
         {/* グラフ */}
         <SimpleBarChart title="" data={series} xKey="day" yKey="total" />
       </CardContent>

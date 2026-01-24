@@ -92,15 +92,15 @@ export default function WeeklyTotalsCard() {
   }
 
   return (
-    <Card className="rounded-xl shadow-sm">
+    <Card className="rounded-xl shadow-sm mb-6 lg:mb-0">
       <CardHeader className="pb-1">
         <CardTitle className="flex items-center justify-between gap-2 text-base">
-          <h3 className="flex items-center gap-2 text-[15px] font-medium text-neutral-800">
+          <h3 className="flex shrink-0 items-center gap-2 text-[15px] font-medium text-neutral-800">
             <FaChartLine className="text-emerald-500" aria-hidden="true" />
             <span>週ごとの合計</span>
           </h3>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 ml-2">
             <Button
               type="button"
               variant="outline"
@@ -112,7 +112,7 @@ export default function WeeklyTotalsCard() {
               <FiChevronLeft className="h-4 w-4" aria-hidden="true" />
             </Button>
 
-            <span className="min-w-[160px] text-center text-sm font-medium">{rangeLabel}</span>
+            <span className="min-w-[120px] text-center text-sm font-medium">{rangeLabel}</span>
 
             <Button
               type="button"
