@@ -1,6 +1,4 @@
-import { useMemo } from 'react'
-
-import type { DashboardData } from '@/types/dashboard'
+import { useState, useMemo } from 'react'
 
 import SimpleBarChart from '@/components/charts/SimpleBarChart'
 import { FaChartLine } from 'react-icons/fa6'
@@ -10,20 +8,22 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 
+import { useMonthlyDailySeries } from '@/hooks/useMonthlyDailySeries'
+
+import { jst } from '@/lib/date'
+
 import dayjs, { type Dayjs } from 'dayjs'
 import 'dayjs/locale/ja'
-
-export type MonthlyChartProps = {
-  month: string
-  setMonth: (month: string) => void
-  series: DashboardData['dailySeries']
-}
-
 /**
  * @description
  * 「日ごとの合計」棒グラフ
  */
-export default function MonthlyChart({ month, setMonth, series }: MonthlyChartProps) {
+export default function MonthlyChart() {
+  // 日別集計の対象月をJST基準で初期化し、切り替えに使う
+  const [month, setMonth] = useState<string>(() => jst().format('YYYY-MM'))
+  // 選択中の月に紐づく日別系列を取得する
+  const series = useMonthlyDailySeries(month)
+
   const value = useMemo(() => dayjs(`${month}-01`), [month])
 
   const onChangeMonth = (next: Dayjs | null) => {

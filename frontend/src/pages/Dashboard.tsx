@@ -1,4 +1,4 @@
-import { useState, Suspense } from 'react'
+import { Suspense } from 'react'
 import Kpis from '@/components/dashboard/cards/Kpis'
 import TodayList from '@/components/dashboard/cards/TodayList'
 import MonthlyChart from '@/components/dashboard/charts/MonthlyChart'
@@ -6,9 +6,7 @@ import { useDashboardData } from '@/hooks/useDashboardData'
 import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton'
 import WeeklyTotalsCard from '@/components/dashboard/charts/WeeklyTotalsCard'
 import YearMonthlyTotalsCard from '@/components/dashboard/charts/YearMonthlyTotalsCard'
-import { useMonthlyDailySeries } from '@/hooks/useMonthlyDailySeries'
-
-import { jst } from '@/lib/date'
+import ChartCardSkeleton from '@/components/skeletons/ChartCardSkeleton'
 
 /**
  * @description ダッシュボードの主要セクションを表示する。
@@ -17,10 +15,10 @@ import { jst } from '@/lib/date'
 function DashboardInner() {
   const data = useDashboardData()
 
-  // 日別集計の対象月をJST基準で初期化し、切り替えに使う
-  const [month, setMonth] = useState<string>(() => jst(new Date()).format('YYYY-MM'))
-  // 選択中の月に紐づく日別系列を取得する
-  const dailySeries = useMonthlyDailySeries(month)
+  // // 日別集計の対象月をJST基準で初期化し、切り替えに使う
+  // const [month, setMonth] = useState<string>(() => jst(new Date()).format('YYYY-MM'))
+  // // 選択中の月に紐づく日別系列を取得する
+  // const dailySeries = useMonthlyDailySeries(month)
 
   return (
     <div className="p-3 min-w-0">
@@ -39,13 +37,17 @@ function DashboardInner() {
       {/* 今日の記録 */}
       <TodayList events={data.todayEvents} />
       {/* 日別ごとの合計*/}
-      <MonthlyChart month={month} setMonth={setMonth} series={dailySeries} />
+      <MonthlyChart />
 
       <div className="lg:grid lg:grid-cols-2 lg:gap-3 mt-6">
         {/* 週ごとの合計 */}
-        <WeeklyTotalsCard />
+        <Suspense fallback={<ChartCardSkeleton />}>
+          <WeeklyTotalsCard />
+        </Suspense>
         {/* 月ごとの合計 */}
-        <YearMonthlyTotalsCard />
+        <Suspense fallback={<ChartCardSkeleton />}>
+          <YearMonthlyTotalsCard />
+        </Suspense>
       </div>
     </div>
   )
