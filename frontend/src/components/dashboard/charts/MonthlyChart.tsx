@@ -8,7 +8,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 
-import { useMonthlyDailySeries } from '@/hooks/useMonthlyDailySeries'
+import { useMonthlyDailyTotals } from '@/hooks/useMonthlyDailySeries'
 
 import { jst } from '@/lib/date'
 
@@ -22,7 +22,7 @@ export default function MonthlyChart() {
   // 日別集計の対象月をJST基準で初期化し、切り替えに使う
   const [month, setMonth] = useState<string>(() => jst().format('YYYY-MM'))
   // 選択中の月に紐づく日別系列を取得する
-  const series = useMonthlyDailySeries(month)
+  const series = useMonthlyDailyTotals(month)
 
   const value = useMemo(() => dayjs(`${month}-01`), [month])
 

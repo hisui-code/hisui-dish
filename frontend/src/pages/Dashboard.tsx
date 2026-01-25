@@ -15,11 +15,6 @@ import ChartCardSkeleton from '@/components/skeletons/ChartCardSkeleton'
 function DashboardInner() {
   const data = useDashboardData()
 
-  // // 日別集計の対象月をJST基準で初期化し、切り替えに使う
-  // const [month, setMonth] = useState<string>(() => jst(new Date()).format('YYYY-MM'))
-  // // 選択中の月に紐づく日別系列を取得する
-  // const dailySeries = useMonthlyDailySeries(month)
-
   return (
     <div className="p-3 min-w-0">
       {/* KPI */}
@@ -37,8 +32,9 @@ function DashboardInner() {
       {/* 今日の記録 */}
       <TodayList events={data.todayEvents} />
       {/* 日別ごとの合計*/}
-      <MonthlyChart />
-
+      <Suspense fallback={<ChartCardSkeleton />}>
+        <MonthlyChart />
+      </Suspense>
       <div className="lg:grid lg:grid-cols-2 lg:gap-3 mt-6">
         {/* 週ごとの合計 */}
         <Suspense fallback={<ChartCardSkeleton />}>
