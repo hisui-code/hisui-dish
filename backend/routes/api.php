@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\DeviceSettingsController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\LogsController;
 use App\Http\Controllers\Api\V1\SessionsController;
+use App\Http\Controllers\Api\V1\YearMonthlyTotalsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +35,7 @@ Route::prefix('v1')
             // Dashboard
             Route::get('dashboard', [DashboardController::class, 'show']);
             Route::get('daily_totals', [DailyTotalsController::class, 'show']);
+            Route::get('year_monthly_totals', [YearMonthlyTotalsController::class, 'show']);
             // DeviceSettings
             Route::get('device_settings/{device_id}', [DeviceSettingsController::class, 'show']);
             Route::put('device_settings/{device_id}', [DeviceSettingsController::class, 'update']);
