@@ -21,7 +21,7 @@ return (new Config())
     ->setRules([
         // 基本（インデント / 空白 / PSR-12）
         '@PSR12' => true,
-
+        'method_chaining_indentation' => true,
         // 余計な空白・改行の整理
         'no_trailing_whitespace' => true,
         'no_trailing_whitespace_in_comment' => true,
