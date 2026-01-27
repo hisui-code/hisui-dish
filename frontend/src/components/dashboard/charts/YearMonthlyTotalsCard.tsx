@@ -9,11 +9,6 @@ import { useYearMonthlyTotals } from '@/hooks/useYearMonthlyTotals'
 
 import { FaChartLine } from 'react-icons/fa6'
 
-type ChartRow = {
-  month: string
-  total: number
-}
-
 /**
  * @description
  * 「年別：月ごとの合計（1〜12）」棒グラフ
@@ -26,10 +21,10 @@ export default function YearMonthlyTotalsCard() {
 
   const totals = useYearMonthlyTotals(year)
 
-  const series: ChartRow[] = useMemo(() => {
+  const series = useMemo(() => {
     return totals.map((x) => ({
-      month: x.monthLabel,
-      total: Math.round(x.totalGrams),
+      month: x.month,
+      total: x.total,
     }))
   }, [totals])
 

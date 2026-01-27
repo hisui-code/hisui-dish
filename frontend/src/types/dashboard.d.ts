@@ -25,3 +25,13 @@ export type DayTotal = { day: string; total: number }
  * @description 日別合計の配列（daily totals）
  */
 export type DailyTotals = DayTotal[]
+
+/**
+ * @description 年別の月合計の１月ずつの要素
+ */
+export type YearMonthlyTotal = { month: string; total: number }
+
+/**
+ * @description 年別の月合計（1〜12月）の配列
+ */
+export type YearMonthlyTotals = YearMonthlyTotal[]

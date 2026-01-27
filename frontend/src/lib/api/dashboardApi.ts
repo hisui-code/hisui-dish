@@ -1,7 +1,7 @@
 import { req } from './client'
 import { resolveDeviceId } from './config'
 
-import type { DashboardData, DailyTotals } from '@/types/dashboard'
+import type { DashboardData, DailyTotals, YearMonthlyTotals } from '@/types/dashboard'
 
 const resolvedDeviceId = resolveDeviceId()
 /**
@@ -39,6 +39,25 @@ export async function fetchDailyTotals(month: string): Promise<DailyTotals> {
     return await req<DailyTotals>(path)
   } catch (err) {
     console.log('fetchDailyTotals', err)
+    throw err
+  }
+}
+
+/**
+ * @description
+ * 指定年の「月ごとの合計（1〜12）」を取得する
+ *
+ * @param year - 対象年（YYYY）
+ * @returns 年別の月合計
+ */
+export async function fetchYearMonthlyTotals(year: string): Promise<YearMonthlyTotals> {
+  const searchParams = new URLSearchParams({ year, device_id: resolvedDeviceId })
+  const path = `/api/v1/year_monthly_totals?${searchParams.toString()}`
+
+  try {
+    return await req<YearMonthlyTotals>(path)
+  } catch (err) {
+    console.error('fetchYearMonthlyTotals failed:', err)
     throw err
   }
 }
