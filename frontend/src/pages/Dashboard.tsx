@@ -9,7 +9,7 @@ import YearMonthlyTotalsCard from '@/components/dashboard/charts/YearMonthlyTota
 import ChartCardSkeleton from '@/components/skeletons/ChartCardSkeleton'
 
 /**
- * @description ダッシュボードの主要セクションを表示する。
+ * @description ダッシュボードの主要セクションを表示する
  * @returns ダッシュボードのメイン画面
  */
 function DashboardInner() {

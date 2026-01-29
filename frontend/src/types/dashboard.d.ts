@@ -8,7 +8,6 @@ export type TodayEvent = { time: string; g: number }
  */
 export type DashboardData = {
   todayEvents: TodayEvent[]
-  dailySeries: DayTotal[]
   // 今日1日の合計摂取量（g）
   todayTotal: number
   // ボウルに残っているごはんの量（g）
