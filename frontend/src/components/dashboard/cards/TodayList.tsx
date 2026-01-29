@@ -2,6 +2,7 @@ import type { TodayEvent } from '@/types/dashboard'
 import { FaBowlFood, FaBowlRice } from 'react-icons/fa6'
 import { FaClock } from 'react-icons/fa'
 import { LuUtensils } from 'react-icons/lu'
+import { GiKitchenScale } from 'react-icons/gi'
 
 type Props = {
   events: TodayEvent[]
@@ -41,10 +42,19 @@ export default function TodayList({ events }: Props) {
       {hasEvents ? (
         <ul className="divide-y divide-neutral-100">
           {events.map((e, index) => (
-            <li key={`${e.time}-${index}`} className="flex items-center justify-between px-10 py-4">
-              <span className="text-lg font-semibold tabular-nums text-neutral-800">{e.time}</span>
-              <span className="flex items-center gap-2 text-base font-semibold tabular-nums text-neutral-800">
+            <li
+              key={`${e.time}-${index}`}
+              className="flex items-center justify-between px-10 py-4 font-semibold"
+            >
+              {/* 時間 */}
+              <span className="flex items-center gap-2 text-base tabular-nums text-neutral-800">
                 <LuUtensils className="text-emerald-500" aria-hidden="true" />
+                <span className="text-lg">{e.time}</span>
+              </span>
+
+              {/* 食事量 */}
+              <span className="flex items-center gap-2 text-base tabular-nums text-neutral-800">
+                <GiKitchenScale className="text-emerald-500" aria-hidden="true" />
                 {e.g.toFixed(1)}
                 <span className="ml-1 text-xs font-medium text-neutral-500">g</span>
               </span>
