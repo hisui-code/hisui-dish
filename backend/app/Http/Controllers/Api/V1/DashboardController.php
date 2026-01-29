@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\DB;
  *
  * 返却する主なデータ:
  * - todayEvents: 今日の食事イベント一覧（JST 表示用の HH:mm と g）
- * - dailySeries: 指定月の日別合計（day=日付(1..), total=合計g）
  * - todayTotal: 今日の合計（g）
  * - bowlRemaining: 最新スナップショットの残量（g）
  * - averageDailyIntakeLast3Months: 直近3ヶ月（前々月〜前月）の 1 日平均（g）
@@ -26,16 +25,15 @@ class DashboardController extends Controller
      * ダッシュボード用の集計結果を返す
      *
      * クエリパラメータ:
-     * - month: 対象月（YYYY-MM）。未指定の場合は JST の当月を使用
-     * - device_id: 対象デバイスID。未指定の場合は devices の先頭を使用
+     * - month: 対象月（YYYY-MM）　未指定の場合は JST の当月を使用
+     * - device_id: 対象デバイスID　未指定の場合は devices の先頭を使用
      *
      * @param Request $request リクエスト
      * @return JsonResponse レスポンス
      */
     public function show(Request $request): JsonResponse
     {
-
-        // month は "YYYY-MM" を想定。未指定なら JST の当月を使う
+        // month は "YYYY-MM" を想定　未指定なら JST の当月を使う
         $month = $request->input('month');
         if (!is_string($month) || trim($month) === '') {
             $month = CarbonImmutable::now('Asia/Tokyo')->format('Y-m');
@@ -69,38 +67,7 @@ class DashboardController extends Controller
 
         $bowlRemaining = $lastSnapshot ? (int) $lastSnapshot->weight_g : 0;
 
-        // 指定月の日別合計（dailySeries）
-        // recorded_at（UTC）を JST に変換して日付で groupBy する
-        $rawDaily = DB::table('bowl_snapshots')
-            ->selectRaw("DATE(recorded_at AT TIME ZONE 'Asia/Tokyo') AS d, SUM(weight_g) AS total")
-            ->where('device_id', $deviceId)
-            ->whereBetween('recorded_at', [
-                $monthStartUtc->format('Y-m-d H:i:s.u'),
-                $monthEndUtc->format('Y-m-d H:i:s.u'),
-            ])
-            ->groupByRaw("DATE(recorded_at AT TIME ZONE 'Asia/Tokyo')")
-            ->orderBy('d')
-            ->get();
-
-        // クエリ結果を "日(1..31)" => 合計g のマップに変換
-        $dailyMap = [];
-        foreach ($rawDaily as $row) {
-            $day = (string) CarbonImmutable::parse($row->d)->day;
-            $dailyMap[$day] = (int) $row->total;
-        }
-
-        // 0 件の日も含めて日数分の配列を返す（UI 側で扱いやすくする）
-        $daysInMonth = $monthStart->daysInMonth;
-        $dailySeries = [];
-        for ($day = 1; $day <= $daysInMonth; $day++) {
-            $dayKey = (string) $day;
-            $dailySeries[] = [
-                'day' => $dayKey,
-                'total' => (int) ($dailyMap[$dayKey] ?? 0),
-            ];
-        }
-
-        // 今日のイベント（todayEvents）/ 今日の合計（todayTotal） 
+        // 今日のイベント（todayEvents）/ 今日の合計（todayTotal）
         // 今日（JST）の 00:00:00〜23:59:59 を UTC に直して検索する
         $todayStart = CarbonImmutable::now('Asia/Tokyo')->startOfDay();
         $todayEnd = $todayStart->endOfDay();
@@ -137,7 +104,7 @@ class DashboardController extends Controller
             ])
             ->sum('weight_g');
 
-        //  直近3ヶ月の 1 日平均（averageDailyIntakeLast3Months） 
+        //  直近3ヶ月の 1 日平均（averageDailyIntakeLast3Months）
         // 対象月の「前々月〜前月」(3ヶ月分) を JST 境界で集計し、日次合計の平均を返す
         $periodStart = $monthStart->subMonths(3)->startOfMonth();
         $periodEnd = $monthStart->subMonths(1)->endOfMonth();
@@ -178,7 +145,6 @@ class DashboardController extends Controller
         // レスポンス
         return response()->json([
             'todayEvents' => $todayEvents,
-            'dailySeries' => $dailySeries,
             'todayTotal' => $todayTotal,
             'bowlRemaining' => $bowlRemaining,
             'averageDailyIntakeLast3Months' => $averageDailyIntakeLast3Months,
