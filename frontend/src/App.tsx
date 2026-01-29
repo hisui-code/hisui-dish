@@ -50,22 +50,21 @@ function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState<boolean>(false)
 
   return (
-    <div className="min-h-screen w-full bg-neutral-50">
+    <div className="min-h-screen w-full bg-neutral-50 md:h-screen md:overflow-hidden md:[--header-h:64px]">
       {/* Header */}
       <Header setMobileOpen={setMobileOpen} />
 
-      <div className="flex w-full">
+      <div className="flex w-full md:h-[calc(100vh-var(--header-h))] md:overflow-hidden">
         {/* サイドバー（デスクトップ：常時表示 / モバイル：非表示） */}
-        <aside className="hidden w-[260px] shrink-0 border-r bg-emerald-600 md:block">
+        <aside className="hidden w-[260px] shrink-0 border-r bg-emerald-600 md:block md:h-full md:overflow-y-auto">
           <Sidebar />
         </aside>
 
         {/* メイン */}
-        <main className="flex-1 min-w-0 w-full md:p-3">
+        <main className="flex-1 min-w-0 w-full md:p-3 md:h-full md:overflow-y-auto">
           <Outlet />
         </main>
       </div>
-
       {/* モバイル用ドロワー（オーバーレイ + 左スライド） */}
       {mobileOpen && (
         <div className="fixed inset-0 z-30 md:hidden">
@@ -79,12 +78,6 @@ function AppLayout() {
           </div>
         </div>
       )}
-
-      <footer className="border-t bg-white/70">
-        <div className="mx-auto max-w-6xl px-4 py-5 text-xs text-neutral-500">
-          © 2025 HisuiDish
-        </div>
-      </footer>
     </div>
   )
 }
