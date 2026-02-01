@@ -1,29 +1,10 @@
-import type { IconType } from 'react-icons'
-import {
-  FiFilter,
-  FiSunrise,
-  FiSun,
-  FiSunset,
-  FiMoon,
-  FiAperture,
-  FiChevronLeft,
-  FiChevronRight,
-} from 'react-icons/fi'
+import { FiChevronLeft, FiChevronRight, FiClock } from 'react-icons/fi'
+import { IoFilter } from 'react-icons/io5'
 
 import type { TimeBand } from '@/types/logs'
 import { timeBandLabels, shiftMonth, formatMonthLabel } from '@/lib/resources/logs'
 import { Button } from '../ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Input } from '../ui/input'
-
-// 時間帯ごとのアイコン定義
-const timeBandIcons: Record<TimeBand, IconType> = {
-  all: FiAperture,
-  morning: FiSunrise,
-  daytime: FiSun,
-  evening: FiSunset,
-  night: FiMoon,
-}
 
 type LogsFilterProps = {
   month: string
@@ -34,6 +15,16 @@ type LogsFilterProps = {
   onTimeBandChange: (band: TimeBand) => void
 }
 
+/**
+ * @description ログの検索・月移動・時間帯フィルターをコンパクトに表示する
+ * @param month 対象月
+ * @param onMonthChange 月変更ハンドラ
+ * @param query 検索文字列
+ * @param onQueryChange 検索変更ハンドラ
+ * @param timeBand 時間帯フィルター
+ * @param onTimeBandChange 時間帯変更ハンドラ
+ * @returns フィルターUIのJSX
+ */
 export default function LogsFilter({
   month,
   onMonthChange,
@@ -43,92 +34,74 @@ export default function LogsFilter({
   onTimeBandChange,
 }: LogsFilterProps) {
   return (
-    <Card className="rounded-xl shadow-sm">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <div className="flex items-center gap-2 text-base">
-            <FiFilter className="h-4 w-4" aria-hidden="true" />
-            検索・フィルター
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {/* 上段: 月フィルタ + 日入力（右側に日が来る） */}
-          <div className="flex flex-wrap items-end gap-3">
-            {/* 月フィルター */}
-            <div className="min-w-[200px] space-y-1">
-              <div className="text-xs font-medium text-muted-foreground">月</div>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-9 w-9 rounded-full"
-                  onClick={() => onMonthChange(shiftMonth(month, -1))}
-                  aria-label="前の月へ"
-                >
-                  <FiChevronLeft className="h-4 w-4" aria-hidden="true" />
-                </Button>
-                <span className="min-w-[120px] text-center text-sm font-medium">
-                  {formatMonthLabel(month)}
-                </span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-9 w-9 rounded-full"
-                  onClick={() => onMonthChange(shiftMonth(month, 1))}
-                  aria-label="次の月へ"
-                >
-                  <FiChevronRight className="h-4 w-4" aria-hidden="true" />
-                </Button>
-              </div>
-            </div>
+    <div className="flex gap-5 px-6">
+      {/* フィルターアイコン */}
+      <div className="items-center gap-2 text-sm font-semibold">
+        <IoFilter className="h-6 w-6" aria-hidden="true" />
+      </div>
 
-            {/* 日付入力: 月の右側に配置（同じ月の中で「日」だけを絞り込む） */}
-            <div className="w-[140px] shrink-0 space-y-1">
-              <div className="text-xs font-medium text-muted-foreground">日</div>
-              <div className="relative">
-                <Input
-                  type="search"
-                  value={query}
-                  onChange={(e) => onQueryChange(e.target.value)}
-                  placeholder="日付で検索"
-                  className="h-11 rounded-2xl text-center"
-                  aria-label="日でログを検索（指定月の中から絞り込み）"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* 下段: 時間帯フィルタ */}
-          <div className="space-y-1 mt-5">
-            <div className="items-center justify-between">
-              <div className="text-xs font-medium text-muted-foreground">時間帯</div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {(['all', 'morning', 'daytime', 'evening', 'night'] as TimeBand[]).map((band) => {
-                const Icon = timeBandIcons[band]
-
-                return (
-                  <Button
-                    key={band}
-                    type="button"
-                    variant={timeBand === band ? 'default' : 'outline'}
-                    size="sm"
-                    className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs"
-                    onClick={() => onTimeBandChange(band)}
-                  >
-                    <Icon className="h-3 w-3" aria-hidden="true" />
-                    <span>{timeBandLabels[band]}</span>
-                  </Button>
-                )
-              })}
-            </div>
-          </div>
+      {/* 年月 */}
+      <div className="flex items-center gap-2">
+        <div className="text-xs font-medium">年月：</div>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            onClick={() => onMonthChange(shiftMonth(month, -1))}
+            aria-label="前の月へ"
+          >
+            <FiChevronLeft className="h-4 w-4" aria-hidden="true" />
+          </Button>
+          <span className="min-w-[120px] text-center text-sm font-medium">
+            {formatMonthLabel(month)}
+          </span>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            onClick={() => onMonthChange(shiftMonth(month, 1))}
+            aria-label="次の月へ"
+          >
+            <FiChevronRight className="h-4 w-4" aria-hidden="true" />
+          </Button>
         </div>
-      </CardContent>
-    </Card>
+        <div className="w-[160px]">
+          <Input
+            type="search"
+            value={query}
+            onChange={(e) => onQueryChange(e.target.value)}
+            placeholder="日付で検索"
+            className="h-9 rounded-lg text-center"
+            aria-label="日でログを検索（指定月の中から絞り込み）"
+          />
+        </div>
+      </div>
+
+      {/* 時間帯行 */}
+      <div className="flex items-center gap-2">
+        <div className="text-xs font-medium text-muted-foreground">時間帯</div>
+        <div className="relative min-w-[160px]">
+          <FiClock
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <select
+            value={timeBand}
+            onChange={(e) => onTimeBandChange(e.target.value as TimeBand)}
+            aria-label="時間帯でログを絞り込み"
+            className="border-input focus-visible:border-ring focus-visible:ring-ring/50 dark:bg-input/30 h-9 w-full appearance-none rounded-md border bg-transparent pl-9 pr-8 py-1 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px]"
+          >
+            {(['all', 'morning', 'daytime', 'evening', 'night'] as TimeBand[]).map((band) => (
+              <option key={band} value={band}>
+                {timeBandLabels[band]}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+    </div>
   )
 }
