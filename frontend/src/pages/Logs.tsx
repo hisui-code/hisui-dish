@@ -25,7 +25,7 @@ function LogsContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto w-full max-w-4xl px-3 pb-10 pt-6 sm:pt-10">
+      <div className="mx-auto w-full max-w-4xl px-3 pb-10 sm:pt-2">
         {/* ヘッダー */}
         <div className="bg-card py-4 sm:px-6">
           <div className="flex items-start justify-between">
