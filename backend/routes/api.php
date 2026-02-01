@@ -42,5 +42,6 @@ Route::prefix('v1')
             Route::patch('device_settings/{device_id}', [DeviceSettingsController::class, 'update']);
             // Log
             Route::get('logs', [LogsController::class, 'index']);
+            Route::delete('logs/{log_id}', [LogsController::class, 'destroy']);
         });
     });

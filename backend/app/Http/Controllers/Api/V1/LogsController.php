@@ -62,6 +62,27 @@ class LogsController extends Controller
         ]);
     }
 
+    /**
+     * @description 指定IDのログを削除する
+     * @param string $logId ログID
+     * @return Response 削除結果
+     */
+    public function destroy(string $logId): JsonResponse
+    {
+        $deleted = DB::table('bowl_snapshots')
+            ->where('id', $logId)
+            ->delete();
+
+        //削除対象が存在しない場合は404
+        if ($deleted === 0) {
+            return response()->json([
+                'error' => 'log not found',
+            ], 404);
+        }
+
+        return response()->json(null, 204);
+    }
+
     private function parseMonthStart(string $month): ?CarbonImmutable
     {
         if (preg_match('/\A\d{4}-\d{2}\z/', $month) !== 1) {

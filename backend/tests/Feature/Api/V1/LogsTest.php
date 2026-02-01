@@ -240,7 +240,7 @@ CREATE TABLE IF NOT EXISTS bowl_snapshots (
 )
 SQL);
     }
- 
+
     private function ensureDeviceSettingsTable(): void
     {
         $row = DB::selectOne("SELECT to_regclass('public.device_settings') as name");
@@ -266,5 +266,30 @@ CREATE TABLE IF NOT EXISTS device_settings (
   updated_at TIMESTAMPTZ
 )
 SQL);
+    }
+
+    public function test_logs_delete_success(): void
+    {
+        $token = $this->seedUser();
+        $deviceId = $this->seedDevice();
+
+        $logId = (string) Str::uuid();
+        $recordedAt = CarbonImmutable::now('UTC');
+
+        DB::table('bowl_snapshots')->insert([
+            'id' => $logId,
+            'device_id' => $deviceId,
+            'weight_g' => 120,
+            'recorded_at' => $recordedAt->format('Y-m-d H:i:s'),
+            'created_at' => $recordedAt->format('Y-m-d H:i:s'),
+            'updated_at' => $recordedAt->format('Y-m-d H:i:s'),
+        ]);
+
+        $response = $this->delete('/api/v1/logs/' . $logId, [], [
+            'Authorization' => 'Bearer ' . $token,
+        ]);
+
+        $response->assertStatus(204);
+        $this->assertSame(0, DB::table('bowl_snapshots')->where('id', $logId)->count());
     }
 }
