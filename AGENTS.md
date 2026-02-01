@@ -131,11 +131,9 @@ function buildUtcRange(\\DateTimeImmutable $startJst, \\DateTimeImmutable $endJs
 
 ## Git / コミット
 
-- コミットは意味単位で小さく
-- メッセージ例：
-  - `docs(spec): 仕様ドキュメント雛形を追加`
-  - `fix(api): JST境界の集計ずれを修正`
-  - `feat(web): デバイス設定の項目を追加`
+- コミットは手動で行うため、コミットメッセージを提示する
+- 必要に応じてコミットの分割案を提示する
+- docs/commit-rules.mdを必ず確認する
 
 ---
 
