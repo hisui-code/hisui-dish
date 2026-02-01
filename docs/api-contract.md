@@ -313,6 +313,23 @@ curl -s 'http://localhost:3000/api/v1/logs?month=invalid' \
   -H 'Authorization: Bearer <auth_token>'
 ```
 
+## DELETE /api/v1/logs/{log_id}
+
+- Auth: required
+- Path params:
+  - `log_id` (required)
+
+Success (204):
+
+- No Content
+
+Failure (404) when log is missing:
+
+````json
+{
+  "error": "log not found"
+}
+
 ## BowlSnapshots endpoints (not present in Rails)
 
 No BowlSnapshots endpoints are defined in Rails routes:
@@ -327,7 +344,7 @@ Curl (route not defined; expect router 404 status, body not specified):
 
 ```bash
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/api/v1/bowl_snapshots
-```
+````
 
 Success / unauthorized / validation / 403 examples: **N/A** (endpoint not defined).
 
