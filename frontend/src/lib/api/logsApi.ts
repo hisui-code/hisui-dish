@@ -16,3 +16,14 @@ export async function fetchLogs(month: string): Promise<LogItem[]> {
 
   return res.logs
 }
+
+/**
+ * @description 指定IDのログを削除する
+ * @param logId ログID
+ * @returns 削除完了を待つPromise
+ */
+export async function deleteLog(logId: string): Promise<void> {
+  await req(`/api/v1/logs/${logId}`, {
+    method: 'DELETE',
+  })
+}

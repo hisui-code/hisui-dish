@@ -16,7 +16,7 @@ const timeBandIcons: Record<TimeBand, IconType> = {
 
 type LogRowProps = {
   item: LogItem
-  onDelete: (id: string) => void
+  onDelete: (item: LogItem) => void
 }
 
 export default function LogRow(props: LogRowProps) {
@@ -57,7 +57,7 @@ export default function LogRow(props: LogRowProps) {
         variant="ghost"
         size="icon"
         className="h-10 w-10 rounded-full text-muted-foreground hover:text-destructive"
-        onClick={() => onDelete(item.id)}
+        onClick={() => onDelete(item)}
         aria-label="削除"
       >
         <Trash2 className="h-4 w-4" aria-hidden="true" />

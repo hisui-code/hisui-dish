@@ -19,10 +19,6 @@ function LogsContent() {
   const filteredLogs = filterLogs(rawLogs, month, query, timeBand)
   const groups = groupLogsByDay(filteredLogs)
 
-  const handleDelete = () => {
-    return console.log('delete log')
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto w-full max-w-4xl px-3 pb-10 sm:pt-2">
@@ -47,7 +43,7 @@ function LogsContent() {
 
         {/* 一覧 */}
         <div className="mt-5">
-          <LogsList groups={groups} onDelete={handleDelete} month={month} />
+          <LogsList groups={groups} month={month} />
         </div>
       </div>
     </div>
