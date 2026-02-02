@@ -1,9 +1,13 @@
+/**
+ * @description ダッシュボードの読み込み中に表示するスケルトンを描画する
+ * @returns ダッシュボードのスケルトンUI
+ */
 export default function DashboardSkeleton() {
   return (
     <div className="p-3 min-w-0 space-y-6 animate-pulse">
       {/* KPI セクションのスケルトン */}
-      <section className="grid gap-4 md:grid-cols-3">
-        {[0, 1, 2].map((i) => (
+      <section className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+        {[0, 1, 2, 3, 4, 5].map((i) => (
           <div
             key={i}
             className="flex flex-col rounded-2xl bg-white p-5 ring-1 ring-black/5 shadow-[0_6px_18px_rgba(0,0,0,.06)]"
@@ -66,12 +70,24 @@ export default function DashboardSkeleton() {
         </ul>
       </section>
 
-      {/* 今月グラフセクションのスケルトン */}
+      {/* 月別グラフセクションのスケルトン */}
       <section className="rounded-3xl bg-white p-4 ring-1 ring-black/5 min-w-0">
         {/* タイトル行 */}
         <div className="h-4 w-32 rounded-full bg-neutral-200" />
         {/* グラフ本体エリア */}
         <div className="mt-4 h-56 rounded-2xl bg-neutral-100" />
+      </section>
+
+      {/* 週ごとの合計 / 月ごとの合計のスケルトン */}
+      <section className="lg:grid lg:grid-cols-2 lg:gap-3 space-y-3 lg:space-y-0">
+        {[0, 1].map((i) => (
+          <div key={i} className="rounded-3xl bg-white p-4 ring-1 ring-black/5 min-w-0">
+            {/* タイトル行 */}
+            <div className="h-4 w-28 rounded-full bg-neutral-200" />
+            {/* グラフ本体エリア */}
+            <div className="mt-4 h-44 rounded-2xl bg-neutral-100" />
+          </div>
+        ))}
       </section>
     </div>
   )
