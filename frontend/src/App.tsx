@@ -6,6 +6,7 @@ import Settings from './pages/Settings'
 import Dashboard from './pages/Dashboard'
 import Logs from './pages/Logs'
 import Login from './pages/Login'
+import MobileSidebarDrawer from './components/layout/MobileSidebarDrawer'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 
 /**
@@ -66,18 +67,7 @@ function AppLayout() {
         </main>
       </div>
       {/* モバイル用ドロワー（オーバーレイ + 左スライド） */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-30 md:hidden">
-          {/* 背景オーバーレイ */}
-          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
-          {/* ドロワーパネル */}
-          <div className="absolute inset-y-0 left-0 w-[84%] max-w-[320px]  bg-emerald-600 shadow-xl min-h-screen">
-            <div className="">
-              <Sidebar />
-            </div>
-          </div>
-        </div>
-      )}
+      <MobileSidebarDrawer isOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
     </div>
   )
 }
