@@ -1,52 +1,39 @@
-import { Suspense, useMemo, useState } from 'react'
+import { Suspense, useState } from 'react'
 import DeviceSettingsForm from '../components/settings/DeviceSettingsForm'
-import { makeDeviceSettingResource } from '../lib/resources/deviceSettingResource'
 import SettingsSkeleton from '../components/skeletons/SettingsSkeleton'
+import { resolveDeviceId } from '@/lib/api/config'
+import useDeviceSetting from '@/hooks/useDeviceSetting'
 
-// 環境変数からデバイスIDを取得
-const DEVICE_ID = import.meta.env.VITE_DEVICE_ID as string
+const deviceId = resolveDeviceId()
 
-// デバイス設定ページ（親コンポーネント）
-export default function Settings() {
-  // 再読み込み用のバージョン番号。値を変えるとリソースが再生成される
+/**
+ * @description 設定画面の中身を表示する
+ * @returns 設定画面の中身
+ */
+function SettingsInner() {
+  // 再読み込み用のバージョン番号。値を変えると再取得される
   const [ver, setVer] = useState(0)
 
-  // Suspense用のデータリソースを生成（verが変わるたびに再作成される）
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const resource = useMemo(() => makeDeviceSettingResource(DEVICE_ID), [ver])
+  const data = useDeviceSetting(deviceId, ver)
 
+  // データ取得後にフォームを表示
   return (
-    <div className="max-w-2xl space-y-4">
-      {/* データ取得中は Skeletonを表示 */}
-      <Suspense fallback={<SettingsSkeleton />}>
-        <SettingsBody
-          key={ver} // keyを変えることでReactが再マウントする（再読込対策）
-          resource={resource} // Suspense対応のデータリソース
-          onReload={() => setVer((v) => v + 1)} // 再読み込み用の関数
-        />
-      </Suspense>
+    <div className="flex min-w-0 justify-center p-3">
+      <div className="w-full max-w-2xl space-y-4">
+        <DeviceSettingsForm initial={data} onReload={() => setVer((v) => v + 1)} />
+      </div>
     </div>
   )
 }
 
-// 実際の設定フォームを描画する部分
-function SettingsBody({
-  resource,
-  onReload,
-}: {
-  resource: ReturnType<typeof makeDeviceSettingResource>
-  onReload: () => void
-}) {
-  // Suspenseの仕組みにより、ここでデータが未取得ならthrowされ、fallbackが表示される
-  try {
-    const data = resource.read()
-    // データ取得後にフォームを表示
-    return <DeviceSettingsForm initial={data} onReload={onReload} />
-  } catch (e) {
-    if (e instanceof Promise) {
-      throw e
-    }
-
-    return <SettingsSkeleton />
-  }
+/**
+ * @description 設定画面をサスペンス付きで表示する
+ * @returns 設定画面
+ */
+export default function Settings() {
+  return (
+    <Suspense fallback={<SettingsSkeleton />}>
+      <SettingsInner />
+    </Suspense>
+  )
 }
