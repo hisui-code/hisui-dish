@@ -4,6 +4,7 @@ import type { TimeBand } from '@/types/logs'
 import LogsFilter from '@/components/logs/LogsFilter'
 import LogsList from '@/components/logs/LogsList'
 import { filterLogs, groupLogsByDay, getDefaultMonth } from '@/lib/resources/logs'
+import { FaBook } from 'react-icons/fa'
 
 /**
  * @description ログ一覧ページのメインコンテンツを描画する
@@ -21,12 +22,11 @@ function LogsContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto w-full max-w-4xl px-3 pb-10 sm:pt-2">
+      <div className="mx-auto w-full max-w-4xl px-3 pb-10">
         {/* ヘッダー */}
-        <div className="bg-card py-4 sm:px-6">
-          <div className="flex items-start justify-between">
-            <h1 className="text-2xl font-semibold tracking-tight">ログ</h1>
-          </div>
+        <div className="flex items-center text-[20px] font-semibold tracking-tight gap-2 md:pt-5 md:my-1 my-2">
+          <FaBook className="text-emerald-500" />
+          <h2 className=" text-emerald-700 font-semibold tracking-tight">ログ</h2>
         </div>
 
         {/* フィルター */}
