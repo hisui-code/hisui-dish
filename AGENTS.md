@@ -10,8 +10,9 @@
 
 2. **コードを書くときはドキュメントコメント必須**
    - JS/TS：**JSDoc**
+     - `@description` `@param` `@returns` を書く（該当がある場合）
    - PHP：**PHPDoc**
-   - それぞれ **`@description` `@param` `@returns`** を必ず書く（該当がある場合）
+     - `概要` `@param` `@return` を書く（該当がある場合）
    - 例外：型だけで自明な極小のワンライナー（ただし可能な限り書く）
 
 3. **わかりやすい・シンプルなコードを優先して提案する**
@@ -77,10 +78,10 @@ export function buildUtcRange(
 
 ```php
 /**
- * @description JST境界の期間をUTCに変換して、DBクエリ用の範囲を返す。
+ * JST境界の期間をUTCに変換して、DBクエリ用の範囲を返す。
  * @param \\DateTimeImmutable $startJst JST開始
  * @param \\DateTimeImmutable $endJst JST終了
- * @returns array{startUtc:\\DateTimeImmutable,endUtc:\\DateTimeImmutable} UTC範囲
+ * @return array{startUtc:\\DateTimeImmutable,endUtc:\\DateTimeImmutable} UTC範囲
  */
 function buildUtcRange(\\DateTimeImmutable $startJst, \\DateTimeImmutable $endJst): array {
     // 1) JSTの境界を受け取り、UTCに変換する
@@ -96,8 +97,9 @@ function buildUtcRange(\\DateTimeImmutable $startJst, \\DateTimeImmutable $endJs
 1. 目的を 1〜3 行で宣言（何を・なぜ）
 2. 影響範囲を列挙（API/DB/UI/計測）
 3. 最小差分で実装（読みやすさ優先）
-4. 動作確認（手順と結果）を残す
-5. 必要なら docs/spec と 90_decisions を更新
+4. 最小差分での実装より、責務の分離を優先する
+5. 動作確認（手順と結果）を残す
+6. 必要なら docs/spec と 90_decisions を更新
 
 ---
 
