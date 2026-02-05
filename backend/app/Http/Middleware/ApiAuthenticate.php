@@ -4,7 +4,8 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Laravel\Sanctum\PersonalAccessToken;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class ApiAuthenticate
@@ -19,10 +20,13 @@ class ApiAuthenticate
             return $this->unauthorized();
         }
 
-        $user = DB::table('users')->where('auth_token', $token)->first();
-        if (!$user) {
+        $accessToken = PersonalAccessToken::findToken($token);
+        if (!$accessToken || !$accessToken->tokenable) {
             return $this->unauthorized();
         }
+
+        // トークンに紐づくユーザーを認証済みにする
+        Auth::setUser($accessToken->tokenable);
 
         return $next($request);
     }
