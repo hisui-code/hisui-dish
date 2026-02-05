@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api\V1;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class LoginTest extends TestCase
@@ -12,6 +13,7 @@ class LoginTest extends TestCase
         parent::setUp();
 
         $this->ensureUsersTable();
+        $this->ensurePersonalAccessTokensTable();
     }
 
     public function test_login_success_returns_token_and_email(): void
@@ -23,8 +25,7 @@ class LoginTest extends TestCase
 
         DB::table('users')->insert([
             'email' => $email,
-            'password_digest' => password_hash($password, PASSWORD_BCRYPT),
-            'auth_token' => null,
+            'password' => Hash::make($password),
             'created_at' => now('Asia/Tokyo'),
             'updated_at' => now('Asia/Tokyo'),
         ]);
@@ -45,8 +46,16 @@ class LoginTest extends TestCase
         $this->assertIsString($token);
         $this->assertNotSame('', $token);
 
-        $storedToken = DB::table('users')->where('email', $email)->value('auth_token');
-        $this->assertSame($token, $storedToken);
+        [$tokenId, $plainToken] = explode('|', $token, 2);
+        $this->assertNotSame('', $tokenId);
+        $this->assertNotSame('', $plainToken);
+
+        $userId = DB::table('users')->where('email', $email)->value('id');
+        $stored = DB::table('personal_access_tokens')->where('id', (int) $tokenId)->first();
+        $this->assertNotNull($stored);
+        $this->assertSame('App\\Models\\User', $stored->tokenable_type);
+        $this->assertSame((int) $userId, (int) $stored->tokenable_id);
+        $this->assertSame(hash('sha256', $plainToken), $stored->token);
     }
 
     public function test_login_invalid_credentials_returns_unauthorized(): void
@@ -58,8 +67,7 @@ class LoginTest extends TestCase
 
         DB::table('users')->insert([
             'email' => $email,
-            'password_digest' => password_hash($password, PASSWORD_BCRYPT),
-            'auth_token' => null,
+            'password' => Hash::make($password),
             'created_at' => now('Asia/Tokyo'),
             'updated_at' => now('Asia/Tokyo'),
         ]);
@@ -108,8 +116,36 @@ class LoginTest extends TestCase
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
   email VARCHAR(255),
-  password_digest VARCHAR(255),
-  auth_token VARCHAR(255),
+  password VARCHAR(255),
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ
+)
+SQL);
+    }
+
+    /**
+     * personal_access_tokens テーブルの存在を保証する
+     * @return void
+     */
+    private function ensurePersonalAccessTokensTable(): void
+    {
+        $row = DB::selectOne("SELECT to_regclass('public.personal_access_tokens') as name");
+        $exists = $row && $row->name !== null;
+
+        if ($exists) {
+            return;
+        }
+
+        DB::statement(<<<SQL
+CREATE TABLE IF NOT EXISTS personal_access_tokens (
+  id SERIAL PRIMARY KEY,
+  tokenable_type VARCHAR(255) NOT NULL,
+  tokenable_id BIGINT NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  token VARCHAR(64) NOT NULL UNIQUE,
+  abilities TEXT,
+  last_used_at TIMESTAMPTZ,
+  expires_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ
 )

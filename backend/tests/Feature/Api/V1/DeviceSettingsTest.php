@@ -13,6 +13,7 @@ class DeviceSettingsTest extends TestCase
         parent::setUp();
 
         $this->ensureUsersTable();
+        $this->ensurePersonalAccessTokensTable();
         $this->ensureDevicesTable();
         $this->ensureDeviceSettingsTable();
     }
@@ -267,18 +268,27 @@ class DeviceSettingsTest extends TestCase
     private function seedUser(): string
     {
         $email = 'device-settings@example.com';
-        $token = 'token-' . uniqid();
+        $plainToken = Str::random(40);
 
         DB::table('users')->where('email', $email)->delete();
-        DB::table('users')->insert([
+        $userId = DB::table('users')->insertGetId([
             'email' => $email,
-            'password_digest' => password_hash('password', PASSWORD_BCRYPT),
-            'auth_token' => $token,
+            'password' => password_hash('password', PASSWORD_BCRYPT),
             'created_at' => now('UTC'),
             'updated_at' => now('UTC'),
         ]);
 
-        return $token;
+        $tokenId = DB::table('personal_access_tokens')->insertGetId([
+            'tokenable_type' => 'App\\Models\\User',
+            'tokenable_id' => $userId,
+            'name' => 'web-login',
+            'token' => hash('sha256', $plainToken),
+            'abilities' => null,
+            'created_at' => now('UTC'),
+            'updated_at' => now('UTC'),
+        ]);
+
+        return $tokenId . '|' . $plainToken;
     }
 
     private function seedDevice(): string
@@ -310,8 +320,36 @@ class DeviceSettingsTest extends TestCase
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
   email VARCHAR(255),
-  password_digest VARCHAR(255),
-  auth_token VARCHAR(255),
+  password VARCHAR(255),
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ
+)
+SQL);
+    }
+
+    /**
+     * personal_access_tokens テーブルの存在を保証する
+     * @return void
+     */
+    private function ensurePersonalAccessTokensTable(): void
+    {
+        $row = DB::selectOne("SELECT to_regclass('public.personal_access_tokens') as name");
+        $exists = $row && $row->name !== null;
+
+        if ($exists) {
+            return;
+        }
+
+        DB::statement(<<<SQL
+CREATE TABLE IF NOT EXISTS personal_access_tokens (
+  id SERIAL PRIMARY KEY,
+  tokenable_type VARCHAR(255) NOT NULL,
+  tokenable_id BIGINT NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  token VARCHAR(64) NOT NULL UNIQUE,
+  abilities TEXT,
+  last_used_at TIMESTAMPTZ,
+  expires_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ
 )

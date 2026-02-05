@@ -65,7 +65,6 @@ class HisuiDishSeeder extends Seeder
      *
      * - 既存 users は全削除して作り直す
      * - password は Hash::make で保存
-     * - auth_token カラムがあれば 64hex を保存
      *
      * @return void
      */
@@ -86,10 +85,6 @@ class HisuiDishSeeder extends Seeder
             'password' => Hash::make($password),
         ];
 
-        // Railsの auth_token 相当がある場合だけ入れる
-        if (Schema::hasColumn('users', 'auth_token')) {
-            $data['auth_token'] = Str::random(64);
-        }
         if (Schema::hasColumn('users', 'created_at')) {
             $data['created_at'] = now();
         }

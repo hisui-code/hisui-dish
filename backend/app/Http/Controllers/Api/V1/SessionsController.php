@@ -3,80 +3,60 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 
 /**
- * @description
  * セッション（ログイン）用のAPIコントローラ
  *
  * - email / password を受け取り、ユーザーを認証する
- * - 認証に成功したら auth_token を返す（未発行なら生成して保存する）
+ * - 認証に成功したら auth_token を返す
  */
 class SessionsController extends Controller
 {
     /**
-     * @description
-     * ログイン処理。
-     *
-     * リクエスト例:
-     * - POST /api/v1/login
-     * - body: { "email": "...", "password": "..." }
-     *
-     * レスポンス例:
-     * - 200: { "auth_token": "...", "body": { "email": "..." } }
-     * - 401: { "error": "invalid_credentials" }
+     * ログイン処理
+     * @param Request $request リクエスト
+     * @return JsonResponse ログイン結果
      */
     public function create(Request $request): JsonResponse
     {
-        // 入力値を取得
-        $email = $request->input('email');
-        $password = $request->input('password');
+        // バリデーション
+        $validated = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string'],
+        ]);
 
-        // 型が不正（null や配列など）なら弾く
-        if (!is_string($email) || !is_string($password)) {
+        // 資格情報チェック
+        if (!Auth::attempt($validated)) {
             return $this->invalidCredentials();
         }
 
-        // Auth で資格情報を検証（セッションは作らず検証だけ）
-        if (!Auth::validate(['email' => $email, 'password' => $password])) {
-            return $this->invalidCredentials();
-        }
-
-        // token 発行/返却のためにユーザーを取得
-        $user = User::query()->where('email', $email)->first();
+        $user = $request->user() ?? Auth::user();
         if (!$user) {
             return $this->invalidCredentials();
         }
 
-        // 既存トークンがあればそれを返す。なければ生成して保存する
-        $authToken = $user->auth_token;
-        if (!is_string($authToken) || $authToken === '') {
-            $authToken = Str::random(24);
-            $user->auth_token = $authToken;
-            $user->save();
-        }
+        // 「web-login」トークンは1個だけにする（乱発防止）
+        $user->tokens()->where('name', 'web-login')->delete();
+
+        // Sanctum トークンを発行
+        $token = $user->createToken('web-login')->plainTextToken;
 
         return response()->json([
-            'auth_token' => $authToken,
+            'auth_token' => $token,
             'body' => [
                 'email' => $user->email,
             ],
-        ]);
+        ], 200);
     }
 
     /**
-     * @description
-     * 認証失敗の共通レスポンス。
-     * 「メールが存在しない」などの詳細は返さず invalid_credentials に統一する。
+     * 認証失敗のレスポンスを返す
      */
     private function invalidCredentials(): JsonResponse
     {
-        return response()->json([
-            'error' => 'invalid_credentials',
-        ], 401);
+        return response()->json(['error' => 'invalid_credentials'], 401);
     }
 }
