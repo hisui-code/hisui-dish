@@ -156,6 +156,7 @@ class LogsTest extends TestCase
         $userId = DB::table('users')->insertGetId([
             'email' => $email,
             'password' => password_hash('password', PASSWORD_BCRYPT),
+            'role' => 'user',
             'created_at' => now('UTC'),
             'updated_at' => now('UTC'),
         ]);
@@ -201,8 +202,9 @@ class LogsTest extends TestCase
         DB::statement(<<<SQL
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
-  email VARCHAR(255),
-  password VARCHAR(255),
+  email VARCHAR(255) NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  role VARCHAR(32) NOT NULL DEFAULT 'user',
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ
 )

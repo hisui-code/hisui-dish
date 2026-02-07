@@ -26,6 +26,7 @@ class LoginTest extends TestCase
         DB::table('users')->insert([
             'email' => $email,
             'password' => Hash::make($password),
+            'role' => 'user',
             'created_at' => now('Asia/Tokyo'),
             'updated_at' => now('Asia/Tokyo'),
         ]);
@@ -68,6 +69,7 @@ class LoginTest extends TestCase
         DB::table('users')->insert([
             'email' => $email,
             'password' => Hash::make($password),
+            'role' => 'user',
             'created_at' => now('Asia/Tokyo'),
             'updated_at' => now('Asia/Tokyo'),
         ]);
@@ -115,8 +117,9 @@ class LoginTest extends TestCase
         DB::statement(<<<SQL
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
-  email VARCHAR(255),
-  password VARCHAR(255),
+  email VARCHAR(255) NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  role VARCHAR(32) NOT NULL DEFAULT 'user',
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ
 )
