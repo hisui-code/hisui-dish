@@ -27,6 +27,7 @@
     "strings": false
   },
   "[php]": {
+    "editor.defaultFormatter": "open-southeners.laravel-pint",
     "editor.formatOnSave": true
   },
   "php-cs-fixer.executablePath": "${workspaceFolder}/backend/vendor/bin/php-cs-fixer",
