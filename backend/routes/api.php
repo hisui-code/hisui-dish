@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\DeviceSettingsController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\LogsController;
 use App\Http\Controllers\Api\V1\SessionsController;
+use App\Http\Controllers\Api\V1\UsersController;
 use App\Http\Controllers\Api\V1\YearMonthlyTotalsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -43,5 +44,12 @@ Route::prefix('v1')
             // Log
             Route::get('logs', [LogsController::class, 'index']);
             Route::delete('logs/{log_id}', [LogsController::class, 'destroy']);
+        });
+
+        // Users
+        Route::middleware(['require.admin'])->group(function () {
+            Route::get('users', [UsersController::class, 'index']);
+            Route::patch('users/{user_id}', [UsersController::class, 'update']);
+            Route::delete('users/{user_id}', [UsersController::class, 'destroy']);
         });
     });
