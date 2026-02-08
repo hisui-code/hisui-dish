@@ -68,7 +68,7 @@
   - created_at / updated_at (timestamptz, UTC)
 - 制約
   - email は UNIQUE
-  - role の許可値は admin / user
+  - role の許可値は admin / user / guest
 - 補足
   - email_verified_at は廃止
   - remember_token は廃止

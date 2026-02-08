@@ -36,7 +36,7 @@
     - `id`: number
     - `name`: string|null
     - `email`: string
-    - `role`: `admin` | `user`
+    - `role`: `admin` | `user` | `guest`
     - `updated_at`: ISO8601文字列
 - エラー
   - 401: 未認証
@@ -46,7 +46,7 @@
 
 - 認証：必要（admin のみ）
 - リクエスト
-  - `role`: `admin` | `user`
+  - `role`: `admin` | `user` | `guest`
 - レスポンス（200）
   - `user`
     - `id`, `name`, `email`, `role`, `updated_at`
