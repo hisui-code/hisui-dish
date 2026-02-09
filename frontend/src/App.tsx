@@ -6,6 +6,7 @@ import Settings from './pages/Settings'
 import Dashboard from './pages/Dashboard'
 import Logs from './pages/Logs'
 import Login from './pages/Login'
+import Users from './pages/Users'
 import MobileSidebarDrawer from './components/layout/MobileSidebarDrawer'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 
@@ -88,6 +89,7 @@ export default function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/logs" element={<Logs />} />
+              <Route path="/users" element={<Users />} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
