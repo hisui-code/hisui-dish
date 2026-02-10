@@ -47,7 +47,7 @@ Route::prefix('v1')
         });
 
         // Users
-        Route::middleware(['require.admin'])->group(function () {
+        Route::middleware(['api.auth', 'require.admin'])->group(function () {
             Route::get('users', [UsersController::class, 'index']);
             Route::patch('users/{user_id}', [UsersController::class, 'update']);
             Route::delete('users/{user_id}', [UsersController::class, 'destroy']);
