@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
  * @description
  * HisuiDish の開発用シード
  *
- * - users: 管理ユーザーを ENV から 1件作成
+ * - users: 管理ユーザーをadminとして作成し、user/guestも追加作成
  * - devices: DEVICE_ID を ENV から作成（なければ固定UUID）
  * - device_settings: テーブルが存在すれば、存在するカラムだけ初期化
  * - bowl_snapshots:
@@ -34,7 +34,7 @@ class HisuiDishSeeder extends Seeder
         $this->log('🧪 Seeding users / devices / bowl_snapshots (past2, current, next2 months)...');
 
         DB::transaction(function () {
-            $this->seedUser();
+            $this->seedUsers();
             $deviceId = $this->ensureDevice();
             $this->ensureDeviceSetting($deviceId);
             $this->seedBowlSnapshots($deviceId);
@@ -61,40 +61,80 @@ class HisuiDishSeeder extends Seeder
 
     /**
      * @description
-     * 管理ユーザーを ENV から 1件作成する
+     * 管理ユーザーをadminとして作成し、user/guestも追加作成する
      *
      * - 既存 users は全削除して作り直す
      * - password は Hash::make で保存
      *
      * @return void
      */
-    private function seedUser(): void
+    private function seedUsers(): void
     {
         if (!Schema::hasTable('users')) {
             $this->log('⚠️ users table not found. skip users seeding.');
             return;
         }
 
-        $email = (string) env('ADMIN_EMAIL', 'admin@example.com');
-        $password = (string) env('ADMIN_PASSWORD', 'password');
+        $adminEmail = (string) env('ADMIN_EMAIL', 'admin@example.com');
+        $adminPassword = (string) env('ADMIN_PASSWORD', 'password');
+        $userEmail = (string) env('USER_EMAIL', 'user@example.com');
+        $userPassword = (string) env('USER_PASSWORD', 'password');
+        $guestEmail = (string) env('GUEST_EMAIL', 'guest@example.com');
+        $guestPassword = (string) env('GUEST_PASSWORD', 'password');
 
         DB::table('users')->delete();
 
-        $data = [
-            'email' => $email,
-            'password' => Hash::make($password),
-        ];
-
+        $baseTimestamps = [];
         if (Schema::hasColumn('users', 'created_at')) {
-            $data['created_at'] = now();
+            $baseTimestamps['created_at'] = now();
         }
         if (Schema::hasColumn('users', 'updated_at')) {
-            $data['updated_at'] = now();
+            $baseTimestamps['updated_at'] = now();
         }
 
-        DB::table('users')->insert($data);
+        // 既存の管理ユーザーをadminとして作成する
+        $adminData = [
+            'email' => $adminEmail,
+            'password' => Hash::make($adminPassword),
+        ] + $baseTimestamps;
+        if (Schema::hasColumn('users', 'name')) {
+            $adminData['name'] = 'admin';
+        }
+        if (Schema::hasColumn('users', 'role')) {
+            $adminData['role'] = 'admin';
+        }
 
-        $this->log('✅ users seeded.');
+        // 一般ユーザーを追加する
+        $userData = [
+            'email' => $userEmail,
+            'password' => Hash::make($userPassword),
+        ] + $baseTimestamps;
+        if (Schema::hasColumn('users', 'name')) {
+            $userData['name'] = 'user';
+        }
+        if (Schema::hasColumn('users', 'role')) {
+            $userData['role'] = 'user';
+        }
+
+        // ゲストユーザーを追加する
+        $guestData = [
+            'email' => $guestEmail,
+            'password' => Hash::make($guestPassword),
+        ] + $baseTimestamps;
+        if (Schema::hasColumn('users', 'name')) {
+            $guestData['name'] = 'guest';
+        }
+        if (Schema::hasColumn('users', 'role')) {
+            $guestData['role'] = 'guest';
+        }
+
+        DB::table('users')->insert([
+            $adminData,
+            $userData,
+            $guestData,
+        ]);
+
+        $this->log('✅ users seeded. (admin/user/guest)');
     }
 
     /**
