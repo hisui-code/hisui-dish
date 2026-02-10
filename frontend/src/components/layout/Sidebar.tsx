@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { FaHome, FaCog, FaBook, FaUsers } from 'react-icons/fa'
 import LogoutButton from './LogoutButton'
+import { useAuth } from '@/contexts/AuthContext'
 
 type NavItemKey = 'dashboard' | 'settings' | 'logs' | 'users'
 
@@ -8,15 +9,22 @@ const items: { key: NavItemKey; label: string; icon: React.ReactNode; path: stri
   { key: 'dashboard', label: 'ダッシュボード', icon: <FaHome />, path: '/dashboard' },
   { key: 'settings', label: '設定', icon: <FaCog />, path: '/settings' },
   { key: 'logs', label: 'ログ', icon: <FaBook />, path: '/logs' },
-  { key: 'users', label: 'ユーザー管理', icon: <FaUsers />, path: '/users' },
 ]
 
 export default function Sidebar() {
+  const { role } = useAuth()
+
+  // 管理者のみusers管理メニューを表示する
+  const navItems =
+    role === 'admin'
+      ? [...items, { key: 'users' as const, label: 'ユーザー管理', icon: <FaUsers />, path: '/users' }]
+      : items
+
   return (
     <aside className="flex h-full flex-col justify-between text-white">
       <div>
         <nav className="mt-4 space-y-1 px-2">
-          {items.map((item) => (
+          {navItems.map((item) => (
             <NavLink
               key={item.key}
               to={item.path}

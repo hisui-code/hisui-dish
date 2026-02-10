@@ -13,14 +13,17 @@ export default function LoginForm({ onLoggedIn }: LoginFormProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    // 再送信時に前回エラーを残さない
     setError(null)
     setLoading(true)
 
     try {
+      // 認証成功時に発行トークンを親へ渡してログイン状態へ遷移する
       const body = await login(email, password)
       const token = body.auth_token
       onLoggedIn(token)
     } catch (err: unknown) {
+      // API返却エラーを表示してユーザーに再入力を促す
       const message = err instanceof Error ? err.message : 'ログインに失敗しました'
       setError(message)
     } finally {

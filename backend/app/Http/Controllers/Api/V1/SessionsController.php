@@ -48,6 +48,7 @@ class SessionsController extends Controller
             'auth_token' => $token,
             'body' => [
                 'email' => $user->email,
+                'role' => $user->role,
             ],
         ], 200);
     }

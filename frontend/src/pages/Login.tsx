@@ -12,6 +12,7 @@ export default function Login({ onLoginSuccess }: LoginPageProps) {
 
         <LoginForm
           onLoggedIn={(token) => {
+            // 子コンポーネントで取得したトークンをルート側へ伝播する
             onLoginSuccess(token)
           }}
         />
