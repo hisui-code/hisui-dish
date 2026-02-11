@@ -1,24 +1,15 @@
-import type { Dispatch, SetStateAction } from 'react'
 import type { UserListItem, UserRole } from '@/types/users'
-import type { EditForm } from '@/hooks/users/useUserEditState'
-import type { CreateForm } from '@/hooks/users/useUserCreateState'
+import type {
+  UsersActionModel,
+  UsersCreateModel,
+  UsersEditModel,
+} from '@/hooks/users/useUsersPage'
 
 type Props = {
   users: UserListItem[]
-  editingId: number | null
-  deletingId: number | null
-  saving: boolean
-  isCreating: boolean
-  form: EditForm
-  createForm: CreateForm
-  setForm: Dispatch<SetStateAction<EditForm>>
-  setCreateForm: Dispatch<SetStateAction<CreateForm>>
-  startEdit: (user: UserListItem) => void
-  cancelEdit: () => void
-  cancelCreate: () => void
-  saveUser: (userId: number) => Promise<void>
-  saveCreateUser: () => Promise<void>
-  removeUser: (userId: number) => Promise<void>
+  editModel: UsersEditModel
+  createModel: UsersCreateModel
+  actionModel: UsersActionModel
 }
 
 /**
@@ -27,20 +18,9 @@ type Props = {
  */
 export function UsersListSection({
   users,
-  editingId,
-  deletingId,
-  saving,
-  isCreating,
-  form,
-  createForm,
-  setForm,
-  setCreateForm,
-  startEdit,
-  cancelEdit,
-  cancelCreate,
-  saveUser,
-  saveCreateUser,
-  removeUser,
+  editModel,
+  createModel,
+  actionModel,
 }: Props) {
   return (
     <div className="overflow-x-auto rounded border bg-white">
@@ -56,15 +36,15 @@ export function UsersListSection({
           </tr>
         </thead>
         <tbody>
-          {isCreating && (
+          {createModel.isCreating && (
             <tr className="border-t bg-emerald-50/40">
               <td className="px-3 py-2">new</td>
               <td className="px-3 py-2">
                 <input
                   type="text"
-                  value={createForm.name}
+                  value={createModel.form.name}
                   onChange={(event) =>
-                    setCreateForm((prev) => ({ ...prev, name: event.target.value }))
+                    createModel.onChangeForm({ name: event.target.value })
                   }
                   className="w-full rounded border px-2 py-1"
                 />
@@ -72,18 +52,18 @@ export function UsersListSection({
               <td className="px-3 py-2">
                 <input
                   type="email"
-                  value={createForm.email}
+                  value={createModel.form.email}
                   onChange={(event) =>
-                    setCreateForm((prev) => ({ ...prev, email: event.target.value }))
+                    createModel.onChangeForm({ email: event.target.value })
                   }
                   className="w-full rounded border px-2 py-1"
                 />
               </td>
               <td className="px-3 py-2">
                 <select
-                  value={createForm.role}
+                  value={createModel.form.role}
                   onChange={(event) =>
-                    setCreateForm((prev) => ({ ...prev, role: event.target.value as UserRole }))
+                    createModel.onChangeForm({ role: event.target.value as UserRole })
                   }
                   className="rounded border px-2 py-1"
                 >
@@ -97,22 +77,26 @@ export function UsersListSection({
                 <div className="flex gap-2">
                   <input
                     type="password"
-                    value={createForm.password}
+                    value={createModel.form.password}
                     onChange={(event) =>
-                      setCreateForm((prev) => ({ ...prev, password: event.target.value }))
+                      createModel.onChangeForm({ password: event.target.value })
                     }
                     placeholder="パスワード"
                     className="rounded border px-2 py-1"
                   />
                   <button
                     type="button"
-                    onClick={() => void saveCreateUser()}
-                    disabled={saving}
+                    onClick={() => void actionModel.onSaveCreateUser()}
+                    disabled={actionModel.saving}
                     className="rounded bg-emerald-600 px-3 py-1 text-white disabled:opacity-60"
                   >
                     保存
                   </button>
-                  <button type="button" onClick={cancelCreate} className="rounded border px-3 py-1">
+                  <button
+                    type="button"
+                    onClick={createModel.onCancelCreate}
+                    className="rounded border px-3 py-1"
+                  >
                     キャンセル
                   </button>
                 </div>
@@ -121,8 +105,8 @@ export function UsersListSection({
           )}
 
           {users.map((user) => {
-            const isEditing = editingId === user.id
-            const isDeleting = deletingId === user.id
+            const isEditing = editModel.editingId === user.id
+            const isDeleting = actionModel.deletingId === user.id
 
             return (
               <tr key={user.id} className="border-t">
@@ -131,10 +115,8 @@ export function UsersListSection({
                   {isEditing ? (
                     <input
                       type="text"
-                      value={form.name}
-                      onChange={(event) =>
-                        setForm((prev) => ({ ...prev, name: event.target.value }))
-                      }
+                      value={editModel.form.name}
+                      onChange={(event) => editModel.onChangeForm({ name: event.target.value })}
                       className="w-full rounded border px-2 py-1"
                     />
                   ) : (
@@ -145,10 +127,8 @@ export function UsersListSection({
                   {isEditing ? (
                     <input
                       type="email"
-                      value={form.email}
-                      onChange={(event) =>
-                        setForm((prev) => ({ ...prev, email: event.target.value }))
-                      }
+                      value={editModel.form.email}
+                      onChange={(event) => editModel.onChangeForm({ email: event.target.value })}
                       className="w-full rounded border px-2 py-1"
                     />
                   ) : (
@@ -158,9 +138,9 @@ export function UsersListSection({
                 <td className="px-3 py-2">
                   {isEditing ? (
                     <select
-                      value={form.role}
+                      value={editModel.form.role}
                       onChange={(event) =>
-                        setForm((prev) => ({ ...prev, role: event.target.value as UserRole }))
+                        editModel.onChangeForm({ role: event.target.value as UserRole })
                       }
                       className="rounded border px-2 py-1"
                     >
@@ -178,24 +158,22 @@ export function UsersListSection({
                     <div className="flex gap-2">
                       <input
                         type="password"
-                        value={form.password}
-                        onChange={(event) =>
-                          setForm((prev) => ({ ...prev, password: event.target.value }))
-                        }
+                        value={editModel.form.password}
+                        onChange={(event) => editModel.onChangeForm({ password: event.target.value })}
                         placeholder="新しいパスワード（任意）"
                         className="rounded border px-2 py-1"
                       />
                       <button
                         type="button"
-                        onClick={() => void saveUser(user.id)}
-                        disabled={saving}
+                        onClick={() => void actionModel.onSaveUser(user.id)}
+                        disabled={actionModel.saving}
                         className="rounded bg-emerald-600 px-3 py-1 text-white disabled:opacity-60"
                       >
                         保存
                       </button>
                       <button
                         type="button"
-                        onClick={cancelEdit}
+                        onClick={editModel.onCancelEdit}
                         className="rounded border px-3 py-1"
                       >
                         キャンセル
@@ -205,14 +183,14 @@ export function UsersListSection({
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        onClick={() => startEdit(user)}
+                        onClick={() => editModel.onStartEdit(user)}
                         className="rounded border px-3 py-1"
                       >
                         編集
                       </button>
                       <button
                         type="button"
-                        onClick={() => void removeUser(user.id)}
+                        onClick={() => void actionModel.onRemoveUser(user.id)}
                         disabled={isDeleting}
                         className="rounded bg-red-600 px-3 py-1 text-white disabled:opacity-60"
                       >
@@ -225,7 +203,7 @@ export function UsersListSection({
             )
           })}
 
-          {!isCreating && users.length === 0 && (
+          {!createModel.isCreating && users.length === 0 && (
             <tr>
               <td colSpan={6} className="px-3 py-6 text-center text-neutral-500">
                 ユーザーが見つかりません

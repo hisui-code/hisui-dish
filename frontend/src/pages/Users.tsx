@@ -10,57 +10,27 @@ import { UsersListSection } from '@/components/users/UsersListSection'
  * @returns users管理ページ
  */
 function UsersContent() {
-  const {
-    users,
-    errorMessage,
-    isForbidden,
-    editingId,
-    deletingId,
-    saving,
-    form,
-    isCreating,
-    createForm,
-    setForm,
-    setCreateForm,
-    startEdit,
-    cancelEdit,
-    openCreate,
-    cancelCreate,
-    saveUser,
-    saveCreateUser,
-    removeUser,
-  } = useUsersPage()
+  const pageViewModel = useUsersPage()
 
   // 権限がなければ403
-  if (isForbidden) {
+  if (pageViewModel.query.isForbidden) {
     return <Forbidden />
   }
 
   return (
     <div className="p-4 space-y-4">
-      <UsersPageHeader onClickNew={openCreate} />
+      <UsersPageHeader onClickNew={pageViewModel.create.onOpenCreate} />
 
-      {errorMessage && (
+      {pageViewModel.query.errorMessage && (
         <div className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {errorMessage}
+          {pageViewModel.query.errorMessage}
         </div>
       )}
       <UsersListSection
-        users={users}
-        editingId={editingId}
-        deletingId={deletingId}
-        saving={saving}
-        isCreating={isCreating}
-        form={form}
-        createForm={createForm}
-        setForm={setForm}
-        setCreateForm={setCreateForm}
-        startEdit={startEdit}
-        cancelEdit={cancelEdit}
-        cancelCreate={cancelCreate}
-        saveUser={saveUser}
-        saveCreateUser={saveCreateUser}
-        removeUser={removeUser}
+        users={pageViewModel.query.users}
+        editModel={pageViewModel.edit}
+        createModel={pageViewModel.create}
+        actionModel={pageViewModel.actions}
       />
     </div>
   )
