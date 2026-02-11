@@ -1,181 +1,38 @@
-import { useEffect, useMemo, useState } from 'react'
-import { fetchUsers, updateUser, deleteUser } from '@/lib/api/usersApi'
-import type { UserListItem, UserRole } from '@/types/users'
+import { Suspense } from 'react'
 import { Forbidden } from '@/components/layout/Forbidden'
 import { UsersTableSkeleton } from '@/components/skeletons/UsersTableSkeleton'
-
-type EditForm = {
-  name: string
-  email: string
-  password: string
-  role: UserRole
-}
+import { useUsersPage } from '@/hooks/users/useUsersPage'
+import type { UserRole } from '@/types/users'
 
 /**
  * @description users管理ページを表示する
  * @returns users管理ページ
  */
-export default function Users() {
-  const [users, setUsers] = useState<UserListItem[]>([])
-  const [query, setQuery] = useState<string>('')
-  const [loading, setLoading] = useState<boolean>(true)
-  const [errorMessage, setErrorMessage] = useState<string>('')
-  const [isForbidden, setIsForbidden] = useState<boolean>(false)
-
-  const [editingId, setEditingId] = useState<number | null>(null)
-  const [deletingId, setDeletingId] = useState<number | null>(null)
-  const [saving, setSaving] = useState<boolean>(false)
-
-  const [form, setForm] = useState<EditForm>({
-    name: '',
-    email: '',
-    password: '',
-    role: 'user',
-  })
-
-  /**
-   * @description 画面初期表示時にusers一覧を取得する
-   * @returns Promise<void>
-   */
-  const loadUsers = async (): Promise<void> => {
-    setLoading(true)
-    setErrorMessage('')
-
-    try {
-      const data = await fetchUsers()
-      setUsers(data)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'unknown_error'
-      // 権限不足は専用表示に切り替える
-      if (message === 'forbidden') {
-        setIsForbidden(true)
-      } else {
-        setErrorMessage(message)
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    void loadUsers()
-  }, [])
-
-  const filteredUsers = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return users
-
-    // name/email の部分一致で絞り込む
-    return users.filter((user) => {
-      const name = (user.name ?? '').toLowerCase()
-      const email = user.email.toLowerCase()
-      return name.includes(q) || email.includes(q)
-    })
-  }, [users, query])
-
-  /**
-   * @description 編集開始時にフォームへ現在値を反映する
-   * @param user 編集対象ユーザー
-   * @returns void
-   */
-  const startEdit = (user: UserListItem): void => {
-    setEditingId(user.id)
-    setForm({
-      name: user.name ?? '',
-      email: user.email,
-      password: '',
-      role: user.role,
-    })
-    setErrorMessage('')
-  }
-
-  /**
-   * @description 編集をキャンセルしてフォームを初期化する
-   * @returns void
-   */
-  const cancelEdit = (): void => {
-    setEditingId(null)
-    setForm({
-      name: '',
-      email: '',
-      password: '',
-      role: 'user',
-    })
-  }
-
-  /**
-   * @description 指定ユーザーを更新する
-   * @param userId 更新対象ユーザーID
-   * @returns Promise<void>
-   */
-  const saveUser = async (userId: number): Promise<void> => {
-    setSaving(true)
-    setErrorMessage('')
-
-    try {
-      // 部分更新のため、入力中フォームの内容をそのまま送る
-      const updated = await updateUser(userId, {
-        name: form.name,
-        email: form.email,
-        password: form.password || undefined,
-        role: form.role,
-      })
-
-      setUsers((prev) => prev.map((u) => (u.id === userId ? updated : u)))
-      cancelEdit()
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'unknown_error'
-      setErrorMessage(message)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  /**
-   * @description 指定ユーザーを削除する
-   * @param userId 削除対象ユーザーID
-   * @returns Promise<void>
-   */
-  const removeUser = async (userId: number): Promise<void> => {
-    const ok = window.confirm('このユーザーを削除しますか？')
-    if (!ok) return
-
-    setDeletingId(userId)
-    setErrorMessage('')
-
-    try {
-      // 204 No Contentを想定してレスポンスボディは扱わない
-      await deleteUser(userId)
-      setUsers((prev) => prev.filter((u) => u.id !== userId))
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'unknown_error'
-      setErrorMessage(message)
-    } finally {
-      setDeletingId(null)
-    }
-  }
+function UsersContent() {
+  const {
+    users,
+    errorMessage,
+    isForbidden,
+    editingId,
+    deletingId,
+    saving,
+    form,
+    setForm,
+    startEdit,
+    cancelEdit,
+    saveUser,
+    removeUser,
+  } = useUsersPage()
 
   // 権限がなければ403
   if (isForbidden) {
     return <Forbidden />
   }
 
-  // ロード中はスケルトン表示
-  if (loading) {
-    return <UsersTableSkeleton />
-  }
-
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">ユーザー管理</h1>
-        <input
-          type="text"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="name / email で検索"
-          className="w-full max-w-xs rounded border px-3 py-2 text-sm"
-        />
       </div>
 
       {errorMessage && (
@@ -197,7 +54,7 @@ export default function Users() {
             </tr>
           </thead>
           <tbody>
-            {filteredUsers.map((user) => {
+            {users.map((user) => {
               const isEditing = editingId === user.id
               const isDeleting = deletingId === user.id
 
@@ -306,7 +163,8 @@ export default function Users() {
                 </tr>
               )
             })}
-            {filteredUsers.length === 0 && (
+
+            {users.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-3 py-6 text-center text-neutral-500">
                   ユーザーが見つかりません
@@ -317,5 +175,17 @@ export default function Users() {
         </table>
       </div>
     </div>
+  )
+}
+
+/**
+ * @description users管理ページをSuspense付きで表示する
+ * @returns users管理ページ
+ */
+export default function Users() {
+  return (
+    <Suspense fallback={<UsersTableSkeleton />}>
+      <UsersContent />
+    </Suspense>
   )
 }
