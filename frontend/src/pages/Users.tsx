@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchUsers, updateUser, deleteUser } from '@/lib/api/usersApi'
 import type { UserListItem, UserRole } from '@/types/users'
+import { Forbidden } from '@/components/layout/Forbidden'
+import { UsersTableSkeleton } from '@/components/skeletons/UsersTableSkeleton'
 
 type EditForm = {
   name: string
@@ -153,17 +155,14 @@ export default function Users() {
     }
   }
 
+  // 権限がなければ403
   if (isForbidden) {
-    return (
-      <div className="p-4">
-        <h2 className="text-lg font-semibold">403</h2>
-        <p className="text-sm text-neutral-600">このページを表示する権限がありません</p>
-      </div>
-    )
+    return <Forbidden />
   }
 
+  // ロード中はスケルトン表示
   if (loading) {
-    return <div className="p-4 text-sm text-neutral-600">読み込み中...</div>
+    return <UsersTableSkeleton />
   }
 
   return (
