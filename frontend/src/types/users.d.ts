@@ -14,3 +14,10 @@ export type UpdateUserPayload = Partial<{
   password: string
   role: UserRole
 }>
+
+export type CreateUserPayload = {
+  name: string
+  email: string
+  password: string
+  role: UserRole
+}

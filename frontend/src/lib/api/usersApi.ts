@@ -1,5 +1,5 @@
 import { req } from './client'
-import type { UserListItem, UpdateUserPayload } from '@/types/users'
+import type { UserListItem, UpdateUserPayload, CreateUserPayload } from '@/types/users'
 
 /**
  * @description ユーザー一覧を取得する
@@ -22,6 +22,19 @@ export async function updateUser(
 ): Promise<UserListItem> {
   const res = await req<{ user: UserListItem }>(`/api/v1/users/${userId}`, {
     method: 'PATCH',
+    body: JSON.stringify(payload),
+  })
+  return res.user
+}
+
+/**
+ * @description 新規ユーザーを作成する
+ * @param payload 作成内容
+ * @returns 作成後のユーザー情報
+ */
+export async function createUser(payload: CreateUserPayload): Promise<UserListItem> {
+  const res = await req<{ user: UserListItem }>('/api/v1/users', {
+    method: 'POST',
     body: JSON.stringify(payload),
   })
   return res.user

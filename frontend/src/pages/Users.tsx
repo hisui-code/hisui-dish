@@ -18,10 +18,16 @@ function UsersContent() {
     deletingId,
     saving,
     form,
+    isCreating,
+    createForm,
     setForm,
+    setCreateForm,
     startEdit,
     cancelEdit,
+    openCreate,
+    cancelCreate,
     saveUser,
+    saveCreateUser,
     removeUser,
   } = useUsersPage()
 
@@ -32,7 +38,7 @@ function UsersContent() {
 
   return (
     <div className="p-4 space-y-4">
-      <UsersPageHeader />
+      <UsersPageHeader onClickNew={openCreate} />
 
       {errorMessage && (
         <div className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -44,11 +50,16 @@ function UsersContent() {
         editingId={editingId}
         deletingId={deletingId}
         saving={saving}
+        isCreating={isCreating}
         form={form}
+        createForm={createForm}
         setForm={setForm}
+        setCreateForm={setCreateForm}
         startEdit={startEdit}
         cancelEdit={cancelEdit}
+        cancelCreate={cancelCreate}
         saveUser={saveUser}
+        saveCreateUser={saveCreateUser}
         removeUser={removeUser}
       />
     </div>

@@ -1,10 +1,13 @@
 import { useState } from 'react'
-import { deleteUser, updateUser } from '@/lib/api/usersApi'
+import { createUser, deleteUser, updateUser } from '@/lib/api/usersApi'
 import type { EditForm } from './useUserEditState'
+import type { CreateForm } from './useUserCreateState'
 
 type Params = {
   form: EditForm
+  createForm: CreateForm
   cancelEdit: () => void
+  cancelCreate: () => void
   setErrorMessage: (message: string) => void
   refetchUsers: () => Promise<unknown>
 }
@@ -18,7 +21,11 @@ export function useUsersActions(params: Params) {
   const [saving, setSaving] = useState<boolean>(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
 
-  // 指定したユーザーを更新する
+  /**
+   * @description 指定ユーザーを更新する
+   * @param userId 更新対象ユーザーID
+   * @returns Promise<void>
+   */
   const saveUser = async (userId: number): Promise<void> => {
     setSaving(true)
     params.setErrorMessage('')
@@ -43,7 +50,36 @@ export function useUsersActions(params: Params) {
     }
   }
 
-  // 指定したユーザーを削除する
+  /**
+   * @description 新規ユーザーを作成する
+   * @returns Promise<void>
+   */
+  const saveCreateUser = async (): Promise<void> => {
+    setSaving(true)
+    params.setErrorMessage('')
+
+    try {
+      await createUser({
+        name: params.createForm.name,
+        email: params.createForm.email,
+        password: params.createForm.password,
+        role: params.createForm.role,
+      })
+      await params.refetchUsers()
+      params.cancelCreate()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'unknown_error'
+      params.setErrorMessage(message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  /**
+   * @description 指定ユーザーを削除する
+   * @param userId 削除対象ユーザーID
+   * @returns Promise<void>
+   */
   const removeUser = async (userId: number): Promise<void> => {
     const ok = window.confirm('このユーザーを削除しますか？')
     if (!ok) return
@@ -68,6 +104,7 @@ export function useUsersActions(params: Params) {
     saving,
     deletingId,
     saveUser,
+    saveCreateUser,
     removeUser,
   }
 }
