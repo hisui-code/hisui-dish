@@ -3,7 +3,7 @@ import type {
   UsersActionModel,
   UsersCreateModel,
   UsersEditModel,
-} from '@/hooks/users/useUsersPage'
+} from '@/types/usersPage'
 
 type Props = {
   users: UserListItem[]
