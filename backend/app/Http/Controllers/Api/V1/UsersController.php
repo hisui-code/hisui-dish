@@ -33,6 +33,29 @@ class UsersController extends Controller
     }
 
     /**
+     * 指定ユーザーを返す
+     * @param Request $request リクエスト
+     * @param string $userId ユーザーID
+     * @return JsonResponse ユーザー情報
+     */
+    public function show(Request $request, string $userId): JsonResponse
+    {
+        // 本人またはadminだけが指定ユーザーを参照できる
+        if (!$this->canAccessTargetUser($request, $userId)) {
+            return $this->forbidden();
+        }
+
+        $user = $this->findUserById($userId);
+        if (!$user) {
+            return $this->notFound();
+        }
+
+        return response()->json([
+            'user' => $this->serializeUser($user),
+        ], 200);
+    }
+
+    /**
      * 指定ユーザーを更新する
      * @param UpdateUserRequest $request リクエスト
      * @param string $userId ユーザーID
@@ -40,6 +63,16 @@ class UsersController extends Controller
      */
     public function update(UpdateUserRequest $request, string $userId): JsonResponse
     {
+        // 本人またはadmin以外の更新を拒否する
+        if (!$this->canAccessTargetUser($request, $userId)) {
+            return $this->forbidden();
+        }
+
+        // 非adminはroleを更新できない
+        if (!$this->isAdmin($request) && array_key_exists('role', $request->validated())) {
+            return $this->forbidden();
+        }
+
         // 先に対象ユーザーの存在を確認する
         $user = $this->findUserById($userId);
         if (!$user) {
@@ -183,5 +216,49 @@ class UsersController extends Controller
         return response()->json([
             'error' => 'self_delete_forbidden',
         ], 409);
+    }
+
+    /**
+     * 本人またはadminかを判定する
+     * @param Request $request リクエスト
+     * @param string $userId 対象ユーザーID
+     * @return bool 許可可否
+     */
+    private function canAccessTargetUser(Request $request, string $userId): bool
+    {
+        $currentUser = $request->user() ?? Auth::user();
+        if (!$currentUser) {
+            return false;
+        }
+
+        // adminは全ユーザーにアクセス可能
+        if ($this->isAdmin($request)) {
+            return true;
+        }
+
+        // 非adminは本人ID一致時のみアクセス可能
+        return (string) $currentUser->id === $userId;
+    }
+
+    /**
+     * 現在ユーザーがadminかを判定する
+     * @param Request $request リクエスト
+     * @return bool adminならtrue
+     */
+    private function isAdmin(Request $request): bool
+    {
+        $currentUser = $request->user() ?? Auth::user();
+        return (bool) $currentUser && isset($currentUser->role) && (string) $currentUser->role === 'admin';
+    }
+
+    /**
+     * forbiddenレスポンスを返す
+     * @return JsonResponse エラーレスポンス
+     */
+    private function forbidden(): JsonResponse
+    {
+        return response()->json([
+            'error' => 'forbidden',
+        ], 403);
     }
 }

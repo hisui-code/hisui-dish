@@ -49,7 +49,11 @@ Route::prefix('v1')
         // Users
         Route::middleware(['api.auth', 'require.admin'])->group(function () {
             Route::get('users', [UsersController::class, 'index']);
-            Route::patch('users/{user_id}', [UsersController::class, 'update']);
             Route::delete('users/{user_id}', [UsersController::class, 'destroy']);
+        });
+
+        Route::middleware(['api.auth'])->group(function () {
+            Route::get('users/{user_id}', [UsersController::class, 'show']);
+            Route::patch('users/{user_id}', [UsersController::class, 'update']);
         });
     });
