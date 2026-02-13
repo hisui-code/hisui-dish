@@ -37,7 +37,6 @@
   - なぜ必要か
   - 代替案はあるか
   - 影響範囲
-  - 最小構成で導入する方法
 
 ---
 
@@ -157,6 +156,11 @@ function buildUtcRange(DateTimeImmutable $startJst, DateTimeImmutable $endJst): 
 
 - コンポーネントは `function` 宣言
 - 内部関数はアロー関数
+- 画面は `Page`、表示は `components`、ロジックは `hooks` / `lib` に分離する
+- サーバー状態（APIデータ）は React Query で管理し、UI状態と混在させない
+- API呼び出しは `lib/api` に集約し、コンポーネント内で直接 `fetch` しない
+- フォームは小規模なら `useState` でもよく、項目や検証が複雑化したら React Hook Form + Zod を採用する
+- `useEffect` は副作用に限定し、計算値は `useMemo` / 純関数で扱う
 - APIレスポンス型は明示する
 - 時間・単位は名前に含める（`_sec`, `_g`, `_hz` など）
 
