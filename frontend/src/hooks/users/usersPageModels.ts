@@ -9,21 +9,21 @@ import type {
   UsersEditModel,
 } from '@/types/usersPage'
 
-type BuildUsersEditModelParams = {
+type CreateUsersEditModelParams = {
   editingId: number | null
   editForm: UsersEditForm
   setEditingId: Dispatch<SetStateAction<number | null>>
   setEditForm: Dispatch<SetStateAction<UsersEditForm>>
 }
 
-type BuildUsersCreateModelParams = {
+type CreateUsersCreateModelParams = {
   isCreating: boolean
   createForm: UsersCreateForm
   setIsCreating: Dispatch<SetStateAction<boolean>>
   setCreateForm: Dispatch<SetStateAction<UsersCreateForm>>
 }
 
-type BuildUsersActionModelParams = {
+type CreateUsersActionModelParams = {
   saving: boolean
   deletingId: number | null
   editForm: UsersEditForm
@@ -40,7 +40,7 @@ type BuildUsersActionModelParams = {
  * @description 編集フォームの初期値を作成する
  * @returns 編集フォーム初期値
  */
-export function buildInitialEditForm(): UsersEditForm {
+export function createInitialEditForm(): UsersEditForm {
   return {
     name: '',
     email: '',
@@ -53,7 +53,7 @@ export function buildInitialEditForm(): UsersEditForm {
  * @description 新規作成フォームの初期値を作成する
  * @returns 新規作成フォーム初期値
  */
-export function buildInitialCreateForm(): UsersCreateForm {
+export function createInitialCreateForm(): UsersCreateForm {
   return {
     name: '',
     email: '',
@@ -67,7 +67,7 @@ export function buildInitialCreateForm(): UsersCreateForm {
  * @param params 編集状態と更新関数
  * @returns 編集モデル
  */
-export function buildUsersEditModel(params: BuildUsersEditModelParams): UsersEditModel {
+export function createUsersEditModel(params: CreateUsersEditModelParams): UsersEditModel {
   /**
    * @description 編集対象のユーザーを設定する
    * @param user 編集対象ユーザー
@@ -90,7 +90,7 @@ export function buildUsersEditModel(params: BuildUsersEditModelParams): UsersEdi
    */
   const onCancelEdit = (): void => {
     params.setEditingId(null)
-    params.setEditForm(buildInitialEditForm())
+    params.setEditForm(createInitialEditForm())
   }
 
   /**
@@ -116,14 +116,14 @@ export function buildUsersEditModel(params: BuildUsersEditModelParams): UsersEdi
  * @param params 新規作成状態と更新関数
  * @returns 新規作成モデル
  */
-export function buildUsersCreateModel(params: BuildUsersCreateModelParams): UsersCreateModel {
+export function createUsersCreateModel(params: CreateUsersCreateModelParams): UsersCreateModel {
   /**
    * @description 新規作成行を開いてフォームを初期化する
    * @returns void
    */
   const onOpenCreate = (): void => {
     params.setIsCreating(true)
-    params.setCreateForm(buildInitialCreateForm())
+    params.setCreateForm(createInitialCreateForm())
   }
 
   /**
@@ -132,7 +132,7 @@ export function buildUsersCreateModel(params: BuildUsersCreateModelParams): User
    */
   const onCancelCreate = (): void => {
     params.setIsCreating(false)
-    params.setCreateForm(buildInitialCreateForm())
+    params.setCreateForm(createInitialCreateForm())
   }
 
   /**
@@ -158,7 +158,7 @@ export function buildUsersCreateModel(params: BuildUsersCreateModelParams): User
  * @param params アクションに必要な状態と操作
  * @returns 保存削除アクションモデル
  */
-export function buildUsersActionModel(params: BuildUsersActionModelParams): UsersActionModel {
+export function createUsersActionModel(params: CreateUsersActionModelParams): UsersActionModel {
   /**
    * @description 指定ユーザーを更新する
    * @param userId 更新対象ユーザーID

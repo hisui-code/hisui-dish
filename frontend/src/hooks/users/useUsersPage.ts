@@ -2,11 +2,11 @@ import { useState } from 'react'
 import type { UsersPageViewModel, UsersCreateForm, UsersEditForm } from '@/types/usersPage'
 import { useUsersQuery } from './useUsersQuery'
 import {
-  buildInitialCreateForm,
-  buildInitialEditForm,
-  buildUsersActionModel,
-  buildUsersCreateModel,
-  buildUsersEditModel,
+  createInitialCreateForm,
+  createInitialEditForm,
+  createUsersActionModel,
+  createUsersCreateModel,
+  createUsersEditModel,
 } from './usersPageModels'
 
 /**
@@ -18,15 +18,15 @@ export function useUsersPage(): UsersPageViewModel {
   const queryState = useUsersQuery()
   // 編集 新規作成 保存中など画面内のUI状態を保持する
   const [editingId, setEditingId] = useState<number | null>(null)
-  const [editForm, setEditForm] = useState<UsersEditForm>(buildInitialEditForm)
+  const [editForm, setEditForm] = useState<UsersEditForm>(createInitialEditForm)
   const [isCreating, setIsCreating] = useState<boolean>(false)
-  const [createForm, setCreateForm] = useState<UsersCreateForm>(buildInitialCreateForm)
+  const [createForm, setCreateForm] = useState<UsersCreateForm>(createInitialCreateForm)
   const [saving, setSaving] = useState<boolean>(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [actionErrorMessage, setActionErrorMessage] = useState<string>('')
 
   // 編集フォームの状態と操作をViewModel化する
-  const editModel = buildUsersEditModel({
+  const editModel = createUsersEditModel({
     editingId,
     editForm,
     setEditingId,
@@ -34,7 +34,7 @@ export function useUsersPage(): UsersPageViewModel {
   })
 
   // 新規作成フォームの状態と操作をViewModel化する
-  const createModel = buildUsersCreateModel({
+  const createModel = createUsersCreateModel({
     isCreating,
     createForm,
     setIsCreating,
@@ -42,7 +42,7 @@ export function useUsersPage(): UsersPageViewModel {
   })
 
   // 保存 削除など副作用を持つ操作をViewModel化する
-  const actionModel = buildUsersActionModel({
+  const actionModel = createUsersActionModel({
     saving,
     deletingId,
     editForm,
