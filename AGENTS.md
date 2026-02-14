@@ -157,12 +157,16 @@ function buildUtcRange(DateTimeImmutable $startJst, DateTimeImmutable $endJst): 
 - コンポーネントは `function` 宣言
 - 内部関数はアロー関数
 - 画面は `Page`、表示は `components`、ロジックは `hooks` / `lib` に分離する
+- `components` は表示責務のみとし、API呼び出し・`useQuery`/`useMutation`・認可判定・エラー整形を直接持たない
+- 取得/更新/認可/エラー整形/フォーム状態は `hooks` に集約し、`components` はpropsを受けて描画とイベント通知のみ行う
+- 例外は1画面限定の極小ロジックのみで、理由をコメントで残す
 - サーバー状態（APIデータ）は React Query で管理し、UI状態と混在させない
 - API呼び出しは `lib/api` に集約し、コンポーネント内で直接 `fetch` しない
 - フォームは小規模なら `useState` でもよく、項目や検証が複雑化したら React Hook Form + Zod を採用する
 - `useEffect` は副作用に限定し、計算値は `useMemo` / 純関数で扱う
 - APIレスポンス型は明示する
 - 時間・単位は名前に含める（`_sec`, `_g`, `_hz` など）
+- ベストプラクティスは.agents/skillsを確認し適していることを確認する
 
 ---
 
