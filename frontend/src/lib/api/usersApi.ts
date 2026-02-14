@@ -28,6 +28,16 @@ export async function updateUser(
 }
 
 /**
+ * @description 指定ユーザーの情報を取得する
+ * @param userId 取得対象ユーザーID
+ * @returns ユーザー情報
+ */
+export async function fetchUserById(userId: number): Promise<UserListItem> {
+  const res = await req<{ user: UserListItem }>(`/api/v1/users/${userId}`, { method: 'GET' })
+  return res.user
+}
+
+/**
  * @description 新規ユーザーを作成する
  * @param payload 作成内容
  * @returns 作成後のユーザー情報

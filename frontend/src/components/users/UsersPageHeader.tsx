@@ -6,6 +6,7 @@ type Props = {
 
 /**
  * @description users管理ページのヘッダー領域を表示する
+ * @param onClickNew 新規作成モーダルを開く処理
  * @returns ヘッダー表示
  */
 export function UsersPageHeader({ onClickNew }: Props) {
