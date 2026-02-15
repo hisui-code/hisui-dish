@@ -39,7 +39,11 @@ export default function MobileSidebarDrawer({
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <Sidebar currentUserName={currentUserName} onOpenSelfSettings={onOpenSelfSettings} />
+        <Sidebar
+          currentUserName={currentUserName}
+          onOpenSelfSettings={onOpenSelfSettings}
+          onNavigate={onClose}
+        />
       </div>
     </div>
   )

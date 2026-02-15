@@ -4,6 +4,7 @@ type Props = {
   to: string
   icon: React.ReactNode
   label: string
+  onClick?: () => void
 }
 
 /**
@@ -13,10 +14,11 @@ type Props = {
  * @param label 表示ラベル
  * @returns サイドバーナビ項目
  */
-export default function SidebarNavItem({ to, icon, label }: Props) {
+export default function SidebarNavItem({ to, icon, label, onClick }: Props) {
   return (
     <NavLink
       to={to}
+      onClick={onClick}
       className={({ isActive }) =>
         isActive
           ? 'block bg-neutral-100 text-neutral-800 rounded-xl'
