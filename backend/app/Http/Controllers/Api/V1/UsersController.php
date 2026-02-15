@@ -15,6 +15,7 @@ class UsersController extends Controller
 {
     /**
      * ユーザー一覧を返す
+     *
      * @return JsonResponse 一覧レスポンス
      */
     public function index(): JsonResponse
@@ -33,20 +34,46 @@ class UsersController extends Controller
     }
 
     /**
+     * ログイン中ユーザー情報を返す
+     *
+     * @param  Request  $request  リクエスト
+     * @return JsonResponse ユーザー情報
+     */
+    public function me(Request $request): JsonResponse
+    {
+        // 認証済みユーザー情報を取得
+        $currentUser = $request->user() ?? Auth::user();
+        if (! $currentUser) {
+            return $this->forbidden();
+        }
+
+        // DBから取得してレスポンス形式を統一
+        $user = $this->findUserById((string) $currentUser->id);
+        if (! $user) {
+            return $this->notFound();
+        }
+
+        return response()->json([
+            'user' => $this->serializeUser($user),
+        ], 200);
+    }
+
+    /**
      * 指定ユーザーを返す
-     * @param Request $request リクエスト
-     * @param string $userId ユーザーID
+     *
+     * @param  Request  $request  リクエスト
+     * @param  string  $userId  ユーザーID
      * @return JsonResponse ユーザー情報
      */
     public function show(Request $request, string $userId): JsonResponse
     {
         // 本人またはadminだけが指定ユーザーを参照できる
-        if (!$this->canAccessTargetUser($request, $userId)) {
+        if (! $this->canAccessTargetUser($request, $userId)) {
             return $this->forbidden();
         }
 
         $user = $this->findUserById($userId);
-        if (!$user) {
+        if (! $user) {
             return $this->notFound();
         }
 
@@ -57,25 +84,26 @@ class UsersController extends Controller
 
     /**
      * 指定ユーザーを更新する
-     * @param UpdateUserRequest $request リクエスト
-     * @param string $userId ユーザーID
+     *
+     * @param  UpdateUserRequest  $request  リクエスト
+     * @param  string  $userId  ユーザーID
      * @return JsonResponse 更新結果
      */
     public function update(UpdateUserRequest $request, string $userId): JsonResponse
     {
         // 本人またはadmin以外の更新を拒否する
-        if (!$this->canAccessTargetUser($request, $userId)) {
+        if (! $this->canAccessTargetUser($request, $userId)) {
             return $this->forbidden();
         }
 
         // 非adminはroleを更新できない
-        if (!$this->isAdmin($request) && array_key_exists('role', $request->validated())) {
+        if (! $this->isAdmin($request) && array_key_exists('role', $request->validated())) {
             return $this->forbidden();
         }
 
         // 先に対象ユーザーの存在を確認する
         $user = $this->findUserById($userId);
-        if (!$user) {
+        if (! $user) {
             return $this->notFound();
         }
 
@@ -91,7 +119,7 @@ class UsersController extends Controller
 
         // 更新後の最新状態を返すため再取得する
         $updatedUser = $this->findUserById($userId);
-        if (!$updatedUser) {
+        if (! $updatedUser) {
             return $this->notFound();
         }
 
@@ -102,15 +130,16 @@ class UsersController extends Controller
 
     /**
      * 指定ユーザーを削除する
-     * @param Request $request リクエスト
-     * @param string $userId ユーザーID
+     *
+     * @param  Request  $request  リクエスト
+     * @param  string  $userId  ユーザーID
      * @return JsonResponse 削除結果
      */
     public function destroy(Request $request, string $userId): JsonResponse
     {
         $currentUser = $request->user() ?? Auth::user();
         // 自己削除を禁止して管理者アカウント喪失事故を防ぐ
-        if (!$currentUser || (string) $currentUser->id === $userId) {
+        if (! $currentUser || (string) $currentUser->id === $userId) {
             return $this->selfDeleteForbidden();
         }
 
@@ -128,7 +157,8 @@ class UsersController extends Controller
 
     /**
      * レスポンス用にユーザー情報を整形する
-     * @param object $user DBから取得したユーザー行
+     *
+     * @param  object  $user  DBから取得したユーザー行
      * @return array{id:int,name:?string,email:string,role:string,updated_at:?string} ユーザー情報
      */
     private function serializeUser(object $user): array
@@ -144,7 +174,8 @@ class UsersController extends Controller
 
     /**
      * 指定IDのユーザーを取得する
-     * @param string $userId ユーザーID
+     *
+     * @param  string  $userId  ユーザーID
      * @return object|null ユーザー行。未存在ならnull
      */
     private function findUserById(string $userId): ?object
@@ -156,7 +187,8 @@ class UsersController extends Controller
 
     /**
      * 更新可能項目だけを更新用配列に変換する
-     * @param array<string,mixed> $payload バリデーション済み入力
+     *
+     * @param  array<string,mixed>  $payload  バリデーション済み入力
      * @return array<string,mixed> DB更新用配列
      */
     private function buildUpdateData(array $payload): array
@@ -185,19 +217,22 @@ class UsersController extends Controller
 
     /**
      * UTCの日時文字列をミリ秒付きISO8601に変換する
-     * @param mixed $value 変換対象
+     *
+     * @param  mixed  $value  変換対象
      * @return string|null 変換結果
      */
     private function formatUtcMillis(mixed $value): ?string
     {
-        if (!is_string($value) || $value === '') {
+        if (! is_string($value) || $value === '') {
             return null;
         }
+
         return CarbonImmutable::parse($value, 'UTC')->utc()->format('Y-m-d\\TH:i:s.v\\Z');
     }
 
     /**
      * not_foundレスポンスを返す
+     *
      * @return JsonResponse エラーレスポンス
      */
     private function notFound(): JsonResponse
@@ -209,6 +244,7 @@ class UsersController extends Controller
 
     /**
      * 自己削除禁止レスポンスを返す
+     *
      * @return JsonResponse エラーレスポンス
      */
     private function selfDeleteForbidden(): JsonResponse
@@ -220,14 +256,15 @@ class UsersController extends Controller
 
     /**
      * 本人またはadminかを判定する
-     * @param Request $request リクエスト
-     * @param string $userId 対象ユーザーID
+     *
+     * @param  Request  $request  リクエスト
+     * @param  string  $userId  対象ユーザーID
      * @return bool 許可可否
      */
     private function canAccessTargetUser(Request $request, string $userId): bool
     {
         $currentUser = $request->user() ?? Auth::user();
-        if (!$currentUser) {
+        if (! $currentUser) {
             return false;
         }
 
@@ -242,17 +279,20 @@ class UsersController extends Controller
 
     /**
      * 現在ユーザーがadminかを判定する
-     * @param Request $request リクエスト
+     *
+     * @param  Request  $request  リクエスト
      * @return bool adminならtrue
      */
     private function isAdmin(Request $request): bool
     {
         $currentUser = $request->user() ?? Auth::user();
+
         return (bool) $currentUser && isset($currentUser->role) && (string) $currentUser->role === 'admin';
     }
 
     /**
      * forbiddenレスポンスを返す
+     *
      * @return JsonResponse エラーレスポンス
      */
     private function forbidden(): JsonResponse

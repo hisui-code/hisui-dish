@@ -53,6 +53,7 @@ Route::prefix('v1')
         });
 
         Route::middleware(['api.auth'])->group(function () {
+            Route::get('me', [UsersController::class, 'me']);
             Route::get('users/{user_id}', [UsersController::class, 'show']);
             Route::patch('users/{user_id}', [UsersController::class, 'update']);
         });

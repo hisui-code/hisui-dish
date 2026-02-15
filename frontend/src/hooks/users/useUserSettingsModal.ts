@@ -72,8 +72,11 @@ export function useUserSettingsModal(
   const queryClient = useQueryClient()
   const isAdmin = role === 'admin'
 
+  // 入力中のフォーム値を保持する
   const [form, setForm] = useState<UserSettingsForm | null>(null)
+  // 保存失敗時に表示するエラーメッセージを保持する
   const [saveErrorMessage, setSaveErrorMessage] = useState<string>('')
+  // モーダル1回のオープン中に初期化を1回に制御する
   const hasInitializedRef = useRef<boolean>(false)
 
   const userQuery = useQuery({
@@ -142,20 +145,26 @@ export function useUserSettingsModal(
       })
     },
     onSuccess: async () => {
+      // 保存成功後は関連クエリを再取得して画面表示を同期する
       // 一覧キャッシュを更新し、編集時は対象ユーザー詳細も更新する
       await queryClient.invalidateQueries({ queryKey: ['users'] })
       if (params.userId !== null) {
         await queryClient.invalidateQueries({ queryKey: ['user', params.userId] })
       }
+      // 設定変更時にサイドバー表示名を即時反映する
+      await queryClient.invalidateQueries({ queryKey: ['me'] })
+
       await params.onSaved()
       params.onClose()
     },
     onError: (error) => {
+      // 例外型に依存しないようエラーメッセージを正規化して保持する
       const message = error instanceof Error ? error.message : 'unknown_error'
       setSaveErrorMessage(message)
     },
   })
 
+  // createでは取得処理がないためfetchエラーは表示しない
   const fetchErrorMessage =
     params.mode === 'edit'
       ? userQuery.error instanceof Error
@@ -166,11 +175,13 @@ export function useUserSettingsModal(
       : ''
 
   const onChangeForm = (patch: Partial<UserSettingsForm>): void => {
+    // 変更された項目だけを部分更新する
     setForm((prev) => (prev ? { ...prev, ...patch } : prev))
   }
 
   const onSubmit = (): void => {
     if (!form) return
+    // 再送信時は前回エラーをクリアしてから保存する
     setSaveErrorMessage('')
     saveMutation.mutate(form)
   }

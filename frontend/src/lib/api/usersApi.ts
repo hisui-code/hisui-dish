@@ -28,6 +28,15 @@ export async function updateUser(
 }
 
 /**
+ * @description ログイン中ユーザー情報を取得する
+ * @returns ログイン中ユーザー情報
+ */
+export async function fetchMe(): Promise<UserListItem> {
+  const res = await req<{ user: UserListItem }>('/api/v1/me', { method: 'GET' })
+  return res.user
+}
+
+/**
  * @description 指定ユーザーの情報を取得する
  * @param userId 取得対象ユーザーID
  * @returns ユーザー情報

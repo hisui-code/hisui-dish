@@ -10,6 +10,7 @@ import MobileSidebarDrawer from './components/layout/sidebar/MobileSidebarDrawer
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import UserSettingsModal from '@/components/users/UserSettingsModal'
 import { useSelfSettingsModal } from './hooks/layout/useSelfSettingsModal'
+import { useMeQuery } from '@/hooks/auth/useMeQuery'
 
 /**
  * @description 認証状態に応じて保護ルートを制御する。
@@ -51,7 +52,8 @@ function LoginRoute() {
  */
 function AppLayout() {
   const auth = useAuth()
-  const me = auth.me
+  const meQuery = useMeQuery()
+  const me = meQuery.data ?? auth.me
 
   const {
     mobileOpen,
