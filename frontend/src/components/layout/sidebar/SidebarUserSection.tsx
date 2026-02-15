@@ -1,5 +1,5 @@
+import SidebarActionItem from '@/components/layout/sidebar/SidebarActionItem'
 import { LuCat } from 'react-icons/lu'
-import { Button } from '../ui/button'
 
 type SidebarUserSectionProps = {
   currentUserName: string
@@ -16,16 +16,8 @@ export default function SidebarUserSection({
   onOpenSelfSettings,
 }: SidebarUserSectionProps) {
   return (
-    <>
-      <Button
-        type="button"
-        variant="ghost"
-        onClick={onOpenSelfSettings}
-        className="w-full justify-start gap-3 rounded-xl px-3.5 mb-2  text-left text-[15px]  hover:bg-neutral-100 hover:text-neutral-800"
-      >
-        <LuCat size={16} />
-        {currentUserName}
-      </Button>
-    </>
+    <SidebarActionItem icon={<LuCat size={16} />} onClick={onOpenSelfSettings}>
+      {currentUserName}
+    </SidebarActionItem>
   )
 }
