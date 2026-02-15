@@ -4,6 +4,7 @@ type MobileSidebarDrawerProps = {
   isOpen: boolean
   onClose: () => void
   currentUserName: string
+  isAdmin: boolean
   onOpenSelfSettings: () => void
 }
 
@@ -18,6 +19,7 @@ export default function MobileSidebarDrawer({
   isOpen,
   onClose,
   currentUserName,
+  isAdmin,
   onOpenSelfSettings,
 }: MobileSidebarDrawerProps) {
   return (
@@ -41,6 +43,7 @@ export default function MobileSidebarDrawer({
       >
         <Sidebar
           currentUserName={currentUserName}
+          isAdmin={isAdmin}
           onOpenSelfSettings={onOpenSelfSettings}
           onNavigate={onClose}
         />

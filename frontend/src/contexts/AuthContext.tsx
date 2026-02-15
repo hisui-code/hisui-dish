@@ -2,7 +2,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import {
   getAuthToken,
-  getAuthRole,
   setAuthToken,
   initAuthTokenFromStorage,
   login as apiLogin,
@@ -13,7 +12,6 @@ type AuthContextValue = {
   ready: boolean
   loggedIn: boolean
   authToken: string | null
-  role: 'admin' | 'user' | 'guest' | null
   loginWithPassword: (email: string, password: string) => Promise<void>
   loginWithToken: (token: string) => void
   logout: () => void
@@ -30,18 +28,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false)
   const [loggedIn, setLoggedIn] = useState(false)
   const [authTokenState, setAuthTokenState] = useState<string | null>(null)
-  const [role, setRole] = useState<'admin' | 'user' | 'guest' | null>(null)
 
   // 初期マウント時に localStorage からトークンを復元
   useEffect(() => {
     // 初期表示時に永続化された認証情報を復元する
     initAuthTokenFromStorage()
     const token = getAuthToken()
-    const restoredRole = getAuthRole()
 
     // Contextで扱う状態へ反映して描画判定に利用する
     setAuthTokenState(token)
-    setRole(restoredRole)
 
     setLoggedIn(!!token)
     setReady(true)
@@ -54,8 +49,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 永続化ストアとContext状態の両方を同期してログイン状態にする
     setAuthToken(token)
     setAuthTokenState(token) // コンテキスト内の状態も更新
-    // login() 側で保存された最新roleを反映する
-    setRole(getAuthRole())
 
     setLoggedIn(true)
   }
@@ -73,7 +66,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // ローカル保存とメモリ状態の両方をクリアする
     apiLogout()
     setAuthTokenState(null)
-    setRole(null)
     setLoggedIn(false)
   }
 
@@ -81,7 +73,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ready,
     loggedIn,
     authToken: authTokenState,
-    role,
     loginWithPassword,
     loginWithToken,
     logout,

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useAuth } from '@/contexts/AuthContext'
 import { createUser, fetchUserById, updateUser } from '@/lib/api/usersApi'
 import type { UserListItem, UserRole } from '@/types/users'
+import { useMeQuery } from '@/hooks/auth/useMeQuery'
 
 type UseUserSettingsModalParams = {
   open: boolean
@@ -68,9 +68,10 @@ function createInitialCreateForm(): UserSettingsForm {
 export function useUserSettingsModal(
   params: UseUserSettingsModalParams
 ): UseUserSettingsModalResult {
-  const { role } = useAuth()
+  const meQuery = useMeQuery()
+  const me = meQuery.data
+  const isAdmin = me?.role === 'admin'
   const queryClient = useQueryClient()
-  const isAdmin = role === 'admin'
 
   // 入力中のフォーム値を保持する
   const [form, setForm] = useState<UserSettingsForm | null>(null)

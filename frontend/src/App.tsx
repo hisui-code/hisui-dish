@@ -53,6 +53,7 @@ function LoginRoute() {
 function AppLayout() {
   const meQuery = useMeQuery()
   const me = meQuery.data
+  const isAdmin = me?.role === 'admin'
 
   const {
     mobileOpen,
@@ -74,7 +75,11 @@ function AppLayout() {
       <div className="flex w-full md:h-[calc(100vh-var(--header-h))] md:overflow-hidden">
         {/* サイドバー（デスクトップ：常時表示 / モバイル：非表示） */}
         <aside className="hidden w-[260px] shrink-0 border-r bg-emerald-600 md:block md:h-full md:overflow-y-auto">
-          <Sidebar currentUserName={me?.name ?? ''} onOpenSelfSettings={openSelfSettings} />
+          <Sidebar
+            currentUserName={me?.name ?? ''}
+            isAdmin={isAdmin}
+            onOpenSelfSettings={openSelfSettings}
+          />
         </aside>
 
         {/* メイン */}
@@ -87,6 +92,7 @@ function AppLayout() {
         isOpen={mobileOpen}
         onClose={closeMobile}
         currentUserName={me?.name ?? ''}
+        isAdmin={isAdmin}
         onOpenSelfSettings={openSelfSettings}
       />
 
