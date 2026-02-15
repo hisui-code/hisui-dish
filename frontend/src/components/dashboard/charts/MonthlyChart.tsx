@@ -8,7 +8,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 
-import { useMonthlyDailyTotals } from '@/hooks/useMonthlyDailyTotals'
+import { useMonthlyDailyTotals } from '@/hooks/dashboard/useMonthlyDailyTotals'
 
 import { jst } from '@/lib/date'
 

@@ -5,7 +5,7 @@ import { jst } from '@/lib/date'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import SimpleBarChart from '@/components/charts/SimpleBarChart'
-import { useYearMonthlyTotals } from '@/hooks/useYearMonthlyTotals'
+import { useYearMonthlyTotals } from '@/hooks/dashboard/useYearMonthlyTotals'
 
 import { FaChartLine } from 'react-icons/fa6'
 

@@ -5,7 +5,7 @@ import { jst } from '@/lib/date'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { getWeekStartIsoJst } from '@/lib/resources/metricsResource'
-import { useWeeklyTotalsMetrics } from '@/hooks/useWeeklyTotals'
+import { useWeeklyTotalsMetrics } from '@/hooks/dashboard/useWeeklyTotals'
 import WeeklyBarChart from '@/components/charts/WeeklyBarChart'
 
 import type { WeeklyBarChartRow } from '@/components/charts/WeeklyBarChart'

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { FiArrowDown, FiArrowUp } from 'react-icons/fi'
 import { FaFish, FaPaw } from 'react-icons/fa'
 
-import type { DashboardMergedData } from '@/hooks/useDashboardData'
+import type { DashboardMergedData } from '@/hooks/dashboard/useDashboardData'
 
 // ダッシュボード上部に並べる KPI カード群
 

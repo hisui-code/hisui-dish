@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { fetchDashboard } from '@/lib/api/dashboardApi'
-import { useThisWeekTotal } from '@/hooks/useThisWeekTotal'
-import { useMonthTotalVsPrev } from '@/hooks/useMonthTotalVsPrev'
+import { useThisWeekTotal } from '@/hooks/dashboard/useThisWeekTotal'
+import { useMonthTotalVsPrev } from '@/hooks/dashboard/useMonthTotalVsPrev'
 
 import { resolveDeviceId } from '@/lib/api/config'
 import { jst } from '@/lib/date'
@@ -11,7 +11,6 @@ import type { DashboardData } from '@/types/dashboard'
 export type DashboardMergedData = DashboardData & {
   // 今週の合計g
   thisWeekTotalGrams: number
-
   // 今月の合計g
   thisMonthTotalGrams: number
   // 前月比の差分g

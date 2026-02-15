@@ -1,5 +1,5 @@
 import { useState, Suspense } from 'react'
-import { useLogsData } from '@/hooks/useLogsData'
+import { useLogsData } from '@/hooks/logs/useLogsData'
 import type { TimeBand } from '@/types/logs'
 import LogsFilter from '@/components/logs/LogsFilter'
 import LogsList from '@/components/logs/LogsList'

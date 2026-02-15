@@ -2,7 +2,7 @@ import { Suspense, useState } from 'react'
 import DeviceSettingsForm from '../components/settings/DeviceSettingsForm'
 import SettingsSkeleton from '../components/skeletons/SettingsSkeleton'
 import { resolveDeviceId } from '@/lib/api/config'
-import useDeviceSetting from '@/hooks/useDeviceSetting'
+import useDeviceSetting from '@/hooks/settings/useDeviceSetting'
 
 const deviceId = resolveDeviceId()
 
