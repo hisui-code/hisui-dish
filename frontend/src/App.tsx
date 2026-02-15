@@ -51,9 +51,8 @@ function LoginRoute() {
  * @returns サイドバーとヘッダーを含むアプリの骨組み
  */
 function AppLayout() {
-  const auth = useAuth()
   const meQuery = useMeQuery()
-  const me = meQuery.data ?? auth.me
+  const me = meQuery.data
 
   const {
     mobileOpen,
@@ -75,10 +74,7 @@ function AppLayout() {
       <div className="flex w-full md:h-[calc(100vh-var(--header-h))] md:overflow-hidden">
         {/* サイドバー（デスクトップ：常時表示 / モバイル：非表示） */}
         <aside className="hidden w-[260px] shrink-0 border-r bg-emerald-600 md:block md:h-full md:overflow-y-auto">
-          <Sidebar
-            currentUserName={me?.name ?? 'Unknown User'}
-            onOpenSelfSettings={openSelfSettings}
-          />
+          <Sidebar currentUserName={me?.name ?? ''} onOpenSelfSettings={openSelfSettings} />
         </aside>
 
         {/* メイン */}
@@ -90,7 +86,7 @@ function AppLayout() {
       <MobileSidebarDrawer
         isOpen={mobileOpen}
         onClose={closeMobile}
-        currentUserName={me?.name ?? 'Unknown User'}
+        currentUserName={me?.name ?? ''}
         onOpenSelfSettings={openSelfSettings}
       />
 

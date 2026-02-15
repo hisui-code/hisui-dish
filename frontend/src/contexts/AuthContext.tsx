@@ -2,8 +2,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import {
   getAuthToken,
-  getAuthUserId,
-  getAuthUserName,
   getAuthRole,
   setAuthToken,
   initAuthTokenFromStorage,
@@ -16,15 +14,9 @@ type AuthContextValue = {
   loggedIn: boolean
   authToken: string | null
   role: 'admin' | 'user' | 'guest' | null
-  me: AuthUser | null
   loginWithPassword: (email: string, password: string) => Promise<void>
   loginWithToken: (token: string) => void
   logout: () => void
-}
-
-type AuthUser = {
-  id: number
-  name: string | null
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -39,23 +31,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loggedIn, setLoggedIn] = useState(false)
   const [authTokenState, setAuthTokenState] = useState<string | null>(null)
   const [role, setRole] = useState<'admin' | 'user' | 'guest' | null>(null)
-  const [me, setMe] = useState<AuthUser | null>(null)
 
   // 初期マウント時に localStorage からトークンを復元
   useEffect(() => {
     // 初期表示時に永続化された認証情報を復元する
     initAuthTokenFromStorage()
     const token = getAuthToken()
-    const restoredUserId = getAuthUserId()
-    const restoredUserName = getAuthUserName()
     const restoredRole = getAuthRole()
 
     // Contextで扱う状態へ反映して描画判定に利用する
     setAuthTokenState(token)
     setRole(restoredRole)
 
-    // user_idがあるときmeを組み立て
-    setMe(restoredUserId !== null ? { id: restoredUserId, name: restoredUserName } : null)
     setLoggedIn(!!token)
     setReady(true)
   }, [])
@@ -69,11 +56,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthTokenState(token) // コンテキスト内の状態も更新
     // login() 側で保存された最新roleを反映する
     setRole(getAuthRole())
-
-    // auth.ts 側へ同期済みの user 情報を取り込む
-    const userId = getAuthUserId()
-    const userName = getAuthUserName()
-    setMe(userId !== null ? { id: userId, name: userName } : null)
 
     setLoggedIn(true)
   }
@@ -92,7 +74,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     apiLogout()
     setAuthTokenState(null)
     setRole(null)
-    setMe(null)
     setLoggedIn(false)
   }
 
@@ -101,7 +82,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loggedIn,
     authToken: authTokenState,
     role,
-    me,
     loginWithPassword,
     loginWithToken,
     logout,

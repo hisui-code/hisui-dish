@@ -3,16 +3,11 @@ import { API_BASE } from './config'
 type LoginResponse = {
   auth_token: string
   body?: {
-    user_id?: number
-    name?: string | null
-    email?: string
     role?: 'admin' | 'user' | 'guest'
   }
 }
 
 let authToken: string | null = null
-let authUserId: number | null = null
-let authUserName: string | null = null
 let authRole: 'admin' | 'user' | 'guest' | null = null
 
 /**
@@ -21,22 +16,6 @@ let authRole: 'admin' | 'user' | 'guest' | null = null
  */
 export function getAuthToken(): string | null {
   return authToken
-}
-
-/**
- * @description 現在のログインユーザーIDを取得する
- * @returns ユーザーID 未設定ならnull
- */
-export function getAuthUserId(): number | null {
-  return authUserId
-}
-
-/**
- * @description 現在のログインユーザー名を取得する
- * @returns ユーザー名 未設定ならnull
- */
-export function getAuthUserName(): string | null {
-  return authUserName
 }
 
 /**
@@ -55,27 +34,18 @@ export function getAuthRole(): 'admin' | 'user' | 'guest' | null {
  */
 export function setAuthToken(token: string | null) {
   // roleは保持したままトークンだけ差し替える
-  setAuthSession(token, authUserId, authUserName, authRole)
+  setAuthSession(token, authRole)
 }
 
 /**
  * @description 認証情報をメモリとlocalStorageへ同期する
  * @param token 認証トークン
- * @param userId ログインユーザーID
- * @param userName ログインユーザー名
  * @param role ユーザーロール
  * @returns void
  */
-export function setAuthSession(
-  token: string | null,
-  userId: number | null = authUserId,
-  userName: string | null = authUserName,
-  role: 'admin' | 'user' | 'guest' | null
-) {
+export function setAuthSession(token: string | null, role: 'admin' | 'user' | 'guest' | null) {
   authToken = token
   authRole = role
-  authUserId = userId
-  authUserName = userName
 
   // ブラウザ以外の環境では永続化処理を行わない
   if (typeof window === 'undefined') return
@@ -86,12 +56,6 @@ export function setAuthSession(
 
   if (role) localStorage.setItem('auth_role', role)
   else localStorage.removeItem('auth_role')
-
-  if (userId !== null) localStorage.setItem('auth_user_id', String(userId))
-  else localStorage.removeItem('auth_user_id')
-
-  if (userName) localStorage.setItem('auth_user_name', userName)
-  else localStorage.removeItem('auth_user_name')
 }
 
 /**
@@ -100,11 +64,6 @@ export function setAuthSession(
 export function initAuthTokenFromStorage() {
   if (typeof window === 'undefined') return
   authToken = localStorage.getItem('auth_token')
-
-  const storedUserId = localStorage.getItem('auth_user_id')
-  authUserId = storedUserId ? Number(storedUserId) : null
-
-  authUserName = localStorage.getItem('auth_user_name')
 
   const storedRole = localStorage.getItem('auth_role')
   authRole =
@@ -132,19 +91,17 @@ export async function login(email: string, password: string) {
   if (!res.ok) throw new Error(body && 'error' in body ? String(body.error) : 'Login failed')
 
   const token = body?.auth_token
-  const userId = body?.body?.user_id ?? null
-  const userName = body?.body?.name ?? null
   const role = body?.body?.role ?? null
 
   if (!token) throw new Error('No token returned')
 
   // ログイン成功時は認証情報をまとめて同期
-  setAuthSession(token, userId, userName, role)
+  setAuthSession(token, role)
   return body
 }
 
 // --- log out ---
 export function logout() {
   // 認証情報を全消去して未ログイン状態に戻す
-  setAuthSession(null, null, null, null)
+  setAuthSession(null, null)
 }
