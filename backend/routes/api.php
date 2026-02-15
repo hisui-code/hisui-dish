@@ -44,17 +44,16 @@ Route::prefix('v1')
             // Log
             Route::get('logs', [LogsController::class, 'index']);
             Route::delete('logs/{log_id}', [LogsController::class, 'destroy']);
-        });
-
-        // Users
-        Route::middleware(['api.auth', 'require.admin'])->group(function () {
-            Route::get('users', [UsersController::class, 'index']);
-            Route::delete('users/{user_id}', [UsersController::class, 'destroy']);
-        });
-
-        Route::middleware(['api.auth'])->group(function () {
+            // User
             Route::get('me', [UsersController::class, 'me']);
             Route::get('users/{user_id}', [UsersController::class, 'show']);
             Route::patch('users/{user_id}', [UsersController::class, 'update']);
+
+            // Users
+            Route::middleware(['require.admin'])->group(function () {
+                Route::get('users', [UsersController::class, 'index']);
+                Route::delete('users/{user_id}', [UsersController::class, 'destroy']);
+            });
         });
+
     });
