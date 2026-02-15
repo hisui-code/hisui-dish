@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CreateSessionRequest;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -18,16 +18,13 @@ class SessionsController extends Controller
     /**
      * ログイン処理
      *
-     * @param  Request  $request  リクエスト
+     * @param  CreateSessionRequest  $request  リクエスト
      * @return JsonResponse ログイン結果
      */
-    public function create(Request $request): JsonResponse
+    public function create(CreateSessionRequest $request): JsonResponse
     {
-        // バリデーション
-        $validated = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string'],
-        ]);
+        // FormRequestで検証済みの資格情報のみを受け取る
+        $validated = $request->validated();
 
         // 資格情報チェック
         if (! Auth::attempt($validated)) {
