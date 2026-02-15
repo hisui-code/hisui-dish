@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createUser, fetchUserById, updateUser } from '@/lib/api/usersApi'
 import type { UserListItem, UserRole } from '@/types/users'
 import { useMeQuery } from '@/hooks/auth/useMeQuery'
+import { validateUserSettingsForm } from '@/schemas/userSettings'
 
 type UseUserSettingsModalParams = {
   open: boolean
@@ -184,7 +185,15 @@ export function useUserSettingsModal(
     if (!form) return
     // 再送信時は前回エラーをクリアしてから保存する
     setSaveErrorMessage('')
-    saveMutation.mutate(form)
+
+    // 送信前にバリデーション
+    const validation = validateUserSettingsForm(params.mode, form)
+    if (!validation.success) {
+      setSaveErrorMessage(validation.message)
+      return
+    }
+
+    saveMutation.mutate(validation.data)
   }
 
   return {
