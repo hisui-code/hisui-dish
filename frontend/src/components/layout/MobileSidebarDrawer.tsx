@@ -3,6 +3,8 @@ import Sidebar from './Sidebar'
 type MobileSidebarDrawerProps = {
   isOpen: boolean
   onClose: () => void
+  currentUserName: string
+  onOpenSelfSettings: () => void
 }
 
 /**
@@ -12,7 +14,12 @@ type MobileSidebarDrawerProps = {
  * @returns モバイルドロワーのUI
  */
 
-export default function MobileSidebarDrawer({ isOpen, onClose }: MobileSidebarDrawerProps) {
+export default function MobileSidebarDrawer({
+  isOpen,
+  onClose,
+  currentUserName,
+  onOpenSelfSettings,
+}: MobileSidebarDrawerProps) {
   return (
     <div
       className={`fixed inset-0 z-30 md:hidden ${
@@ -32,7 +39,7 @@ export default function MobileSidebarDrawer({ isOpen, onClose }: MobileSidebarDr
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <Sidebar />
+        <Sidebar currentUserName={currentUserName} onOpenSelfSettings={onOpenSelfSettings} />
       </div>
     </div>
   )

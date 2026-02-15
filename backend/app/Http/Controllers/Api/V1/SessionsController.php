@@ -17,7 +17,8 @@ class SessionsController extends Controller
 {
     /**
      * ログイン処理
-     * @param Request $request リクエスト
+     *
+     * @param  Request  $request  リクエスト
      * @return JsonResponse ログイン結果
      */
     public function create(Request $request): JsonResponse
@@ -29,12 +30,12 @@ class SessionsController extends Controller
         ]);
 
         // 資格情報チェック
-        if (!Auth::attempt($validated)) {
+        if (! Auth::attempt($validated)) {
             return $this->invalidCredentials();
         }
 
         $user = $request->user() ?? Auth::user();
-        if (!$user) {
+        if (! $user) {
             return $this->invalidCredentials();
         }
 
@@ -47,6 +48,8 @@ class SessionsController extends Controller
         return response()->json([
             'auth_token' => $token,
             'body' => [
+                'user_id' => $user->id,
+                'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->role,
             ],

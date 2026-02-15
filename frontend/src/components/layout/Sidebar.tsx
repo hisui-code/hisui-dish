@@ -2,6 +2,12 @@ import { NavLink } from 'react-router-dom'
 import { FaHome, FaCog, FaBook, FaUsers } from 'react-icons/fa'
 import LogoutButton from './LogoutButton'
 import { useAuth } from '@/contexts/AuthContext'
+import SidebarUserSection from './SidebarUserSection'
+
+type SidebarProps = {
+  currentUserName: string
+  onOpenSelfSettings: () => void
+}
 
 type NavItemKey = 'dashboard' | 'settings' | 'logs' | 'users'
 
@@ -11,13 +17,22 @@ const items: { key: NavItemKey; label: string; icon: React.ReactNode; path: stri
   { key: 'logs', label: 'ログ', icon: <FaBook />, path: '/logs' },
 ]
 
-export default function Sidebar() {
+/**
+ * @description サイドバーのメニューとユーザー操作導線を表示する
+ * @param currentUserName ログインユーザー名
+ * @param onOpenSelfSettings 自分の設定モーダルを開くハンドラ
+ * @returns サイドバーUI
+ */
+export default function Sidebar({ currentUserName, onOpenSelfSettings }: SidebarProps) {
   const { role } = useAuth()
 
-  // 管理者のみusers管理メニューを表示する
+  // adminのみユーザー管理メニューを追加する
   const navItems =
     role === 'admin'
-      ? [...items, { key: 'users' as const, label: 'ユーザー管理', icon: <FaUsers />, path: '/users' }]
+      ? [
+          ...items,
+          { key: 'users' as const, label: 'ユーザー管理', icon: <FaUsers />, path: '/users' },
+        ]
       : items
 
   return (
@@ -42,8 +57,12 @@ export default function Sidebar() {
           ))}
 
           <div className="my-2 border-t border-white/10" />
-          <LogoutButton />
         </nav>
+        <SidebarUserSection
+          currentUserName={currentUserName}
+          onOpenSelfSettings={onOpenSelfSettings}
+        />
+        <LogoutButton />
       </div>
     </aside>
   )

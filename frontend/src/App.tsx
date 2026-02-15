@@ -9,6 +9,8 @@ import Login from './pages/Login'
 import Users from './pages/Users'
 import MobileSidebarDrawer from './components/layout/MobileSidebarDrawer'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import UserSettingsModal from '@/components/users/UserSettingsModal'
+import { useUserSettingsModal } from '@/hooks/users/useUserSettingsModal'
 
 /**
  * @description 認証状態に応じて保護ルートを制御する。
@@ -45,11 +47,34 @@ function LoginRoute() {
 }
 
 /**
- * @description ログイン済みユーザー向けのレイアウトを表示する。
+ * @description ログイン済みユーザー向けのレイアウトを表示する
  * @returns サイドバーとヘッダーを含むアプリの骨組み
  */
 function AppLayout() {
+  const auth = useAuth()
+  const me = auth.me
   const [mobileOpen, setMobileOpen] = useState<boolean>(false)
+  const [isSelfSettingsOpen, setIsSelfSettingsOpen] = useState<boolean>(false)
+
+  /**
+   * @description サイドバーから自分の設定モーダルを開く
+   */
+  const onOpenSelfSettings = () => {
+    // user_idがない状態ではモーダルは開かない
+    if (!me?.id) return
+
+    // モバイルではドロワーを閉じてからモーダルを開く
+    setMobileOpen(false)
+    setIsSelfSettingsOpen(true)
+  }
+
+  const selfSettingsViewModel = useUserSettingsModal({
+    open: isSelfSettingsOpen,
+    mode: 'edit',
+    userId: me?.id ?? null,
+    onClose: () => setIsSelfSettingsOpen(false),
+    onSaved: () => undefined,
+  })
 
   return (
     <div className="min-h-screen w-full bg-neutral-50 md:h-screen md:overflow-hidden md:[--header-h:64px]">
@@ -59,7 +84,10 @@ function AppLayout() {
       <div className="flex w-full md:h-[calc(100vh-var(--header-h))] md:overflow-hidden">
         {/* サイドバー（デスクトップ：常時表示 / モバイル：非表示） */}
         <aside className="hidden w-[260px] shrink-0 border-r bg-emerald-600 md:block md:h-full md:overflow-y-auto">
-          <Sidebar />
+          <Sidebar
+            currentUserName={me?.name ?? 'Unknown User'}
+            onOpenSelfSettings={onOpenSelfSettings}
+          />
         </aside>
 
         {/* メイン */}
@@ -68,7 +96,19 @@ function AppLayout() {
         </main>
       </div>
       {/* モバイル用ドロワー（オーバーレイ + 左スライド） */}
-      <MobileSidebarDrawer isOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
+      <MobileSidebarDrawer
+        isOpen={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        currentUserName={me?.name ?? 'Unknown User'}
+        onOpenSelfSettings={onOpenSelfSettings}
+      />
+
+      {/* ユーザー設定モーダル */}
+      <UserSettingsModal
+        open={isSelfSettingsOpen}
+        onClose={() => setIsSelfSettingsOpen(false)}
+        viewModel={selfSettingsViewModel}
+      />
     </div>
   )
 }

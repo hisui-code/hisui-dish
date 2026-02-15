@@ -2,6 +2,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import {
   getAuthToken,
+  getAuthUserId,
+  getAuthUserName,
   getAuthRole,
   setAuthToken,
   initAuthTokenFromStorage,
@@ -14,40 +16,65 @@ type AuthContextValue = {
   loggedIn: boolean
   authToken: string | null
   role: 'admin' | 'user' | 'guest' | null
+  me: AuthUser | null
   loginWithPassword: (email: string, password: string) => Promise<void>
-  loginWithToken: (token: string, role?: 'admin' | 'user' | 'guest' | null) => void
+  loginWithToken: (token: string) => void
   logout: () => void
+}
+
+type AuthUser = {
+  id: number
+  name: string | null
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
+/**
+ * @description アプリ全体で共有する認証状態と認証操作を提供する
+ * localStorage復元 ログイン反映 ログアウト反映を1箇所に集約する
+ * 画面側は useAuth だけを参照して認証情報を扱えるようにする
+ */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false)
   const [loggedIn, setLoggedIn] = useState(false)
   const [authTokenState, setAuthTokenState] = useState<string | null>(null)
   const [role, setRole] = useState<'admin' | 'user' | 'guest' | null>(null)
+  const [me, setMe] = useState<AuthUser | null>(null)
 
   // 初期マウント時に localStorage からトークンを復元
   useEffect(() => {
     // 初期表示時に永続化された認証情報を復元する
     initAuthTokenFromStorage()
     const token = getAuthToken()
+    const restoredUserId = getAuthUserId()
+    const restoredUserName = getAuthUserName()
     const restoredRole = getAuthRole()
+
     // Contextで扱う状態へ反映して描画判定に利用する
     setAuthTokenState(token)
     setRole(restoredRole)
+
+    // user_idがあるときmeを組み立て
+    setMe(restoredUserId !== null ? { id: restoredUserId, name: restoredUserName } : null)
     setLoggedIn(!!token)
-    // 初期化完了後にルート描画を許可する
     setReady(true)
   }, [])
 
-  // すでに別の場所で取得したトークンでログインする
+  /**
+   * @description 既存トークンを使って認証状態をContextへ同期する
+   */
   const loginWithToken = (token: string) => {
     // 永続化ストアとContext状態の両方を同期してログイン状態にする
     setAuthToken(token)
     setAuthTokenState(token) // コンテキスト内の状態も更新
     // login() 側で保存された最新roleを反映する
     setRole(getAuthRole())
+
+    // auth.ts 側へ同期済みの user 情報を取り込む
+    const userId = getAuthUserId()
+    const userName = getAuthUserName()
+    setMe(userId !== null ? { id: userId, name: userName } : null)
+
     setLoggedIn(true)
   }
 
@@ -62,9 +89,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     // ローカル保存とメモリ状態の両方をクリアする
-    apiLogout() // lib/api/auth 側の状態 & localStorage をクリア
+    apiLogout()
     setAuthTokenState(null)
     setRole(null)
+    setMe(null)
     setLoggedIn(false)
   }
 
@@ -73,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loggedIn,
     authToken: authTokenState,
     role,
+    me,
     loginWithPassword,
     loginWithToken,
     logout,
@@ -81,6 +110,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
+/**
+ * @description 認証コンテキストを取得する共通フック
+ * Provider外での誤使用を早期検知するため例外を投げる
+ */
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext)
   if (!ctx) {
