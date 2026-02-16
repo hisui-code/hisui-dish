@@ -86,10 +86,6 @@ class SessionsController extends Controller
             return null;
         }
 
-        if (! is_string($token) || $token === '') {
-            return null;
-        }
-
         return PersonalAccessToken::findToken($token);
     }
 

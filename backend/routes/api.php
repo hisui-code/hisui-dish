@@ -48,6 +48,8 @@ Route::prefix('v1')
             Route::get('me', [UsersController::class, 'me']);
             Route::get('users/{user_id}', [UsersController::class, 'show']);
             Route::patch('users/{user_id}', [UsersController::class, 'update']);
+            // Logout
+            Route::post('logout', [SessionsController::class, 'destroy']);
 
             // Users
             Route::middleware(['require.admin'])->group(function () {

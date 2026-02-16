@@ -21,6 +21,7 @@ class LoginTest extends TestCase
         $email = 'login-success@example.com';
         $password = 'password';
 
+        // テストごとに対象ユーザーを作り直して前回実行の影響を除外
         DB::table('users')->where('email', $email)->delete();
 
         DB::table('users')->insert([
@@ -43,6 +44,7 @@ class LoginTest extends TestCase
             ],
         ]);
 
+        // 返却トークンの形式とDB保存値の整合を検証
         $token = $response->json('auth_token');
         $this->assertIsString($token);
         $this->assertNotSame('', $token);
@@ -64,6 +66,7 @@ class LoginTest extends TestCase
         $email = 'login-failure@example.com';
         $password = 'password';
 
+        // テストごとに対象ユーザーを作り直して前回実行の影響を除外
         DB::table('users')->where('email', $email)->delete();
 
         DB::table('users')->insert([
@@ -82,6 +85,55 @@ class LoginTest extends TestCase
         $response->assertStatus(401);
         $response->assertJson([
             'error' => 'invalid_credentials',
+        ]);
+    }
+
+    public function test_logout_revokes_current_token_and_returns_no_content(): void
+    {
+        $email = 'logout-success@example.com';
+        $password = 'password';
+
+        // ログイン対象ユーザーを毎回作り直して再現性を担保
+        DB::table('users')->where('email', $email)->delete();
+
+        DB::table('users')->insert([
+            'email' => $email,
+            'password' => Hash::make($password),
+            'role' => 'user',
+            'created_at' => now('Asia/Tokyo'),
+            'updated_at' => now('Asia/Tokyo'),
+        ]);
+
+        $loginResponse = $this->postJson('/api/v1/login', [
+            'email' => $email,
+            'password' => $password,
+        ]);
+
+        $loginResponse->assertStatus(200);
+
+        // 発行済みトークンIDを保持してログアウト後の削除有無を確認
+        $token = (string) $loginResponse->json('auth_token');
+        [$tokenId] = explode('|', $token, 2);
+
+        $logoutResponse = $this->postJson('/api/v1/logout', [], [
+            'Authorization' => "Bearer {$token}",
+        ]);
+
+        $logoutResponse->assertNoContent();
+
+        // 現在トークンが失効してDBから消えることを検証
+        $stored = DB::table('personal_access_tokens')->where('id', (int) $tokenId)->first();
+        $this->assertNull($stored);
+    }
+
+    public function test_logout_requires_authentication(): void
+    {
+        // Authorizationなしではログアウトできないことを検証
+        $response = $this->postJson('/api/v1/logout');
+
+        $response->assertStatus(401);
+        $response->assertJson([
+            'error' => 'unauthorized',
         ]);
     }
 
@@ -116,12 +168,12 @@ class LoginTest extends TestCase
 
         DB::statement(<<<SQL
 CREATE TABLE IF NOT EXISTS users (
-  id SERIAL PRIMARY KEY,
-  email VARCHAR(255) NOT NULL,
-  password VARCHAR(255) NOT NULL,
-  role VARCHAR(32) NOT NULL DEFAULT 'user',
-  created_at TIMESTAMPTZ,
-  updated_at TIMESTAMPTZ
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(32) NOT NULL DEFAULT 'user',
+    created_at TIMESTAMPTZ,
+    updated_at TIMESTAMPTZ
 )
 SQL);
     }
@@ -141,16 +193,16 @@ SQL);
 
         DB::statement(<<<SQL
 CREATE TABLE IF NOT EXISTS personal_access_tokens (
-  id SERIAL PRIMARY KEY,
-  tokenable_type VARCHAR(255) NOT NULL,
-  tokenable_id BIGINT NOT NULL,
-  name VARCHAR(255) NOT NULL,
-  token VARCHAR(64) NOT NULL UNIQUE,
-  abilities TEXT,
-  last_used_at TIMESTAMPTZ,
-  expires_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ,
-  updated_at TIMESTAMPTZ
+    id SERIAL PRIMARY KEY,
+    tokenable_type VARCHAR(255) NOT NULL,
+    tokenable_id BIGINT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    token VARCHAR(64) NOT NULL UNIQUE,
+    abilities TEXT,
+    last_used_at TIMESTAMPTZ,
+    expires_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ,
+    updated_at TIMESTAMPTZ
 )
 SQL);
     }
