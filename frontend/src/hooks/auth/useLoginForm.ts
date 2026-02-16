@@ -5,13 +5,30 @@ type UseLoginFormOptions = {
   onSuccess: () => void
 }
 
+/**
+ * @description ログインフォームフックが返す状態と操作の型
+ * 画面はこの戻り値だけを使って入力表示と送信イベントを接続する
+ */
 type UseLoginFormReturn = {
+  /** メールアドレス入力値 */
   email: string
+
+  /** パスワード入力値 */
   password: string
+
+  /** 画面表示用エラーメッセージ。未発生時はnull */
   error: string | null
+
+  /** 送信中フラグ。二重送信防止と表示制御に使う */
   loading: boolean
+
+  /** メールアドレス入力の変更ハンドラ */
   onEmailChange: (event: ChangeEvent<HTMLInputElement>) => void
+
+  /** パスワード入力の変更ハンドラ */
   onPasswordChange: (event: ChangeEvent<HTMLInputElement>) => void
+
+  /** フォーム送信ハンドラ */
   onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>
 }
 

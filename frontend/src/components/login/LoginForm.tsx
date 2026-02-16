@@ -43,7 +43,7 @@ export default function LoginForm({
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-slate-900 text-white py-2 rounded hover::bg-slate-800 disabled:opacity-50"
+        className="w-full bg-slate-900 text-white py-2 rounded hover:bg-slate-800 disabled:opacity-50"
       >
         {loading ? 'ログイン中...' : 'ログイン'}
       </button>

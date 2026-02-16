@@ -14,8 +14,8 @@ export default function LogoutButton() {
     setOpen(true)
   }
 
-  const handleConfirm = () => {
-    logout()
+  const handleConfirm = async () => {
+    await logout()
     navigate('/login')
     setOpen(false)
   }

@@ -25,7 +25,7 @@ type AuthContextValue = {
   loginWithToken: (token: string) => void
 
   /** ログアウトして認証情報をクリアする */
-  logout: () => void
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -73,9 +73,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loginWithToken(token)
   }
 
-  const logout = () => {
-    // ローカル保存とメモリ状態の両方をクリアする
-    apiLogout()
+  const logout = async () => {
+    await apiLogout()
     setAuthTokenState(null)
     setLoggedIn(false)
   }

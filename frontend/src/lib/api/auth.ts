@@ -101,7 +101,25 @@ export async function login(email: string, password: string) {
 }
 
 // --- log out ---
-export function logout() {
-  // 認証情報を全消去して未ログイン状態に戻す
+/**
+ * @description サーバー側トークン失効を試行し、ローカル認証情報を破棄する
+ */
+export async function logout(): Promise<void> {
+  const token = authToken
+
   setAuthSession(null, null)
+
+  if (!token) return
+
+  try {
+    await fetch(`${API_BASE}/api/v1/logout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    })
+  } catch {
+    // 通信失敗時もローカルログアウト状態は維持する
+  }
 }
