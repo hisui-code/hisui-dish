@@ -9,11 +9,22 @@ import {
 } from '../lib/api/auth'
 
 type AuthContextValue = {
+  /** 初期復元が完了し、認証判定に使える状態か */
   ready: boolean
+
+  /** 現在ログイン中か */
   loggedIn: boolean
+
+  /** 現在保持している認証トークン。未ログイン時は null */
   authToken: string | null
+
+  /** メールアドレスとパスワードでログインし、認証状態を更新する */
   loginWithPassword: (email: string, password: string) => Promise<void>
+
+  /** 既存トークンを使って認証状態を同期する */
   loginWithToken: (token: string) => void
+
+  /** ログアウトして認証情報をクリアする */
   logout: () => void
 }
 

@@ -1,44 +1,32 @@
-import { useState } from 'react'
-import { login } from '@/lib/api/auth'
+import type { FormEvent } from 'react'
 
 type LoginFormProps = {
-  onLoggedIn: (token: string) => void
+  email: string
+  password: string
+  error: string | null
+  loading: boolean
+  onEmailChange: (event: React.ChangeEvent<HTMLInputElement>) => void
+  onPasswordChange: (event: React.ChangeEvent<HTMLInputElement>) => void
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }
 
-export default function LoginForm({ onLoggedIn }: LoginFormProps) {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    // 再送信時に前回エラーを残さない
-    setError(null)
-    setLoading(true)
-
-    try {
-      // 認証成功時に発行トークンを親へ渡してログイン状態へ遷移する
-      const body = await login(email, password)
-      const token = body.auth_token
-      onLoggedIn(token)
-    } catch (err: unknown) {
-      // API返却エラーを表示してユーザーに再入力を促す
-      const message = err instanceof Error ? err.message : 'ログインに失敗しました'
-      setError(message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
+export default function LoginForm({
+  email,
+  password,
+  error,
+  loading,
+  onEmailChange,
+  onPasswordChange,
+  onSubmit,
+}: LoginFormProps) {
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-4">
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
       <input
         type="email"
         value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        onChange={onEmailChange}
         placeholder="メールアドレス"
         className="w-full border rounded p-2"
         required
@@ -46,7 +34,7 @@ export default function LoginForm({ onLoggedIn }: LoginFormProps) {
       <input
         type="password"
         value={password}
-        onChange={(e) => setPassword(e.target.value)}
+        onChange={onPasswordChange}
         placeholder="パスワード"
         className="w-full border rounded p-2"
         required

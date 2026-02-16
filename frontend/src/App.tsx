@@ -30,16 +30,14 @@ function ProtectedRoute() {
  */
 function LoginRoute() {
   const navigate = useNavigate()
-  const { ready, loggedIn, loginWithToken } = useAuth()
+  const { ready, loggedIn } = useAuth()
   // 認証状態が確定するまでは描画を止める
   if (!ready) return null
   // 既にログイン済みならトップへ戻す
   if (loggedIn) return <Navigate to="/" replace />
   return (
     <Login
-      onLoginSuccess={(token) => {
-        // トークンを保持してからトップに遷移する
-        loginWithToken(token)
+      onLoginSuccess={() => {
         navigate('/', { replace: true })
       }}
     />
