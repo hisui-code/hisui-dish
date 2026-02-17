@@ -56,6 +56,148 @@ class UsersTest extends TestCase
         ]);
     }
 
+    // テスト内容: adminはユーザーを新規作成できる
+    public function test_users_store_success_for_admin(): void
+    {
+        // 前提: adminユーザーを作成する
+        $admin = $this->seedUser('admin', 'users-store-admin@example.com');
+        $newEmail = 'users-created-'.Str::lower(Str::random(8)).'@example.com';
+
+        // 実行: adminでユーザー作成APIを呼ぶ
+        $response = $this->postJson('/api/v1/users', [
+            'name' => 'created user',
+            'email' => $newEmail,
+            'password' => 'password-123',
+            'role' => 'user',
+        ], [
+            'Authorization' => 'Bearer '.$admin['token'],
+        ]);
+
+        // 検証: 201で作成されたユーザー情報を返す
+        $response->assertStatus(201);
+        $response->assertJsonPath('user.name', 'created user');
+        $response->assertJsonPath('user.email', $newEmail);
+        $response->assertJsonPath('user.role', 'user');
+
+        // 検証: DBにも作成されている
+        $stored = DB::table('users')->where('email', $newEmail)->first();
+        $this->assertNotNull($stored);
+        $this->assertTrue(Hash::check('password-123', (string) $stored->password));
+    }
+
+    // テスト内容: 非adminはユーザーを新規作成できない
+    public function test_users_store_forbidden_for_non_admin(): void
+    {
+        // 前提: 非adminユーザーを作成する
+        $user = $this->seedUser('user', 'users-store-non-admin@example.com');
+
+        // 実行: 非adminでユーザー作成APIを呼ぶ
+        $response = $this->postJson('/api/v1/users', [
+            'name' => 'forbidden create',
+            'email' => 'forbidden-create@example.com',
+            'password' => 'password-123',
+            'role' => 'user',
+        ], [
+            'Authorization' => 'Bearer '.$user['token'],
+        ]);
+
+        // 検証: 権限不足で403を返す
+        $response->assertStatus(403);
+        $response->assertJson([
+            'error' => 'forbidden',
+        ]);
+    }
+
+    // テスト内容: 不正な作成入力は422で弾かれる
+    public function test_users_store_invalid_payload_returns_unprocessable_entity(): void
+    {
+        // 前提: adminユーザーを作成する
+        $admin = $this->seedUser('admin', 'users-store-invalid@example.com');
+
+        // 実行: 不正な入力でユーザー作成を試みる
+        $response = $this->postJson('/api/v1/users', [
+            'name' => '',
+            'email' => 'invalid-email',
+            'password' => 'short',
+            'role' => 'invalid-role',
+        ], [
+            'Authorization' => 'Bearer '.$admin['token'],
+        ]);
+
+        // 検証: バリデーションエラーで422を返す
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['name', 'email', 'password', 'role']);
+    }
+
+    // テスト内容: 認証なしではユーザー新規作成できない
+    public function test_users_store_requires_authentication(): void
+    {
+        // 実行: 認証ヘッダなしでユーザー作成APIを呼ぶ
+        $response = $this->postJson('/api/v1/users', [
+            'name' => 'unauthorized create',
+            'email' => 'unauthorized-create@example.com',
+            'password' => 'password-123',
+            'role' => 'user',
+        ]);
+
+        // 検証: 未認証で401を返す
+        $response->assertStatus(401);
+        $response->assertJson([
+            'error' => 'unauthorized',
+        ]);
+    }
+
+    // テスト内容: 本番環境ではX-Api-Token不一致でユーザー作成を拒否する
+    public function test_users_store_requires_api_token_in_production(): void
+    {
+        // 前提: adminユーザーと本番向けAPI_TOKEN環境を用意する
+        $admin = $this->seedUser('admin', 'users-store-production-admin@example.com');
+
+        putenv('API_TOKEN=secret-token');
+        $_ENV['API_TOKEN'] = 'secret-token';
+        $_SERVER['API_TOKEN'] = 'secret-token';
+
+        config(['app.env' => 'production']);
+
+        // 実行: 不一致なX-Api-Tokenで作成APIを呼ぶ
+        $response = $this->post('/api/v1/users', [
+            'name' => 'production create',
+            'email' => 'production-create@example.com',
+            'password' => 'password-123',
+            'role' => 'user',
+        ], [
+            'Authorization' => 'Bearer '.$admin['token'],
+            'X-Api-Token' => 'wrong-token',
+        ]);
+
+        // 検証: 403で空レスポンスを返す
+        $response->assertStatus(403);
+        $response->assertContent('');
+        $response->assertHeaderMissing('Content-Type');
+    }
+
+    // テスト内容: 既存メールアドレスではユーザー新規作成できない
+    public function test_users_store_duplicate_email_returns_unprocessable_entity(): void
+    {
+        // 前提: adminユーザーと既存ユーザーを作成する
+        $admin = $this->seedUser('admin', 'users-store-duplicate-admin@example.com');
+        $existing = $this->seedUser('user', 'users-store-duplicate-existing@example.com');
+
+        // 実行: 既存メールアドレスで作成を試みる
+        $response = $this->postJson('/api/v1/users', [
+            'name' => 'duplicate email',
+            'email' => $existing['email'],
+            'password' => 'password-123',
+            'role' => 'user',
+        ], [
+            'Authorization' => 'Bearer '.$admin['token'],
+        ]);
+
+        // 検証: バリデーションエラーで422を返す
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['email']);
+    }
+
     // テスト内容: adminは他ユーザー詳細を取得できる
     public function test_users_show_success_for_admin(): void
     {
