@@ -23,4 +23,23 @@ export const jst = (input?: string | Date) => dayjs(input).tz('Asia/Tokyo')
  */
 export const jstMidnight = (isoDate: string) => dayjs.tz(`${isoDate}T00:00:00`, 'Asia/Tokyo')
 
+/**
+ * @description 表示用に日時をJST文字列へ変換する
+ * 保存値はUTCのまま維持し、画面表示だけをJSTに揃える
+ * @param input 変換対象の日時文字列
+ * @returns JST表示文字列。未設定や不正値の場合は'-'
+ */
+export const formatJstDateTime = (input: string | null): string => {
+  if (!input) {
+    return '-'
+  }
+
+  const value = jst(input)
+  if (!value.isValid()) {
+    return '-'
+  }
+
+  return value.format('YYYY/MM/DD HH:mm:ss')
+}
+
 export default dayjs

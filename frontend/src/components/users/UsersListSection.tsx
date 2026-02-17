@@ -1,5 +1,6 @@
 import type { UserListItem } from '@/types/users'
 import type { UsersActionModel } from '@/types/usersPage'
+import { formatJstDateTime } from '@/lib/date'
 
 type Props = {
   users: UserListItem[]
@@ -36,7 +37,7 @@ export function UsersListSection({ users, actionModel, onOpenSettings }: Props) 
                 <td className="px-3 py-2">{user.name ?? '-'}</td>
                 <td className="px-3 py-2">{user.email}</td>
                 <td className="px-3 py-2">{user.role}</td>
-                <td className="px-3 py-2">{user.updated_at ?? '-'}</td>
+                <td className="px-3 py-2">{formatJstDateTime(user.updated_at)}</td>
                 <td className="px-3 py-2">
                   <div className="flex gap-2">
                     <button
