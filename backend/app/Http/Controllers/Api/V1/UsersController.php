@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CreateUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
@@ -13,6 +14,41 @@ use Illuminate\Support\Facades\Hash;
 
 class UsersController extends Controller
 {
+    /**
+     * ユーザーを新規作成する
+     *
+     * @param  CreateUserRequest  $request  リクエスト
+     * @return JsonResponse 作成結果
+     */
+    public function store(CreateUserRequest $request): JsonResponse
+    {
+        // FormRequestで検証済みの値だけを受け取る
+        $payload = $request->validated();
+
+        // 作成時刻と更新時刻はUTCで統一する
+        $nowUtc = CarbonImmutable::now('UTC')->format('Y-m-d H:i:s.u');
+
+        $userId = DB::table('users')->insertGetId([
+            'name' => $payload['name'],
+            'email' => $payload['email'],
+            // パスワードは平文保存を避けるため必ずハッシュ化する
+            'password' => Hash::make((string) $payload['password']),
+            'role' => $payload['role'],
+            'created_at' => $nowUtc,
+            'updated_at' => $nowUtc,
+        ]);
+
+        // 作成後の最新状態を返すため再取得する
+        $createdUser = $this->findUserById((string) $userId);
+        if (! $createdUser) {
+            return $this->notFound();
+        }
+
+        return response()->json([
+            'user' => $this->serializeUser($createdUser),
+        ], 201);
+    }
+
     /**
      * ユーザー一覧を返す
      *

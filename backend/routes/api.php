@@ -54,6 +54,7 @@ Route::prefix('v1')
             // Users
             Route::middleware(['require.admin'])->group(function () {
                 Route::get('users', [UsersController::class, 'index']);
+                Route::post('users', [UsersController::class, 'store']);
                 Route::delete('users/{user_id}', [UsersController::class, 'destroy']);
             });
         });
