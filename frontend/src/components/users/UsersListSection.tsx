@@ -1,6 +1,7 @@
 import type { UserListItem } from '@/types/users'
 import type { UsersActionModel } from '@/types/usersPage'
 import { formatJstDateTime } from '@/lib/date'
+import { FiEdit, FiTrash2 } from 'react-icons/fi'
 
 type Props = {
   users: UserListItem[]
@@ -16,15 +17,15 @@ type Props = {
 export function UsersListSection({ users, actionModel, onOpenSettings }: Props) {
   return (
     <div className="overflow-x-auto rounded border bg-white">
-      <table className="min-w-full text-sm">
+      <table className="min-w-full table-fixed text-sm">
         <thead className="bg-neutral-50">
           <tr>
-            <th className="px-3 py-2 text-left">ID</th>
+            <th className="hidden px-3 py-2 text-left md:table-cell">ID</th>
             <th className="px-3 py-2 text-left">Name</th>
-            <th className="px-3 py-2 text-left">Email</th>
+            <th className="hidden px-3 py-2 text-left md:table-cell">Email</th>
             <th className="px-3 py-2 text-left">Role</th>
-            <th className="px-3 py-2 text-left">Updated</th>
-            <th className="px-3 py-2 text-left">Actions</th>
+            <th className="hidden px-3 py-2 text-left md:table-cell">Updated</th>
+            <th className="w-[132px] px-3 py-2 text-left">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -33,27 +34,33 @@ export function UsersListSection({ users, actionModel, onOpenSettings }: Props) 
 
             return (
               <tr key={user.id} className="border-t">
-                <td className="px-3 py-2">{user.id}</td>
+                <td className="hidden px-3 py-2 md:table-cell">{user.id}</td>
                 <td className="px-3 py-2">{user.name ?? '-'}</td>
-                <td className="px-3 py-2">{user.email}</td>
+                <td className="hidden px-3 py-2 md:table-cell">{user.email}</td>
                 <td className="px-3 py-2">{user.role}</td>
-                <td className="px-3 py-2">{formatJstDateTime(user.updated_at)}</td>
-                <td className="px-3 py-2">
-                  <div className="flex gap-2">
+                <td className="hidden px-3 py-2 md:table-cell">
+                  {formatJstDateTime(user.updated_at)}
+                </td>
+                <td className="w-[96px] px-3 py-2 align-top">
+                  <div className="flex items-center gap-6">
                     <button
                       type="button"
                       onClick={() => onOpenSettings(user.id)}
-                      className="rounded border px-3 py-1"
+                      aria-label="ユーザーを編集"
+                      title="編集"
+                      className="inline-flex h-8 w-12 items-center justify-center rounded border text-slate-700 hover:bg-slate-50"
                     >
-                      編集
+                      <FiEdit className="h-4 w-4 md:h-5 md:w-5" />
                     </button>
                     <button
                       type="button"
                       onClick={() => void actionModel.onRemoveUser(user.id)}
                       disabled={isDeleting}
-                      className="rounded bg-red-600 px-3 py-1 text-white disabled:opacity-60"
+                      aria-label="ユーザーを削除"
+                      title="削除"
+                      className="inline-flex h-8 w-12 items-center justify-center rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
                     >
-                      削除
+                      <FiTrash2 className="h-4 w-4 md:h-5 md:w-5" />
                     </button>
                   </div>
                 </td>

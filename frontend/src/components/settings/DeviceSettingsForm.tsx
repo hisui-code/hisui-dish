@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { DeviceSetting } from '@/types/deviceSettings'
 import { updateDeviceSetting } from '@/lib/api/deviceSettings'
-import SettingsHeader from './SettingsHeader'
 import SettingsFields from './SettingsFields'
 import StatusLine from './StatusLine'
 import ActionButtons from './ActionButtons'
@@ -75,7 +74,11 @@ export default function DeviceSettingsForm({ initial, onReload }: Props) {
 
   return (
     <div className="space-y-6">
-      <SettingsHeader deviceId={base.device_id} lockVersion={lockVersion} updatedAt={updatedAt} />
+      {/* フォームに紐づくメタ情報を先頭で表示する */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-600">
+        <span>lock_version: {lockVersion}</span>
+        <span>updated_at: {new Date(updatedAt).toLocaleString()}</span>
+      </div>
 
       <SettingsFields values={f} errors={errors} onChange={setField} />
 

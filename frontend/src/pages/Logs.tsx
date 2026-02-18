@@ -5,6 +5,7 @@ import LogsFilter from '@/components/logs/LogsFilter'
 import LogsList from '@/components/logs/LogsList'
 import { filterLogs, groupLogsByDay, getDefaultMonth } from '@/lib/resources/logs'
 import { FaBook } from 'react-icons/fa'
+import { PageHeader } from '@/components/layout/PageHeader'
 
 /**
  * @description ログ一覧ページのメインコンテンツを描画する
@@ -21,30 +22,23 @@ function LogsContent() {
   const groups = groupLogsByDay(filteredLogs)
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="mx-auto w-full max-w-4xl px-3 pb-10">
+    <div className="px-3 py-3 md:px-4 md:py-4">
+      <div className="mx-auto w-full max-w-4xl space-y-4 md:space-y-6">
         {/* ヘッダー */}
-        <div className="flex items-center text-[20px] font-semibold tracking-tight gap-2 md:pt-5 md:my-1 my-2">
-          <FaBook className="text-emerald-500" />
-          <h2 className=" text-emerald-700 font-semibold tracking-tight">ログ</h2>
-        </div>
+        <PageHeader icon={<FaBook className="h-5 w-5" />} title="ログ" />
 
         {/* フィルター */}
-        <div className="bg-card">
-          <LogsFilter
-            month={month}
-            onMonthChange={setMonth}
-            query={query}
-            onQueryChange={setQuery}
-            timeBand={timeBand}
-            onTimeBandChange={setTimeBand}
-          />
-        </div>
+        <LogsFilter
+          month={month}
+          onMonthChange={setMonth}
+          query={query}
+          onQueryChange={setQuery}
+          timeBand={timeBand}
+          onTimeBandChange={setTimeBand}
+        />
 
         {/* 一覧 */}
-        <div className="mt-5">
-          <LogsList groups={groups} month={month} />
-        </div>
+        <LogsList groups={groups} month={month} />
       </div>
     </div>
   )

@@ -2,10 +2,11 @@ import { Suspense, useState } from 'react'
 import { Forbidden } from '@/components/layout/Forbidden'
 import { UsersTableSkeleton } from '@/components/skeletons/UsersTableSkeleton'
 import { useUsersPage } from '@/hooks/users/useUsersPage'
-import { UsersPageHeader } from '@/components/users/UsersPageHeader'
 import { UsersListSection } from '@/components/users/UsersListSection'
 import UserSettingsModal from '@/components/users/UserSettingsModal'
 import { useUserSettingsModal } from '@/hooks/users/useUserSettingsModal'
+import { PageHeader } from '@/components/layout/PageHeader'
+import { FaUsers } from 'react-icons/fa'
 
 type UserSettingsMode = 'create' | 'edit'
 
@@ -58,9 +59,22 @@ function UsersContent() {
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="px-3 py-3 md:px-4 md:py-4 space-y-4 md:space-y-6">
       {/* ヘッダーと新規作成導線 */}
-      <UsersPageHeader onClickNew={onOpenCreate} />
+      <PageHeader
+        icon={<FaUsers className="h-5 w-5" />}
+        title="ユーザー管理"
+        right={
+          <button
+            type="button"
+            onClick={onOpenCreate}
+            className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+          >
+            <span aria-hidden>＋</span>
+            追加
+          </button>
+        }
+      />
 
       {/* 一覧取得や削除失敗時のメッセージを表示する */}
       {pageViewModel.query.errorMessage && (
