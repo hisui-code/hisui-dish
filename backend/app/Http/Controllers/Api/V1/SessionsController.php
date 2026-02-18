@@ -33,13 +33,12 @@ class SessionsController extends Controller
             return $this->invalidCredentials();
         }
 
+        // 認証成功後に認証済みユーザーを取得する
+        // 取得できない異常系は資格情報エラーとして扱い処理を打ち切る
         $user = $request->user() ?? Auth::user();
         if (! $user) {
             return $this->invalidCredentials();
         }
-
-        // 「web-login」トークンは1個だけにする（乱発防止）
-        $user->tokens()->where('name', 'web-login')->delete();
 
         // Sanctum トークンを発行
         $token = $user->createToken('web-login')->plainTextToken;

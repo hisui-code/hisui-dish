@@ -88,6 +88,60 @@ class LoginTest extends TestCase
         ]);
     }
 
+    public function test_login_allows_multiple_active_tokens_for_same_user(): void
+    {
+        $email = 'multi-device-login@example.com';
+        $password = 'password';
+
+        // 同一ユーザーで複数回ログインできる前提を作るため対象ユーザーを作り直す
+        DB::table('users')->where('email', $email)->delete();
+
+        DB::table('users')->insert([
+            'email' => $email,
+            'password' => Hash::make($password),
+            'role' => 'user',
+            'created_at' => now('Asia/Tokyo'),
+            'updated_at' => now('Asia/Tokyo'),
+        ]);
+
+        // 端末Aのログインを模擬して1つ目のトークンを発行する
+        $firstLoginResponse = $this->postJson('/api/v1/login', [
+            'email' => $email,
+            'password' => $password,
+        ]);
+        $firstLoginResponse->assertStatus(200);
+        $firstToken = (string) $firstLoginResponse->json('auth_token');
+
+        // 端末Bのログインを模擬して2つ目のトークンを発行する
+        $secondLoginResponse = $this->postJson('/api/v1/login', [
+            'email' => $email,
+            'password' => $password,
+        ]);
+        $secondLoginResponse->assertStatus(200);
+        $secondToken = (string) $secondLoginResponse->json('auth_token');
+
+        // 別端末ログインでトークンが置き換えられていないことを確認する
+        $this->assertNotSame($firstToken, $secondToken);
+
+        $userId = DB::table('users')->where('email', $email)->value('id');
+        $tokenCount = DB::table('personal_access_tokens')
+            ->where('tokenable_type', 'App\\Models\\User')
+            ->where('tokenable_id', (int) $userId)
+            ->count();
+        $this->assertSame(2, $tokenCount);
+
+        // どちらのトークンでも認証APIにアクセスできることを確認する
+        $firstMeResponse = $this->get('/api/v1/me', [
+            'Authorization' => 'Bearer '.$firstToken,
+        ]);
+        $firstMeResponse->assertStatus(200);
+
+        $secondMeResponse = $this->get('/api/v1/me', [
+            'Authorization' => 'Bearer '.$secondToken,
+        ]);
+        $secondMeResponse->assertStatus(200);
+    }
+
     public function test_logout_revokes_current_token_and_returns_no_content(): void
     {
         $email = 'logout-success@example.com';
