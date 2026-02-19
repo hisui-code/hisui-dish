@@ -11,6 +11,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import UserSettingsModal from '@/components/users/UserSettingsModal'
 import { useSelfSettingsModal } from './hooks/layout/useSelfSettingsModal'
 import { useMeQuery } from '@/hooks/auth/useMeQuery'
+import { Forbidden } from '@/components/layout/Forbidden'
 
 /**
  * @description 認証状態に応じて保護ルートを制御する。
@@ -42,6 +43,18 @@ function LoginRoute() {
       }}
     />
   )
+}
+
+/**
+ * @description 管理者専用ルートを保護する
+ * 認証済みユーザーのroleを確認し、admin以外は403画面を返す
+ * @returns adminなら子ルート、非adminならForbidden
+ */
+function AdminRoute() {
+  const meQuery = useMeQuery()
+  if (meQuery.isLoading) return null
+  const isAdmin = meQuery.data?.role === 'admin'
+  return isAdmin ? <Outlet /> : <Forbidden />
 }
 
 /**
@@ -120,7 +133,9 @@ export default function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/logs" element={<Logs />} />
-              <Route path="/users" element={<Users />} />
+              <Route element={<AdminRoute />}>
+                <Route path="/users" element={<Users />} />
+              </Route>
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
