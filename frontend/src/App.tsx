@@ -12,6 +12,7 @@ import UserSettingsModal from '@/components/users/UserSettingsModal'
 import { useSelfSettingsModal } from './hooks/layout/useSelfSettingsModal'
 import { useMeQuery } from '@/hooks/auth/useMeQuery'
 import { Forbidden } from '@/components/layout/Forbidden'
+import { FullScreenLoading } from '@/components/layout/FullScreenLoading'
 
 /**
  * @description 認証状態に応じて保護ルートを制御する。
@@ -20,7 +21,7 @@ import { Forbidden } from '@/components/layout/Forbidden'
 function ProtectedRoute() {
   const { ready, loggedIn } = useAuth()
   // 認証状態が確定するまでは描画を止める
-  if (!ready) return null
+  if (!ready) return <FullScreenLoading />
   // 未ログインならログイン画面にリダイレクトする
   return loggedIn ? <Outlet /> : <Navigate to="/login" replace />
 }
@@ -33,7 +34,7 @@ function LoginRoute() {
   const navigate = useNavigate()
   const { ready, loggedIn } = useAuth()
   // 認証状態が確定するまでは描画を止める
-  if (!ready) return null
+  if (!ready) return <FullScreenLoading />
   // 既にログイン済みならトップへ戻す
   if (loggedIn) return <Navigate to="/" replace />
   return (
@@ -52,7 +53,7 @@ function LoginRoute() {
  */
 function AdminRoute() {
   const meQuery = useMeQuery()
-  if (meQuery.isLoading) return null
+  if (meQuery.isLoading) return <FullScreenLoading />
   const isAdmin = meQuery.data?.role === 'admin'
   return isAdmin ? <Outlet /> : <Forbidden />
 }
