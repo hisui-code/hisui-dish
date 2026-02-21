@@ -1,8 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
+import { req } from '../api/client'
 import { getDeviceSetting } from '../api/deviceSettings'
-import { setAuthToken } from '../api/auth'
-
-// getDeviceSetting のリクエスト～レスポンスの流れを通して検証する統合的なテスト群
+import { getAuthToken, getAuthRole, setAuthSession, setAuthToken } from '../api/auth'
 
 const ID = 'dummy-device-id'
 
@@ -12,7 +11,23 @@ afterEach(() => {
   setAuthToken(null)
 })
 
-// GETのテスト
+// AuthTest
+describe('セッションテスト', () => {
+  it('401時は認証セッションをクリアする', async () => {
+    setAuthSession('dummy-token', 'user')
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401 })
+    )
+
+    await expect(req('/api/v1/me', { method: 'GET' })).rejects.toThrow('unauthorized')
+
+    expect(getAuthToken()).toBeNull()
+    expect(getAuthRole()).toBeNull()
+  })
+})
+
+// DeviceSettingsTest
 describe('fetchDeviceSettings', () => {
   it('200 なら JSON を返す', async () => {
     // 正常系で使うデバイス設定のダミーデータ

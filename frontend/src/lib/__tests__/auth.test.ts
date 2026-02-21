@@ -1,5 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { login, logout, getAuthToken, setAuthToken, initAuthTokenFromStorage } from '../api/auth'
+import {
+  login,
+  logout,
+  getAuthToken,
+  getAuthRole,
+  setAuthToken,
+  setAuthSession,
+  initAuthTokenFromStorage,
+  onAuthSessionChanged,
+} from '../api/auth'
 import { API_BASE } from '../api/config'
 
 const localStorageMock = (() => {
@@ -104,5 +113,21 @@ describe('auth login / logout', () => {
     initAuthTokenFromStorage()
 
     expect(getAuthToken()).toBe('stored-token')
+  })
+
+  it('setAuthSession: 認証変更イベントを通知する', () => {
+    const handler = vi.fn()
+    const unsubscribe = onAuthSessionChanged(handler)
+
+    setAuthSession('token-xyz', 'admin')
+
+    expect(handler).toHaveBeenCalledWith({
+      token: 'token-xyz',
+      role: 'admin',
+    })
+    expect(getAuthToken()).toBe('token-xyz')
+    expect(getAuthRole()).toBe('admin')
+
+    unsubscribe()
   })
 })
