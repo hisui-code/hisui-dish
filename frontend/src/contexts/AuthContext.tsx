@@ -6,6 +6,7 @@ import {
   initAuthTokenFromStorage,
   login as apiLogin,
   logout as apiLogout,
+  onAuthSessionChanged,
 } from '../lib/api/auth'
 
 type AuthContextValue = {
@@ -51,6 +52,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setLoggedIn(!!token)
     setReady(true)
+  }, [])
+
+  // 認証情報変更イベントを購読してContext状態を同期する
+  // リロード時も401で失効した瞬間も認証状態を一元管理できる
+  useEffect(() => {
+    const unsubscribe = onAuthSessionChanged(({ token }) => {
+      setAuthTokenState(token)
+      setLoggedIn(!!token)
+    })
+    return unsubscribe
   }, [])
 
   /**

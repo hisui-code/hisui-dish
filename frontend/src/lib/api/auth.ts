@@ -1,14 +1,51 @@
 import { API_BASE } from './config'
 
+type Role = 'admin' | 'user' | 'guest'
+
+type AuthSession = {
+  token: string | null
+  role: Role | null
+}
+
 type LoginResponse = {
   auth_token: string
   body?: {
-    role?: 'admin' | 'user' | 'guest'
+    role?: Role
   }
 }
 
+// 認証状態変更をアプリ全体へ通知するためのイベント名
+const AUTH_SESSION_CHANGED_EVENT = 'auth:session-changed'
+
 let authToken: string | null = null
-let authRole: 'admin' | 'user' | 'guest' | null = null
+let authRole: Role | null = null
+
+// 認証セッションを更新したことをアプリ全体へ通知する
+// AuthContext がこのイベントを購読して loggedIn / authToken を同期する
+const notifyAuthSessionChanged = (payload: AuthSession) => {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(
+    new CustomEvent<AuthSession>(AUTH_SESSION_CHANGED_EVENT, { detail: payload })
+  )
+}
+
+/**
+ * @description 認証セッション変更通知を購読する
+ * @param handler 認証情報が変わったときに呼ぶ処理
+ * @returns 購読解除関数
+ */
+export function onAuthSessionChanged(handle: (payload: AuthSession) => void): () => void {
+  if (typeof window === 'undefined') return () => {}
+
+  // CustomEventから認証セッションを取り出して購読側へ渡す
+  const listener: EventListener = (event) => {
+    const customEvent = event as CustomEvent<AuthSession>
+    handle(customEvent.detail)
+  }
+
+  window.addEventListener(AUTH_SESSION_CHANGED_EVENT, listener)
+  return () => window.removeEventListener(AUTH_SESSION_CHANGED_EVENT, listener)
+}
 
 /**
  * @description 現在の認証トークンを取得する
@@ -22,7 +59,7 @@ export function getAuthToken(): string | null {
  * @description 現在のロールを取得する
  * @returns ロール 未設定ならnull
  */
-export function getAuthRole(): 'admin' | 'user' | 'guest' | null {
+export function getAuthRole(): Role | null {
   // サイドバー表示制御に使う現在ロールを返す
   return authRole
 }
@@ -56,6 +93,8 @@ export function setAuthSession(token: string | null, role: 'admin' | 'user' | 'g
 
   if (role) localStorage.setItem('auth_role', role)
   else localStorage.removeItem('auth_role')
+
+  notifyAuthSessionChanged({ token, role })
 }
 
 /**

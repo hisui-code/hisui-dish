@@ -1,4 +1,4 @@
-import { getAuthToken } from './auth'
+import { getAuthToken, setAuthSession } from './auth'
 import { API_BASE } from './config'
 
 async function parseJsonSafely(res: Response) {
@@ -34,7 +34,15 @@ export async function req<T>(path: string, init: RequestInit = {}): Promise<T> {
 
   if (!res.ok) {
     // サーバーが返したエラー内容を優先
-    const msg = (body && (body.error || body.message)) ?? `HTTP ${res.status}`
+    const errorFromBody = body?.error
+    const messageFromBody = body?.message
+    const fallbackMessage = `HTTP ${res.status}`
+    const msg = errorFromBody ?? messageFromBody ?? fallbackMessage
+
+    // セッション失効時は認証情報を即時クリアする
+    if (res.status === 401 || msg === 'unauthorized') {
+      setAuthSession(null, null)
+    }
     throw new Error(msg)
   }
 
