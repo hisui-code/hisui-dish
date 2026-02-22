@@ -8,6 +8,18 @@ import WeeklyTotalsCard from '@/components/dashboard/charts/WeeklyTotalsCard'
 import YearMonthlyTotalsCard from '@/components/dashboard/charts/YearMonthlyTotalsCard'
 import ChartCardSkeleton from '@/components/skeletons/ChartCardSkeleton'
 
+type SuspendedChartProps = {
+  children: React.ReactNode
+}
+
+/**
+ * @description チャート表示のSuspenseラッパー
+ * 読み込み中は共通のカードスケルトンを表示する
+ */
+function SuspendedChart({ children }: SuspendedChartProps) {
+  return <Suspense fallback={<ChartCardSkeleton />}>{children}</Suspense>
+}
+
 /**
  * @description ダッシュボードの主要セクションを表示する
  * @returns ダッシュボードのメイン画面
@@ -32,18 +44,18 @@ function DashboardInner() {
       {/* 今日の記録 */}
       <TodayList events={data.todayEvents} />
       {/* 日別ごとの合計*/}
-      <Suspense fallback={<ChartCardSkeleton />}>
+      <SuspendedChart>
         <MonthlyChart />
-      </Suspense>
+      </SuspendedChart>
       <div className="lg:grid lg:grid-cols-2 lg:gap-3 mt-6">
         {/* 週ごとの合計 */}
-        <Suspense fallback={<ChartCardSkeleton />}>
+        <SuspendedChart>
           <WeeklyTotalsCard />
-        </Suspense>
+        </SuspendedChart>
         {/* 月ごとの合計 */}
-        <Suspense fallback={<ChartCardSkeleton />}>
+        <SuspendedChart>
           <YearMonthlyTotalsCard />
-        </Suspense>
+        </SuspendedChart>
       </div>
     </div>
   )
