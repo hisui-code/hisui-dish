@@ -1,15 +1,23 @@
 import type { ReactNode } from 'react'
 import { FiArrowDown, FiArrowUp } from 'react-icons/fi'
 import { FaFish, FaPaw } from 'react-icons/fa'
-
 import type { DashboardMergedData } from '@/hooks/dashboard/useDashboardData'
 
-// ダッシュボード上部に並べる KPI カード群
+type DashboardKpisData = Pick<
+  DashboardMergedData,
+  | 'todayTotal'
+  | 'bowlRemaining'
+  | 'averageDailyIntakeLast3Months'
+  | 'thisWeekTotalGrams'
+  | 'thisMonthTotalGrams'
+  | 'thisMonthDiffGrams'
+  | 'thisMonthDiffPct'
+>
 
-/**
- * @description
- * Stat の入力
- */
+type KpisProps = {
+  data: DashboardKpisData
+}
+
 type StatProps = {
   icon: ReactNode
   label: string
@@ -18,6 +26,11 @@ type StatProps = {
   color?: string
   subText?: string
   rightIcon?: ReactNode
+}
+
+type MonthTrendViewModel = {
+  subText: string
+  icon: ReactNode | null
 }
 
 /**
@@ -64,49 +77,34 @@ function Stat({ icon, label, value, unit, color, subText, rightIcon }: StatProps
   )
 }
 
-// Kpis が使う値だけを Dashboard の戻り値から切り出す
-type DashboardKpisData = Pick<
-  DashboardMergedData,
-  | 'todayTotal'
-  | 'bowlRemaining'
-  | 'averageDailyIntakeLast3Months'
-  | 'thisWeekTotalGrams'
-  | 'thisMonthTotalGrams'
-  | 'thisMonthDiffGrams'
-  | 'thisMonthDiffPct'
->
+/**
+ * @description 前月比表示をKPI表示用に整形する
+ */
+function buildMonthTrendViewModel(diffGrams: number, diffPct: number | null): MonthTrendViewModel {
+  // 差分表示の符号
+  const sign = diffGrams >= 0 ? '+' : ''
+  // 前月のデータがなければ'—'
+  const pctLabel = diffPct == null ? '—' : `${sign}${Math.round(diffPct * 100)}%`
+  // 表示用
+  const subText = `前月比 ${sign}${Math.round(diffGrams)}g (${pctLabel})`
+  // 差分の矢印
+  const icon =
+    diffGrams > 0 ? (
+      <FiArrowUp className="h-4 w-4 text-emerald-600" aria-label="前月より増" />
+    ) : diffGrams < 0 ? (
+      <FiArrowDown className="h-4 w-4 text-rose-600" aria-label="前月より減" />
+    ) : null
 
-type KpisProps = {
-  data: DashboardKpisData
+  return { subText, icon }
 }
 
 /**
  * @description
- * ダッシュボードの KPI 群。
- *
- * @param props - 入力
- * @param props.data - ダッシュボード集計値（KPI 用に必要なもの）
- * @returns KPI 群の JSX
+ * ダッシュボードの KPI 群
  */
 export default function Kpis({ data }: KpisProps) {
-  // 差分表示の符号
-  const monthDiffSign = data.thisMonthDiffGrams >= 0 ? '+' : ''
-  // 差分率 前月が 0 のときは計算できないので — にする
-  const monthDiffPctLabel =
-    data.thisMonthDiffPct == null
-      ? '—'
-      : `${monthDiffSign}${Math.round(data.thisMonthDiffPct * 100)}%`
-
   // 補足表示 前月比
-  const monthSubText = `前月比 ${monthDiffSign}${Math.round(data.thisMonthDiffGrams)}g (${monthDiffPctLabel})`
-
-  // 前月比がプラスなら上矢印 マイナスなら下矢印 0 は表示なし
-  const monthTrendIcon =
-    data.thisMonthDiffGrams > 0 ? (
-      <FiArrowUp className="h-4 w-4 text-emerald-600" aria-label="前月より増" />
-    ) : data.thisMonthDiffGrams < 0 ? (
-      <FiArrowDown className="h-4 w-4 text-rose-600" aria-label="前月より減" />
-    ) : null
+  const monthTrend = buildMonthTrendViewModel(data.thisMonthDiffGrams, data.thisMonthDiffPct)
 
   return (
     <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
@@ -148,8 +146,8 @@ export default function Kpis({ data }: KpisProps) {
         value={Math.round(data.thisMonthTotalGrams)}
         unit="g"
         color="#14b8a6"
-        subText={monthSubText}
-        rightIcon={monthTrendIcon}
+        subText={monthTrend.subText}
+        rightIcon={monthTrend.icon}
       />
     </div>
   )
