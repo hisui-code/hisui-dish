@@ -2,13 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createUser, fetchUserById, updateUser } from '@/lib/api/usersApi'
 import type { UserListItem, UserRole } from '@/types/users'
-import { useMeQuery } from '@/hooks/auth/useMeQuery'
 import { validateUserSettingsForm } from '@/schemas/userSettings'
 
 type UseUserSettingsModalParams = {
   open: boolean
   mode: 'create' | 'edit'
   userId: number | null
+  isAdmin: boolean
   onClose: () => void
   onSaved: () => Promise<unknown> | void
 }
@@ -69,9 +69,6 @@ function createInitialCreateForm(): UserSettingsForm {
 export function useUserSettingsModal(
   params: UseUserSettingsModalParams
 ): UseUserSettingsModalResult {
-  const meQuery = useMeQuery()
-  const me = meQuery.data
-  const isAdmin = me?.role === 'admin'
   const queryClient = useQueryClient()
 
   // 入力中のフォーム値を保持する
@@ -130,7 +127,7 @@ export function useUserSettingsModal(
           name: payload.name,
           email: payload.email,
           password: payload.password,
-          role: isAdmin ? payload.role : 'user',
+          role: params.isAdmin ? payload.role : 'user',
         })
       }
 
@@ -143,7 +140,7 @@ export function useUserSettingsModal(
         name: payload.name,
         email: payload.email,
         password: payload.password || undefined,
-        role: isAdmin ? payload.role : undefined,
+        role: params.isAdmin ? payload.role : undefined,
       })
     },
     onSuccess: async () => {
@@ -198,7 +195,7 @@ export function useUserSettingsModal(
 
   return {
     mode: params.mode,
-    isAdmin,
+    isAdmin: params.isAdmin,
     loading: params.mode === 'edit' ? userQuery.isLoading : false,
     saving: saveMutation.isPending,
     fetchErrorMessage,

@@ -13,6 +13,8 @@ import { useSelfSettingsModal } from './hooks/layout/useSelfSettingsModal'
 import { useMeQuery } from '@/hooks/auth/useMeQuery'
 import { Forbidden } from '@/components/layout/Forbidden'
 import { FullScreenLoading } from '@/components/layout/FullScreenLoading'
+import { useAppLayoutContext } from '@/hooks/layout/useAppLayoutContext'
+import type { AppLayoutOutletContext } from '@/hooks/layout/useAppLayoutContext'
 
 /**
  * @description 認証状態に応じて保護ルートを制御する。
@@ -52,10 +54,8 @@ function LoginRoute() {
  * @returns adminなら子ルート、非adminならForbidden
  */
 function AdminRoute() {
-  const meQuery = useMeQuery()
-  if (meQuery.isLoading) return <FullScreenLoading />
-  const isAdmin = meQuery.data?.role === 'admin'
-  return isAdmin ? <Outlet /> : <Forbidden />
+  const layoutContext = useAppLayoutContext()
+  return layoutContext.isAdmin ? <Outlet context={layoutContext} /> : <Forbidden />
 }
 
 /**
@@ -66,6 +66,7 @@ function AppLayout() {
   const meQuery = useMeQuery()
   const me = meQuery.data
   const isAdmin = me?.role === 'admin'
+  const layoutContext: AppLayoutOutletContext = { me, isAdmin }
 
   const {
     mobileOpen,
@@ -77,7 +78,10 @@ function AppLayout() {
     selfSettingsViewModel,
   } = useSelfSettingsModal({
     userId: me?.id ?? null,
+    isAdmin,
   })
+
+  if (meQuery.isLoading) return <FullScreenLoading />
 
   return (
     <div className="min-h-screen w-full bg-neutral-50 md:h-screen md:overflow-hidden md:[--header-h:64px]">
@@ -96,7 +100,7 @@ function AppLayout() {
 
         {/* メイン */}
         <main className="flex-1 min-w-0 w-full md:p-3 md:h-full md:overflow-y-auto">
-          <Outlet />
+          <Outlet context={layoutContext} />
         </main>
       </div>
       {/* モバイル用ドロワー（オーバーレイ + 左スライド） */}

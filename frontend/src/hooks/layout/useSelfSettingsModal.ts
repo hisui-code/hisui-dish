@@ -3,6 +3,7 @@ import { useUserSettingsModal } from '@/hooks/users/useUserSettingsModal'
 
 type UseSelfSettingsModalParams = {
   userId: number | null
+  isAdmin: boolean
 }
 
 type UseSelfSettingsModalResult = {
@@ -22,6 +23,7 @@ type UseSelfSettingsModalResult = {
  */
 export function useSelfSettingsModal({
   userId,
+  isAdmin,
 }: UseSelfSettingsModalParams): UseSelfSettingsModalResult {
   const [mobileOpen, setMobileOpen] = useState<boolean>(false)
   const [isSelfSettingsOpen, setIsSelfSettingsOpen] = useState<boolean>(false)
@@ -48,6 +50,7 @@ export function useSelfSettingsModal({
     open: isSelfSettingsOpen,
     mode: 'edit',
     userId,
+    isAdmin,
     onClose: closeSelfSettings,
     onSaved: () => undefined,
   })

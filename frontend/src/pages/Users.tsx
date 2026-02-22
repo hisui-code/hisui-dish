@@ -7,6 +7,7 @@ import UserSettingsModal from '@/components/users/UserSettingsModal'
 import { useUserSettingsModal } from '@/hooks/users/useUserSettingsModal'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { FaUsers } from 'react-icons/fa'
+import { useAppLayoutContext } from '@/hooks/layout/useAppLayoutContext'
 
 type UserSettingsMode = 'create' | 'edit'
 
@@ -16,6 +17,7 @@ type UserSettingsMode = 'create' | 'edit'
  */
 function UsersContent() {
   const pageViewModel = useUsersPage()
+  const { isAdmin } = useAppLayoutContext()
 
   // 設定モーダルの表示状態と対象ユーザーを管理する
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false)
@@ -27,6 +29,7 @@ function UsersContent() {
     open: isSettingsOpen,
     mode: settingsMode,
     userId: targetUserId,
+    isAdmin,
     onClose: () => {
       // モーダルを閉じるときは対象IDとモードを初期化する
       setIsSettingsOpen(false)
