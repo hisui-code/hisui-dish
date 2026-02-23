@@ -20,7 +20,7 @@ function DashboardInner() {
       {/* KPI */}
       <Kpis data={vm.kpis} />
       {/* 今日の記録 */}
-      <TodayList events={vm.today.events} />
+      <TodayList today={vm.today} />
 
       {/* 日別ごとの合計*/}
       <Suspense fallback={<ChartCardSkeleton />}>

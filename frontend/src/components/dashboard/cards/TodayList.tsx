@@ -1,17 +1,14 @@
-import type { TodayEvent } from '@/types/dashboard'
 import { FaBowlFood, FaBowlRice } from 'react-icons/fa6'
 import { FaClock } from 'react-icons/fa'
 import { LuUtensils } from 'react-icons/lu'
 import { GiKitchenScale } from 'react-icons/gi'
+import type { DashboardTodayViewModel } from '@/hooks/dashboard/useDashboardPage'
 
-type Props = {
-  events: TodayEvent[]
+type TodayListProps = {
+  today: DashboardTodayViewModel
 }
 
-export default function TodayList({ events }: Props) {
-  const total = events.reduce((s, e) => s + e.g, 0)
-  const hasEvents = events.length > 0
-
+export default function TodayList({ today }: TodayListProps) {
   return (
     <div className="mt-6 overflow-hidden rounded-3xl bg-white ring-1 ring-black/5">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-100 px-5 py-4">
@@ -25,23 +22,23 @@ export default function TodayList({ events }: Props) {
             {/* 食事回数 */}
             <div className="flex items-center gap-2">
               <FaClock className="text-neutral-400" aria-hidden="true" />
-              <span className="font-semibold text-neutral-900">{events.length} 回</span>
+              <span className="font-semibold text-neutral-900">{today.count} 回</span>
             </div>
             <div className="h-4 w-px bg-neutral-200" aria-hidden="true" />
             {/* 食事合計 */}
             <div className="flex items-center gap-2">
               <FaBowlRice className="text-neutral-400" aria-hidden="true" />
               <span className="font-semibold text-neutral-900">
-                {total.toFixed(1)}
+                {today.totalGrams.toFixed(1)}
                 <span className="ml-1 text-xs font-medium text-neutral-500">g</span>
               </span>
             </div>
           </div>
         </div>
       </div>
-      {hasEvents ? (
+      {today.hasEvents ? (
         <ul className="divide-y divide-neutral-100">
-          {events.map((e, index) => (
+          {today.events.map((e, index) => (
             <li
               key={`${e.time}-${index}`}
               className="flex items-center justify-between px-10 py-4 font-semibold"
