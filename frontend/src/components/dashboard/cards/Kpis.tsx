@@ -1,21 +1,10 @@
 import type { ReactNode } from 'react'
 import { FiArrowDown, FiArrowUp } from 'react-icons/fi'
 import { FaFish, FaPaw } from 'react-icons/fa'
-import type { DashboardMergedData } from '@/hooks/dashboard/useDashboardData'
-
-type DashboardKpisData = Pick<
-  DashboardMergedData,
-  | 'todayTotal'
-  | 'bowlRemaining'
-  | 'averageDailyIntakeLast3Months'
-  | 'thisWeekTotalGrams'
-  | 'thisMonthTotalGrams'
-  | 'thisMonthDiffGrams'
-  | 'thisMonthDiffPct'
->
+import type { DashboardKpisViewModel } from '@/hooks/dashboard/useDashboardPage'
 
 type KpisProps = {
-  data: DashboardKpisData
+  data: DashboardKpisViewModel
 }
 
 type StatProps = {
@@ -34,19 +23,7 @@ type MonthTrendViewModel = {
 }
 
 /**
- * @description
- * 1 枚の KPI 表示。
- * value と unit の右側に `rightIcon` を置けるようにして差分の方向を示す
- *
- * @param props - 入力
- * @param props.icon - 左側のアイコン
- * @param props.label - ラベル
- * @param props.value - 表示値
- * @param props.unit - 単位
- * @param props.color - value の色
- * @param props.subText - 補足テキスト
- * @param props.rightIcon - unit の右側に置く補助アイコン
- * @returns KPI 1 枚分の JSX
+ * @description KPIカード1枚分の表示
  */
 function Stat({ icon, label, value, unit, color, subText, rightIcon }: StatProps) {
   return (
@@ -99,8 +76,7 @@ function buildMonthTrendViewModel(diffGrams: number, diffPct: number | null): Mo
 }
 
 /**
- * @description
- * ダッシュボードの KPI 群
+ * @description ダッシュボードの KPIを表示する
  */
 export default function Kpis({ data }: KpisProps) {
   // 補足表示 前月比
