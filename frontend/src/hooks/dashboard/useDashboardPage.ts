@@ -189,6 +189,7 @@ export function useDashboardPage(): DashboardPageViewModel {
   }, [weekStartIso])
 
   // ヘッダー表示用の期間ラベルを作る
+  // 表示は「先頭週の月曜〜最新週の月曜」で統一する
   const weeklyRangeLabel = useMemo(() => {
     return `${formatMd(weekStartIso)}の週〜${formatMd(latestWeekStartIso)}の週`
   }, [weekStartIso, latestWeekStartIso])
@@ -224,6 +225,7 @@ export function useDashboardPage(): DashboardPageViewModel {
   const onWeeklyNext = () => {
     // 未来期間に入る操作は無効化する
     if (!weeklyCanNext) return
+    // 先頭週を6週間ぶん進めて表示期間を未来側へ移動する
     setWeekStartIso((prev) =>
       jst(`${prev}T00:00:00`)
         .add(WEEKS * 7, 'day')
