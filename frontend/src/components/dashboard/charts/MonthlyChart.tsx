@@ -1,36 +1,34 @@
-import { useState, useMemo } from 'react'
-
+import { useMemo } from 'react'
 import SimpleBarChart from '@/components/charts/SimpleBarChart'
 import { FaChartLine } from 'react-icons/fa6'
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card'
-
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
-
-import { useMonthlyDailyTotals } from '@/hooks/dashboard/useMonthlyDailyTotals'
-
-import { jst } from '@/lib/date'
-
 import dayjs, { type Dayjs } from 'dayjs'
 import 'dayjs/locale/ja'
+import type { DailyTotals } from '@/types/dashboard'
+
+type MonthlyChartProps = {
+  month: string
+  onChangeMonth: (next: string) => void
+  series: DailyTotals
+}
+
 /**
  * @description
  * 「日ごとの合計」棒グラフ
  */
-export default function MonthlyChart() {
-  // 日別集計の対象月をJST基準で初期化し、切り替えに使う
-  const [month, setMonth] = useState<string>(() => jst().format('YYYY-MM'))
-  // 選択中の月に紐づく日別系列を取得する
-  const series = useMonthlyDailyTotals(month)
-
+export default function MonthlyChart({ month, onChangeMonth, series }: MonthlyChartProps) {
+  // picker表示用に YYYY-MM から月初Dayjsへ変換する
   const value = useMemo(() => dayjs(`${month}-01`), [month])
 
-  const onChangeMonth = (next: Dayjs | null) => {
+  // picker変更を画面状態の YYYY-MM へ戻す
+  const handleChangeMonth = (next: Dayjs | null) => {
     if (!next) return
-    const nextMonth = next.format('YYYY-MM')
-    setMonth(nextMonth)
+    onChangeMonth(next.format('YYYY-MM'))
   }
+
   return (
     <Card className="rounded-xl shadow-sm mt-6">
       <CardHeader>
@@ -47,7 +45,7 @@ export default function MonthlyChart() {
                 views={['year', 'month']}
                 openTo="month"
                 value={value}
-                onChange={onChangeMonth}
+                onChange={handleChangeMonth}
                 format="YYYY年M月"
                 slotProps={{
                   textField: {
