@@ -78,6 +78,18 @@ services:
     env_file:
       - ../../.env
 
+  device:
+    build:
+      context: ../..
+      dockerfile: infra/docker/device.Dockerfile
+    working_dir: /app
+    volumes:
+      - ../../device:/app
+    env_file:
+      - ../../.env
+    depends_on:
+      - api-laravel
+
 volumes:
   bundle_cache:
   composer_cache:
