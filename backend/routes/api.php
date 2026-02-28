@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\DailyTotalsController;
 use App\Http\Controllers\Api\V1\DashboardController;
+use App\Http\Controllers\Api\V1\DeviceSessionEventsController;
 use App\Http\Controllers\Api\V1\DeviceSettingsController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\LogsController;
@@ -31,6 +32,9 @@ Route::prefix('v1')
     ->group(function () {
         Route::get('health', [HealthController::class, 'show']);
         Route::post('login', [SessionsController::class, 'create']);
+
+        // Device
+        Route::post('device/session_events', [DeviceSessionEventsController::class, 'store']);
 
         Route::middleware(['api.auth'])->group(function () {
             // Dashboard
