@@ -35,6 +35,8 @@ MIN_CONSUMED_G = 2.0
 
 # 校正値保存先
 CALIBRATION_FILE = Path(__file__).resolve().parent / 'calibration.json'
+# セッション結果のローカル保存先
+SESSION_EVENTS_FILE = Path(__file__).resolve().parent / 'session_events.jsonl'
 
 # キャリブレーション設定
 KNOWN_WEIGHT_G = 100.0

@@ -16,10 +16,12 @@ from config import (
     START_CONFIRM_SECONDS,
     STABILITY_EPSILON_G,
     START_THRESHOLD_G,
+    SESSION_EVENTS_FILE,
 )
 from calibration_store import load_calibration
 from eating_state_machine import EatingDetector, EatingDetectorConfig
 from hx711_reader import cleanup_gpio, convert_raw_to_grams, create_sensor, read_raw_once
+from session_store import append_session_event
 
 
 def measure_runtime_zero(sensor, offset: float, scale: float) -> float:
@@ -95,6 +97,9 @@ def main() -> None:
         events = detector.step(avg_grams=avg_grams, now=now)
         for event in events:
             print(event)
+            # 完了イベントはローカルに追記保存する
+            if append_session_event(path=SESSION_EVENTS_FILE, event_line=event):
+                print(f'event=local_saved path={SESSION_EVENTS_FILE.name}')
 
         baseline = detector.baseline_grams if detector.baseline_grams is not None else 0.0
 
