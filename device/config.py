@@ -10,9 +10,15 @@ READ_SLEEP_SEC = 0.1
 MOVING_AVG_WINDOW = 10
 # 起動時ゼロ補正の計測秒
 RUNTIME_ZERO_SECONDS = 3.0
+# 生値の絶対値ガード
+RAW_ABS_MAX = 1_000_000.0
+# 生値ジャンプ幅ガード
+RAW_JUMP_MAX = 50_000.0
 
 # 食事開始判定 閾値以上減ったら開始
 START_THRESHOLD_G = 0.5
+# 開始判定の継続秒 この秒数dropが続いたら開始する
+START_CONFIRM_SECONDS = 1.0
 # 安定判定 隣接サンプル差がこの値以下なら安定寄りとみなす
 STABILITY_EPSILON_G = 0.2
 # 安定継続秒 この秒数安定したら終了方向へ進める

@@ -9,8 +9,11 @@ from config import (
     MAX_SESSION_SECONDS,
     MOVING_AVG_WINDOW,
     PD_SCK_PIN,
+    RAW_ABS_MAX,
+    RAW_JUMP_MAX,
     READ_SLEEP_SEC,
     RUNTIME_ZERO_SECONDS,
+    START_CONFIRM_SECONDS,
     STABILITY_EPSILON_G,
     START_THRESHOLD_G,
 )
@@ -52,6 +55,7 @@ def main() -> None:
     detector = EatingDetector(
         EatingDetectorConfig(
             start_threshold_g=START_THRESHOLD_G,
+            start_confirm_seconds=START_CONFIRM_SECONDS,
             stability_epsilon_g=STABILITY_EPSILON_G,
             end_stable_seconds=END_STABLE_SECONDS,
             finalize_seconds=FINALIZE_SECONDS,
@@ -62,13 +66,30 @@ def main() -> None:
     print('HisuiDish device start')
     print(
         f'offset={offset}, scale={scale}, moving_avg_window={MOVING_AVG_WINDOW}, '
-        f'start_threshold={START_THRESHOLD_G}, stability_epsilon={STABILITY_EPSILON_G}, '
-        f'runtime_zero={runtime_zero:.2f}'
+        f'start_threshold={START_THRESHOLD_G}, start_confirm={START_CONFIRM_SECONDS}, '
+        f'stability_epsilon={STABILITY_EPSILON_G}, '
+        f'runtime_zero={runtime_zero:.2f}, raw_abs_max={RAW_ABS_MAX}, raw_jump_max={RAW_JUMP_MAX}'
     )
+
+    prev_raw: float | None = None
 
     while True:
         now = time.monotonic()
         raw = read_raw_once(sensor)
+
+        # 物理的にありえない生値はノイズとして破棄する
+        if abs(raw) > RAW_ABS_MAX:
+            print(f'warn=outlier_raw raw={raw:.2f} reason=abs_limit')
+            time.sleep(READ_SLEEP_SEC)
+            continue
+
+        # 直前サンプルからの急激なジャンプは一時ノイズとして破棄する
+        if prev_raw is not None and abs(raw - prev_raw) > RAW_JUMP_MAX:
+            print(f'warn=outlier_raw raw={raw:.2f} prev_raw={prev_raw:.2f} reason=jump_limit')
+            time.sleep(READ_SLEEP_SEC)
+            continue
+
+        prev_raw = raw
         grams = convert_raw_to_grams(raw=raw, offset=offset, scale=scale)
 
         # 起動時に測ったゼロ点を差し引いて判定用の重さを作る

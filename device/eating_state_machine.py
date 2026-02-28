@@ -21,6 +21,7 @@ class EatingDetectorConfig:
     """
 
     start_threshold_g: float
+    start_confirm_seconds: float
     stability_epsilon_g: float
     end_stable_seconds: float
     finalize_seconds: float
@@ -40,6 +41,7 @@ class EatingDetector:
 
         self._session_started_at = 0.0
         self._stabilized_since = 0.0
+        self._start_candidate_since = 0.0
         self._meal_start_weight = 0.0
         self._meal_min_weight = 0.0
 
@@ -59,15 +61,24 @@ class EatingDetector:
             drop_from_baseline = self.baseline_grams - avg_grams
 
             if drop_from_baseline >= self.config.start_threshold_g:
-                self.state = EatingState.MEASURING
-                self._session_started_at = now
-                self._stabilized_since = now
-                self._meal_start_weight = self.baseline_grams
-                self._meal_min_weight = avg_grams
-                events.append(
-                    f'event=eat_started baseline={self._meal_start_weight:.2f} '
-                    f'current={avg_grams:.2f} drop={drop_from_baseline:.2f}'
-                )
+                # 開始候補の時刻を記録し、一定時間継続した時だけ開始確定する
+                if self._start_candidate_since == 0.0:
+                    self._start_candidate_since = now
+
+                if now - self._start_candidate_since >= self.config.start_confirm_seconds:
+                    self.state = EatingState.MEASURING
+                    self._session_started_at = now
+                    self._stabilized_since = now
+                    self._meal_start_weight = self.baseline_grams
+                    self._meal_min_weight = avg_grams
+                    events.append(
+                        f'event=eat_started baseline={self._meal_start_weight:.2f} '
+                        f'current={avg_grams:.2f} drop={drop_from_baseline:.2f}'
+                    )
+                    self._start_candidate_since = 0.0
+            else:
+                # 条件を外れたら開始候補をリセットする
+                self._start_candidate_since = 0.0
 
         elif self.state == EatingState.MEASURING:
             self._meal_min_weight = min(self._meal_min_weight, avg_grams)
