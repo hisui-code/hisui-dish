@@ -41,8 +41,18 @@ cat calibration.json
 
 ## Environment Switching
 
-本プロジェクトのデバイス送信先は環境変数で切り替える  
-コード側で開発/本番の分岐は持たず、実行環境が値を上書きする
+本プロジェクトのデバイス送信先は `device/.env` 系ファイルと環境変数で切り替える  
+`config.py` の解決順は次のとおり
+
+1. OS環境変数
+2. `device/.env` + `device/.env.<env>`
+3. 既定値
+
+`<env>` は次の優先順で決まる
+
+1. `HISUIDISH_ENV`
+2. `APP_ENV`
+3. `development`（未指定時）
 
 ### Variables
 
@@ -54,20 +64,53 @@ cat calibration.json
 ### Development Example
 
 ```bash
-export HISUIDISH_API_BASE=http://localhost:8000
-export HISUIDISH_EVENT_ENDPOINT=/api/v1/device/session_events
+# 開発差分は .env.development に記載しておく
+APP_ENV=development python3 main.py
+```
+
+`.env.development` 例:
+
+```env
+HISUIDISH_API_BASE=http://localhost:8000
+HISUIDISH_EVENT_ENDPOINT=/api/v1/device/session_events
+HISUIDISH_API_TOKEN=dev_token
+HISUIDISH_DEVICE_ID=dev_device_uuid
+```
+
+### Production Example (file switch)
+
+`.env` を本番値として運用する場合は、環境指定なしで起動する
+
+```bash
 python3 main.py
 ```
 
-### Production Example (systemd)
+`.env` 例:
 
-`/etc/systemd/system/hisuidish-device.service` に環境変数を設定する
-
-```ini
-Environment=HISUIDISH_API_BASE=https://api.example.com
-Environment=HISUIDISH_EVENT_ENDPOINT=/api/v1/device/session_events
-Environment=HISUIDISH_API_TOKEN=replace_me
-Environment=HISUIDISH_DEVICE_ID=replace_me
+```env
+HISUIDISH_API_BASE=https://api.example.com
+HISUIDISH_EVENT_ENDPOINT=/api/v1/device/session_events
+HISUIDISH_API_TOKEN=prod_token
+HISUIDISH_DEVICE_ID=prod_device_uuid
 ```
 
-この方式で、開発から本番への切替時もコード変更は不要
+### Production Example (systemd recommended)
+
+本番は systemd で環境変数を注入するのを推奨する  
+`/etc/hisuidish/device.env` を作成し、サービス側で読み込む
+
+```ini
+EnvironmentFile=/etc/hisuidish/device.env
+Environment=APP_ENV=production
+```
+
+`/etc/hisuidish/device.env` 例:
+
+```env
+HISUIDISH_API_BASE=https://api.example.com
+HISUIDISH_EVENT_ENDPOINT=/api/v1/device/session_events
+HISUIDISH_API_TOKEN=prod_token
+HISUIDISH_DEVICE_ID=prod_device_uuid
+```
+
+この方式なら、開発/本番切替時もコード変更は不要
