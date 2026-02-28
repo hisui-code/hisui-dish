@@ -2,25 +2,36 @@ import time
 from collections import deque
 
 from config import (
+    API_BASE_URL,
+    API_TIMEOUT_SEC,
+    API_TOKEN,
     CALIBRATION_FILE,
+    DEVICE_EVENT_ENDPOINT,
+    DEVICE_ID,
     DOUT_PIN,
     END_STABLE_SECONDS,
     FINALIZE_SECONDS,
     IDLE_UP_SPIKE_IGNORE_G,
     MAX_SESSION_SECONDS,
+    MAX_RETRY_COUNT,
     MIN_CONSUMED_G,
     MOVING_AVG_WINDOW,
     PD_SCK_PIN,
+    QUEUE_FLUSH_INTERVAL_SEC,
     READ_SLEEP_SEC,
+    RETRY_INTERVAL_SEC,
     RUNTIME_ZERO_SECONDS,
+    SESSION_QUEUE_FILE,
     START_CONFIRM_SECONDS,
     STABILITY_EPSILON_G,
     START_THRESHOLD_G,
     SESSION_EVENTS_FILE,
 )
+from api_sender import post_session_event
 from calibration_store import load_calibration
 from eating_state_machine import EatingDetector, EatingDetectorConfig
 from hx711_reader import cleanup_gpio, convert_raw_to_grams, create_sensor, read_raw_once
+from queue_store import enqueue_finished_event, flush_queue
 from session_store import append_session_event
 
 
@@ -77,8 +88,12 @@ def main() -> None:
         f'idle_up_spike_ignore={IDLE_UP_SPIKE_IGNORE_G}, '
         f'stability_epsilon={STABILITY_EPSILON_G}, '
         f'min_consumed={MIN_CONSUMED_G}, '
-        f'runtime_zero={runtime_zero:.2f}'
+        f'runtime_zero={runtime_zero:.2f}, retry_interval={RETRY_INTERVAL_SEC}, '
+        f'max_retry_count={MAX_RETRY_COUNT}'
     )
+
+    # 再送キューは一定間隔で処理する
+    next_queue_flush_at = 0.0
 
     while True:
         now = time.monotonic()
@@ -98,8 +113,37 @@ def main() -> None:
         for event in events:
             print(event)
             # 完了イベントはローカルに追記保存する
-            if append_session_event(path=SESSION_EVENTS_FILE, event_line=event):
+            saved_record = append_session_event(path=SESSION_EVENTS_FILE, event_line=event)
+            if saved_record:
                 print(f'event=local_saved path={SESSION_EVENTS_FILE.name}')
+                # eat_finishedのみ送信キューへ投入する
+                if enqueue_finished_event(
+                    path=SESSION_QUEUE_FILE,
+                    record=saved_record,
+                    device_id=DEVICE_ID,
+                ):
+                    print(f'event=queue_enqueued path={SESSION_QUEUE_FILE.name}')
+
+        # 送信キューを定期的にフラッシュする
+        if now >= next_queue_flush_at:
+            queue_stats = flush_queue(
+                path=SESSION_QUEUE_FILE,
+                retry_interval_sec=RETRY_INTERVAL_SEC,
+                max_retry_count=MAX_RETRY_COUNT,
+                sender=lambda payload: post_session_event(
+                    api_base_url=API_BASE_URL,
+                    endpoint_path=DEVICE_EVENT_ENDPOINT,
+                    token=API_TOKEN,
+                    timeout_sec=API_TIMEOUT_SEC,
+                    payload=payload,
+                ),
+            )
+            if queue_stats['sent'] or queue_stats['retried'] or queue_stats['failed']:
+                print(
+                    f"event=queue_flushed sent={queue_stats['sent']} "
+                    f"retried={queue_stats['retried']} failed={queue_stats['failed']}"
+                )
+            next_queue_flush_at = now + QUEUE_FLUSH_INTERVAL_SEC
 
         baseline = detector.baseline_grams if detector.baseline_grams is not None else 0.0
 
