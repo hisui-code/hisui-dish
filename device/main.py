@@ -6,11 +6,11 @@ from config import (
     DOUT_PIN,
     END_STABLE_SECONDS,
     FINALIZE_SECONDS,
+    IDLE_UP_SPIKE_IGNORE_G,
     MAX_SESSION_SECONDS,
+    MIN_CONSUMED_G,
     MOVING_AVG_WINDOW,
     PD_SCK_PIN,
-    RAW_ABS_MAX,
-    RAW_JUMP_MAX,
     READ_SLEEP_SEC,
     RUNTIME_ZERO_SECONDS,
     START_CONFIRM_SECONDS,
@@ -45,8 +45,11 @@ def main() -> None:
     """
     @description 校正値を適用して重さを監視し食事状態を判定する
     """
+    # 校正値を読み込んで raw -> g 変換に使う
     offset, scale = load_calibration(CALIBRATION_FILE)
+    # センサー初期化
     sensor = create_sensor(dout_pin=DOUT_PIN, pd_sck_pin=PD_SCK_PIN)
+    # 起動時の空状態を基準にしてゼロ点ずれを吸収する
     runtime_zero = measure_runtime_zero(sensor=sensor, offset=offset, scale=scale)
 
     # 短期ノイズを抑えるために移動平均を使う
@@ -56,10 +59,12 @@ def main() -> None:
         EatingDetectorConfig(
             start_threshold_g=START_THRESHOLD_G,
             start_confirm_seconds=START_CONFIRM_SECONDS,
+            idle_up_spike_ignore_g=IDLE_UP_SPIKE_IGNORE_G,
             stability_epsilon_g=STABILITY_EPSILON_G,
             end_stable_seconds=END_STABLE_SECONDS,
             finalize_seconds=FINALIZE_SECONDS,
             max_session_seconds=MAX_SESSION_SECONDS,
+            min_consumed_g=MIN_CONSUMED_G,
         )
     )
 
@@ -67,33 +72,22 @@ def main() -> None:
     print(
         f'offset={offset}, scale={scale}, moving_avg_window={MOVING_AVG_WINDOW}, '
         f'start_threshold={START_THRESHOLD_G}, start_confirm={START_CONFIRM_SECONDS}, '
+        f'idle_up_spike_ignore={IDLE_UP_SPIKE_IGNORE_G}, '
         f'stability_epsilon={STABILITY_EPSILON_G}, '
-        f'runtime_zero={runtime_zero:.2f}, raw_abs_max={RAW_ABS_MAX}, raw_jump_max={RAW_JUMP_MAX}'
+        f'min_consumed={MIN_CONSUMED_G}, '
+        f'runtime_zero={runtime_zero:.2f}'
     )
-
-    prev_raw: float | None = None
 
     while True:
         now = time.monotonic()
+        # 1サンプル読み取り
         raw = read_raw_once(sensor)
-
-        # 物理的にありえない生値はノイズとして破棄する
-        if abs(raw) > RAW_ABS_MAX:
-            print(f'warn=outlier_raw raw={raw:.2f} reason=abs_limit')
-            time.sleep(READ_SLEEP_SEC)
-            continue
-
-        # 直前サンプルからの急激なジャンプは一時ノイズとして破棄する
-        if prev_raw is not None and abs(raw - prev_raw) > RAW_JUMP_MAX:
-            print(f'warn=outlier_raw raw={raw:.2f} prev_raw={prev_raw:.2f} reason=jump_limit')
-            time.sleep(READ_SLEEP_SEC)
-            continue
-
-        prev_raw = raw
+        # 校正値を使って g に変換
         grams = convert_raw_to_grams(raw=raw, offset=offset, scale=scale)
 
         # 起動時に測ったゼロ点を差し引いて判定用の重さを作る
         net_grams = grams - runtime_zero
+        # ノイズ低減のため移動平均で平滑化する
         history.append(net_grams)
         avg_grams = sum(history) / len(history)
 
