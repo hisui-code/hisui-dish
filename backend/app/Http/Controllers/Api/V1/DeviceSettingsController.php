@@ -89,7 +89,7 @@ class DeviceSettingsController extends Controller
             'stable_duration_sec' => (int) $payload['stable_duration_sec'],
             'max_session_sec' => (int) $payload['max_session_sec'],
             'tare_weight' => (int) $payload['tare_weight'],
-            'stability_epsilon_g' => (int) $payload['stability_epsilon_g'],
+            'stability_epsilon_g' => (float) $payload['stability_epsilon_g'],
             'sampling_hz' => (int) $payload['sampling_hz'],
             'moving_avg_window' => (int) $payload['moving_avg_window'],
             'gross_weight_limit_g' => (int) $payload['gross_weight_limit_g'],
@@ -155,7 +155,7 @@ class DeviceSettingsController extends Controller
             'max_session_sec' => (int) $setting->max_session_sec,
             'lock_version' => (int) $setting->lock_version,
             'tare_weight' => (int) $setting->tare_weight,
-            'stability_epsilon_g' => (int) $setting->stability_epsilon_g,
+            'stability_epsilon_g' => (float) $setting->stability_epsilon_g,
             'sampling_hz' => (int) $setting->sampling_hz,
             'moving_avg_window' => (int) $setting->moving_avg_window,
             'gross_weight_limit_g' => (int) $setting->gross_weight_limit_g,
@@ -185,7 +185,9 @@ class DeviceSettingsController extends Controller
                 continue;
             }
 
-            $value = $this->parseInteger($payload[$field]);
+            $value = $field === 'stability_epsilon_g'
+                ? $this->parseFloat($payload[$field])
+                : $this->parseInteger($payload[$field]);
             if ($value === null) {
                 $errors[] = $label . ' is not a number';
                 continue;
@@ -207,6 +209,19 @@ class DeviceSettingsController extends Controller
 
         if (is_string($value) && preg_match('/\A-?\d+\z/', $value) === 1) {
             return (int) $value;
+        }
+
+        return null;
+    }
+
+    private function parseFloat(mixed $value): ?float
+    {
+        if (is_int($value) || is_float($value)) {
+            return (float) $value;
+        }
+
+        if (is_string($value) && preg_match('/\A-?(?:\d+|\d+\.\d+|\.\d+)\z/', $value) === 1) {
+            return (float) $value;
         }
 
         return null;
