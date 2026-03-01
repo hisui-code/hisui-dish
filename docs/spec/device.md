@@ -108,7 +108,18 @@
 
 - ボウル重量 = `tare_weight` + 餌重量
 - 微小揺れは許容する（1g未満はノイズ扱い）
-- 食事判定に使わない変動でも、最新重量の同期方針は別途定義する
+- food重量は `総重量 - tare_weight` で算出する
+- `総重量 > gross_weight_limit_g` は異常値として送信対象外にする（皿持ち上げ想定）
+- `food重量 < 0` は `0` に丸める
+
+### 8.1 bowl_snapshots 送信タイミング（確定）
+
+- 食事イベント終了時（`eat_finished`）に現在の food重量を即時送信する
+- 常時起動中は 5分ごとに現在の food重量を送信する
+- 食事中（`MEASURING` / `STABILIZING`）は定期送信しない
+  - 判定中ノイズで現在量がぶれるため
+- 直近送信値との差分が小さい場合は送信を省略してよい
+  - 省略閾値は実装定数で管理する（例: 0.5g）
 
 ## 9. API送信失敗時の再送キュー
 
@@ -152,6 +163,21 @@
 - `device_session_events`
   - 食事イベント集計の一次データとする
   - 日次/月次/年次の摂取量集計は `eaten`（保存時は `eaten_grams`）を使う
+
+### 9.3 bowl_snapshots 送信API payload（確定）
+
+- エンドポイント
+  - `POST /api/v1/device/bowl_snapshots`
+- 送信項目
+  - `snapshot_id`（必須）
+    - デバイス側で生成するスナップショット識別子
+    - 冪等キーとして扱う
+  - `device_id`（必須）
+    - 送信元デバイス識別子
+  - `weight_g`（必須）
+    - food重量（総重量 - tare_weight）
+  - `recorded_at`（必須）
+    - デバイス側で記録した時刻（ISO8601）
 
 ## 10. DeviceSettings同期
 
