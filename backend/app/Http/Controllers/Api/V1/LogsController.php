@@ -49,16 +49,17 @@ class LogsController extends Controller
             ], 404);
         }
 
-        // 対象デバイスかつ対象月範囲のスナップショットを新しい順で取得する
-        $records = DB::table('bowl_snapshots')
+        // logsは食事確定イベントを元に返す
+        $records = DB::table('device_session_events')
             ->where('device_id', $deviceId)
+            ->where('event', 'eat_finished')
             ->whereBetween('recorded_at', [
                 $monthStartUtc->format('Y-m-d H:i:s'),
                 $monthEndUtc->format('Y-m-d H:i:s'),
             ])
             ->orderByDesc('recorded_at')
             ->orderByDesc('id')
-            ->get(['id', 'recorded_at', 'weight_g']);
+            ->get(['id', 'recorded_at', 'eaten_grams']);
 
         // レスポンスはJST表示に合わせて日時を変換する
         $logs = $records->map(function ($row) {
@@ -67,7 +68,7 @@ class LogsController extends Controller
             return [
                 'id' => $row->id,
                 'recordedAtIso' => $recordedAt->toIso8601String(),
-                'grams' => (int) $row->weight_g,
+                'grams' => (float) $row->eaten_grams,
             ];
         })->all();
 
@@ -86,8 +87,9 @@ class LogsController extends Controller
     public function destroy(string $logId): JsonResponse
     {
         // 指定IDのログを1件削除する
-        $deleted = DB::table('bowl_snapshots')
+        $deleted = DB::table('device_session_events')
             ->where('id', $logId)
+            ->where('event', 'eat_finished')
             ->delete();
 
         // 削除対象が存在しない場合は404

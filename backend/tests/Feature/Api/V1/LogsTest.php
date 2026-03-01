@@ -13,28 +13,38 @@ class LogsTest extends TestCase
     {
         parent::setUp();
 
+        // テスト実行に必要な最小テーブルを準備する
         $this->ensureUsersTable();
         $this->ensurePersonalAccessTokensTable();
         $this->ensureDevicesTable();
         $this->ensureDeviceSettingsTable();
-        $this->ensureBowlSnapshotsTable();
+        $this->ensureDeviceSessionEventsTable();
     }
 
     public function test_logs_success_with_month_and_device_id(): void
     {
+        // テストケース
+        // 月とdevice_idを指定したとき、対象月のeat_finishedログだけ取得できる
+        // 処理内容
+        // 2026-02の食事イベントを1件作成して /api/v1/logs で取得する
+        // 期待する結果
+        // 200で logs 配列が返り、JST形式の recordedAtIso と grams が含まれる
         $token = $this->seedUser();
         $deviceId = $this->seedDevice();
         $month = '2026-02';
 
-        DB::table('bowl_snapshots')->where('device_id', $deviceId)->delete();
+        DB::table('device_session_events')->where('device_id', $deviceId)->delete();
 
         $recordedAt = CarbonImmutable::create(2026, 2, 10, 12, 0, 0, 'UTC');
 
-        DB::table('bowl_snapshots')->insert([
+        DB::table('device_session_events')->insert([
             'id' => (string) Str::uuid(),
+            'session_id' => (string) Str::uuid(),
             'device_id' => $deviceId,
-            'weight_g' => 123,
+            'event' => 'eat_finished',
+            'eaten_grams' => 123,
             'recorded_at' => $recordedAt->format('Y-m-d H:i:s'),
+            'raw_payload' => json_encode(['event' => 'eat_finished'], JSON_UNESCAPED_UNICODE),
             'created_at' => $recordedAt->format('Y-m-d H:i:s'),
             'updated_at' => $recordedAt->format('Y-m-d H:i:s'),
         ]);
@@ -57,18 +67,27 @@ class LogsTest extends TestCase
 
     public function test_logs_success_with_month_omitted(): void
     {
+        // テストケース
+        // month未指定時に当月（JST）でログ取得できる
+        // 処理内容
+        // 現在時刻のeat_finishedログを1件作成して monthなしで取得する
+        // 期待する結果
+        // 200で logs 配列が返る
         $token = $this->seedUser();
         $deviceId = $this->seedDevice();
 
-        DB::table('bowl_snapshots')->where('device_id', $deviceId)->delete();
+        DB::table('device_session_events')->where('device_id', $deviceId)->delete();
 
         $recordedAt = CarbonImmutable::now('UTC');
 
-        DB::table('bowl_snapshots')->insert([
+        DB::table('device_session_events')->insert([
             'id' => (string) Str::uuid(),
+            'session_id' => (string) Str::uuid(),
             'device_id' => $deviceId,
-            'weight_g' => 50,
+            'event' => 'eat_finished',
+            'eaten_grams' => 50,
             'recorded_at' => $recordedAt->format('Y-m-d H:i:s'),
+            'raw_payload' => json_encode(['event' => 'eat_finished'], JSON_UNESCAPED_UNICODE),
             'created_at' => $recordedAt->format('Y-m-d H:i:s'),
             'updated_at' => $recordedAt->format('Y-m-d H:i:s'),
         ]);
@@ -87,6 +106,12 @@ class LogsTest extends TestCase
 
     public function test_logs_invalid_month_returns_bad_request(): void
     {
+        // テストケース
+        // month形式が不正な場合
+        // 処理内容
+        // month=invalid でアクセスする
+        // 期待する結果
+        // 400 invalid month を返す
         $token = $this->seedUser();
 
         $response = $this->get('/api/v1/logs?month=invalid', [
@@ -101,8 +126,14 @@ class LogsTest extends TestCase
 
     public function test_logs_missing_device_returns_not_found(): void
     {
+        // テストケース
+        // デバイスが1件も無い場合
+        // 処理内容
+        // devices/device_settings/device_session_events を空にして /logs を呼ぶ
+        // 期待する結果
+        // 404 device not found を返す
         $token = $this->seedUser();
-        DB::table('bowl_snapshots')->delete();
+        DB::table('device_session_events')->delete();
         DB::table('device_settings')->delete();
         DB::table('devices')->delete();
 
@@ -118,6 +149,12 @@ class LogsTest extends TestCase
 
     public function test_logs_requires_authentication(): void
     {
+        // テストケース
+        // 認証なしアクセス
+        // 処理内容
+        // Authorizationヘッダなしで /logs を呼ぶ
+        // 期待する結果
+        // 401 unauthorized を返す
         $response = $this->get('/api/v1/logs');
 
         $response->assertStatus(401);
@@ -128,6 +165,12 @@ class LogsTest extends TestCase
 
     public function test_logs_requires_api_token_in_production(): void
     {
+        // テストケース
+        // production環境でAPIトークンが不正な場合
+        // 処理内容
+        // app.env=production かつ X-Api-Token を誤値で /logs を呼ぶ
+        // 期待する結果
+        // 403を返し、レスポンスボディは空
         $token = $this->seedUser();
         $deviceId = $this->seedDevice();
 
@@ -149,6 +192,8 @@ class LogsTest extends TestCase
 
     private function seedUser(): string
     {
+        // 認証付きAPIテスト用ユーザーを作成する
+        // 戻り値は token_id|plain_token 形式
         $email = 'logs@example.com';
         $plainToken = Str::random(40);
 
@@ -176,6 +221,7 @@ class LogsTest extends TestCase
 
     private function seedDevice(): string
     {
+        // ログ紐付け用のデバイスを作成する
         $deviceId = (string) Str::uuid();
 
         DB::table('devices')->where('id', $deviceId)->delete();
@@ -192,6 +238,7 @@ class LogsTest extends TestCase
 
     private function ensureUsersTable(): void
     {
+        // usersテーブルが無い環境でも動くよう最小構成で補完する
         $row = DB::selectOne("SELECT to_regclass('public.users') as name");
         $exists = $row && $row->name !== null;
 
@@ -217,6 +264,7 @@ SQL);
      */
     private function ensurePersonalAccessTokensTable(): void
     {
+        // personal_access_tokensテーブルを最小構成で補完する
         $row = DB::selectOne("SELECT to_regclass('public.personal_access_tokens') as name");
         $exists = $row && $row->name !== null;
 
@@ -242,6 +290,7 @@ SQL);
 
     private function ensureDevicesTable(): void
     {
+        // devicesテーブルを最小構成で補完する
         $row = DB::selectOne("SELECT to_regclass('public.devices') as name");
         $exists = $row && $row->name !== null;
 
@@ -260,9 +309,10 @@ CREATE TABLE IF NOT EXISTS devices (
 SQL);
     }
 
-    private function ensureBowlSnapshotsTable(): void
+    private function ensureDeviceSessionEventsTable(): void
     {
-        $row = DB::selectOne("SELECT to_regclass('public.bowl_snapshots') as name");
+        // logs取得元のdevice_session_eventsを最小構成で補完する
+        $row = DB::selectOne("SELECT to_regclass('public.device_session_events') as name");
         $exists = $row && $row->name !== null;
 
         if ($exists) {
@@ -270,11 +320,14 @@ SQL);
         }
 
         DB::statement(<<<SQL
-CREATE TABLE IF NOT EXISTS bowl_snapshots (
+CREATE TABLE IF NOT EXISTS device_session_events (
   id VARCHAR(255) PRIMARY KEY,
+  session_id VARCHAR(255) NOT NULL,
   device_id VARCHAR(255) NOT NULL,
-  weight_g INTEGER NOT NULL,
+  event VARCHAR(64) NOT NULL,
+  eaten_grams NUMERIC(8,2) NOT NULL,
   recorded_at TIMESTAMPTZ NOT NULL,
+  raw_payload TEXT,
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ
 )
@@ -310,17 +363,26 @@ SQL);
 
     public function test_logs_delete_success(): void
     {
+        // テストケース
+        // ログID指定で削除できる
+        // 処理内容
+        // eat_finishedイベントを1件作成し DELETE /logs/{id} を呼ぶ
+        // 期待する結果
+        // 204を返し、対象レコードが削除される
         $token = $this->seedUser();
         $deviceId = $this->seedDevice();
 
         $logId = (string) Str::uuid();
         $recordedAt = CarbonImmutable::now('UTC');
 
-        DB::table('bowl_snapshots')->insert([
+        DB::table('device_session_events')->insert([
             'id' => $logId,
+            'session_id' => (string) Str::uuid(),
             'device_id' => $deviceId,
-            'weight_g' => 120,
+            'event' => 'eat_finished',
+            'eaten_grams' => 120,
             'recorded_at' => $recordedAt->format('Y-m-d H:i:s'),
+            'raw_payload' => json_encode(['event' => 'eat_finished'], JSON_UNESCAPED_UNICODE),
             'created_at' => $recordedAt->format('Y-m-d H:i:s'),
             'updated_at' => $recordedAt->format('Y-m-d H:i:s'),
         ]);
@@ -330,6 +392,6 @@ SQL);
         ]);
 
         $response->assertStatus(204);
-        $this->assertSame(0, DB::table('bowl_snapshots')->where('id', $logId)->count());
+        $this->assertSame(0, DB::table('device_session_events')->where('id', $logId)->count());
     }
 }
