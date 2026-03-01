@@ -23,8 +23,11 @@ from config import (
     GROSS_WEIGHT_LIMIT_G,
     IDLE_UP_SPIKE_IGNORE_G,
     MAX_SESSION_SECONDS,
+    MAX_VALID_GRAMS_MARGIN,
+    MAX_VALID_NET_JUMP_G,
     MAX_RETRY_COUNT,
     MIN_CONSUMED_G,
+    MIN_VALID_GRAMS,
     MOVING_AVG_WINDOW,
     PD_SCK_PIN,
     QUEUE_FLUSH_INTERVAL_SEC,
@@ -312,6 +315,8 @@ def main() -> None:
     next_bowl_snapshot_at = 0.0
     # 直近送信したfood重量
     last_snapshot_weight_g: float | None = None
+    # 直前の有効サンプル（異常値除外後）を保持する
+    last_valid_net_grams: float | None = None
 
     while True:
         now = time.monotonic()
@@ -338,6 +343,42 @@ def main() -> None:
         # 起動時に測ったゼロ点を差し引いて判定用の重さを作る
         # 器の個体差や設置ズレの影響をここで吸収する
         net_grams = grams - runtime_zero
+
+        # 異常に小さい重量はグリッチとして捨てる
+        if grams < MIN_VALID_GRAMS:
+            print(
+                f'event=sample_ignored reason=below_min raw={raw:.2f} '
+                f'grams={grams:.2f} min_valid={MIN_VALID_GRAMS:.2f}'
+            )
+            time.sleep(READ_SLEEP_SEC)
+            continue
+
+        # 異常に大きい重量はグリッチとして捨てる
+        max_valid_grams = runtime_settings.gross_weight_limit_g + MAX_VALID_GRAMS_MARGIN
+        if grams > max_valid_grams:
+            print(
+                f'event=sample_ignored reason=above_max raw={raw:.2f} '
+                f'grams={grams:.2f} max_valid={max_valid_grams:.2f}'
+            )
+            time.sleep(READ_SLEEP_SEC)
+            continue
+
+        # 直前有効値から急変しすぎるサンプルは捨てる
+        if (
+            last_valid_net_grams is not None
+            and abs(net_grams - last_valid_net_grams) > MAX_VALID_NET_JUMP_G
+        ):
+            print(
+                f'event=sample_ignored reason=jump raw={raw:.2f} '
+                f'net_grams={net_grams:.2f} prev={last_valid_net_grams:.2f} '
+                f'max_jump={MAX_VALID_NET_JUMP_G:.2f}'
+            )
+            time.sleep(READ_SLEEP_SEC)
+            continue
+
+        # ここまで通過した値だけ有効サンプルとして保持する
+        last_valid_net_grams = net_grams
+
         # ノイズ低減のため移動平均で平滑化する
         history.append(net_grams)
         avg_grams = sum(history) / len(history)

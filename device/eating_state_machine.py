@@ -50,6 +50,8 @@ class EatingDetector:
         self._session_started_at = 0.0
         self._stabilized_since = 0.0
         self._start_candidate_since = 0.0
+        # IDLE中の上方向スパイク継続を判定する時刻
+        self._up_spike_since = 0.0
         # 食事量算出で使う開始重量と最小重量
         self._meal_start_weight = 0.0
         self._meal_min_weight = 0.0
@@ -75,6 +77,18 @@ class EatingDetector:
                 self.baseline_grams = self.baseline_grams * 0.95 + avg_grams * 0.05
                 # 開始前の安定区間として開始重量候補に蓄積する
                 self._idle_reference_samples.append(avg_grams)
+                # 上方向スパイク判定は解除する
+                self._up_spike_since = 0.0
+            else:
+                # 大きな上昇が一定時間続いたら補充とみなしbaselineを再設定する
+                # 食後baselineを引き継いだまま補充すると次回開始判定が不安定になるため
+                if self._up_spike_since == 0.0:
+                    self._up_spike_since = now
+                elif now - self._up_spike_since >= 2.0:
+                    self.baseline_grams = avg_grams
+                    self._idle_reference_samples.clear()
+                    self._start_candidate_since = 0.0
+                    self._up_spike_since = 0.0
 
             drop_from_baseline = self.baseline_grams - avg_grams
 

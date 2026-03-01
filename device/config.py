@@ -186,3 +186,12 @@ RETRY_INTERVAL_SEC = 60
 MAX_RETRY_COUNT = 10
 # ループ中の再送チェック間隔
 QUEUE_FLUSH_INTERVAL_SEC = 1.0
+
+# 異常値フィルタ設定
+# 異常に小さい重量はセンサーグリッチとして無視する
+MIN_VALID_GRAMS = _env_float('HISUIDISH_MIN_VALID_GRAMS', -100.0)
+# 直前有効サンプルとの差分が大きすぎる場合は無視する
+MAX_VALID_NET_JUMP_G = _env_float('HISUIDISH_MAX_VALID_NET_JUMP_G', 50.0)
+# 異常に大きい重量はグリッチとして無視する
+# 上限判定は gross_weight_limit + このマージンで判定する
+MAX_VALID_GRAMS_MARGIN = _env_float('HISUIDISH_MAX_VALID_GRAMS_MARGIN', 200.0)
