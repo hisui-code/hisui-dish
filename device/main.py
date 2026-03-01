@@ -7,7 +7,12 @@ from config import (
     API_BASE_URL,
     API_TIMEOUT_SEC,
     API_TOKEN,
+    BOWL_SNAPSHOTS_QUEUE_FILE,
+    BOWL_SNAPSHOT_INTERVAL_SEC,
+    BOWL_SNAPSHOT_MIN_DELTA_G,
     CALIBRATION_FILE,
+    DEFAULT_TARE_WEIGHT_G,
+    DEVICE_BOWL_SNAPSHOT_ENDPOINT,
     DEVICE_EVENT_ENDPOINT,
     DEVICE_SETTINGS_ENDPOINT,
     DEVICE_SETTINGS_VERSION_ENDPOINT,
@@ -33,13 +38,13 @@ from config import (
     START_THRESHOLD_G,
     SESSION_EVENTS_FILE,
 )
-from api_sender import post_session_event
+from api_sender import post_bowl_snapshot, post_session_event
 from calibration_store import load_calibration
 from device_settings_client import fetch_settings, fetch_version
 from device_settings_store import load_applied_lock_version, load_applied_state, save_applied_state
 from eating_state_machine import EatingDetector, EatingDetectorConfig
 from hx711_reader import cleanup_gpio, convert_raw_to_grams, create_sensor, read_raw_once
-from queue_store import enqueue_finished_event, flush_queue
+from queue_store import enqueue_bowl_snapshot, enqueue_finished_event, flush_queue
 from session_store import append_session_event
 
 
@@ -52,6 +57,7 @@ class RuntimeSettings:
     detector_config: EatingDetectorConfig
     moving_avg_window: int
     gross_weight_limit_g: float
+    tare_weight_g: float
     lock_version: int
 
 
@@ -62,6 +68,8 @@ def measure_runtime_zero(sensor, offset: float, scale: float) -> float:
     end_at = time.monotonic() + RUNTIME_ZERO_SECONDS
     samples: list[float] = []
 
+    # 数秒だけ連続サンプリングして平均値をゼロ基準にする
+    # 単発値を使うとノイズで基準がズレやすいため平均を使う
     while time.monotonic() < end_at:
         raw = read_raw_once(sensor)
         grams = convert_raw_to_grams(raw=raw, offset=offset, scale=scale)
@@ -78,6 +86,7 @@ def _build_default_runtime_settings() -> RuntimeSettings:
     """
     @description ローカル定数から実行時設定を作る
     """
+    # DeviceSettingsが取れないときでも動かすための安全な既定値
     return RuntimeSettings(
         detector_config=EatingDetectorConfig(
             start_threshold_g=START_THRESHOLD_G,
@@ -91,6 +100,7 @@ def _build_default_runtime_settings() -> RuntimeSettings:
         ),
         moving_avg_window=max(1, MOVING_AVG_WINDOW),
         gross_weight_limit_g=GROSS_WEIGHT_LIMIT_G,
+        tare_weight_g=DEFAULT_TARE_WEIGHT_G,
         lock_version=-1,
     )
 
@@ -100,6 +110,7 @@ def _build_runtime_settings_from_payload(payload: dict) -> RuntimeSettings:
     @description DeviceSettings payloadを状態機械向け設定へ変換する
     """
     # start_threshold/start_confirmは今のAPIに無いのでローカル値を使う
+    # それ以外はWeb設定値を優先して反映する
     return RuntimeSettings(
         detector_config=EatingDetectorConfig(
             start_threshold_g=START_THRESHOLD_G,
@@ -113,8 +124,28 @@ def _build_runtime_settings_from_payload(payload: dict) -> RuntimeSettings:
         ),
         moving_avg_window=max(1, int(payload['moving_avg_window'])),
         gross_weight_limit_g=float(payload['gross_weight_limit_g']),
+        tare_weight_g=float(payload['tare_weight']),
         lock_version=int(payload['lock_version']),
     )
+
+
+def _to_food_weight_g(*, gross_grams: float, tare_weight_g: float, gross_limit_g: float) -> float | None:
+    """
+    @description 総重量からfood重量を計算する
+    異常値はNoneで返して送信しない
+    """
+    # 皿持ち上げなどで総重量が跳ねるケースは誤送信を避けるため除外
+    if gross_grams > gross_limit_g:
+        return None
+
+    # food重量 = 総重量 - 皿重量
+    # 例  総重量 430g  皿 400g なら food 30g
+    food_weight = gross_grams - tare_weight_g
+    if food_weight < 0:
+        # マイナス値は0へ丸める
+        return 0.0
+
+    return food_weight
 
 
 def _resolve_initial_runtime_settings() -> RuntimeSettings:
@@ -126,8 +157,8 @@ def _resolve_initial_runtime_settings() -> RuntimeSettings:
         print('event=settings_update_failed reason=missing_device_id')
         return default_settings
 
-    # 前回設定を読み込む
-    # APIに届かないときはこれを使う
+    # 前回適用済み設定を読み込む
+    # APIに届かないときのフォールバックとして使う
     applied_state = load_applied_state(APPLIED_SETTINGS_FILE)
     applied_lock_version = load_applied_lock_version(APPLIED_SETTINGS_FILE)
     cached_settings = applied_state.get('settings') if isinstance(applied_state, dict) else None
@@ -152,14 +183,14 @@ def _resolve_initial_runtime_settings() -> RuntimeSettings:
     remote_lock_version = int(version_payload['lock_version'])
     print(f'event=settings_version_checked remote={remote_lock_version} applied={applied_lock_version}')
 
-    # 前回設定が最新ならそのまま使う
+    # 前回設定が最新ならAPI本体を取りに行かずそのまま使う
     if isinstance(cached_settings, dict) and remote_lock_version == applied_lock_version:
         try:
             return _build_runtime_settings_from_payload(cached_settings)
         except (KeyError, TypeError, ValueError):
             print('event=settings_update_failed reason=invalid_cached_settings')
 
-    # 更新があるときだけ設定本体を取得
+    # 更新があるときだけ設定本体を取得して通信量を抑える
     ok, settings_payload, reason = fetch_settings(
         api_base_url=API_BASE_URL,
         endpoint_template=DEVICE_SETTINGS_ENDPOINT,
@@ -212,6 +243,7 @@ def _sync_runtime_settings(current_lock_version: int) -> RuntimeSettings | None:
         return None
 
     # versionが増えたときだけ設定本体を取得して反映
+    # 常時起動中でも再起動なしで設定を切り替える
     ok, settings_payload, reason = fetch_settings(
         api_base_url=API_BASE_URL,
         endpoint_template=DEVICE_SETTINGS_ENDPOINT,
@@ -245,9 +277,11 @@ def main() -> None:
     runtime_zero = measure_runtime_zero(sensor=sensor, offset=offset, scale=scale)
 
     # 起動時に使う設定を確定
+    # Web設定が取れればそれを使い、取れなければ既定値を使う
     runtime_settings = _resolve_initial_runtime_settings()
 
     # 短期ノイズを抑えるために移動平均を使う
+    # 直近N点の平均で判定すると誤検知が減る
     history: deque[float] = deque(maxlen=runtime_settings.moving_avg_window)
 
     # 状態機械を設定値で初期化
@@ -264,6 +298,7 @@ def main() -> None:
         f'end_stable={runtime_settings.detector_config.end_stable_seconds}, '
         f'max_session={runtime_settings.detector_config.max_session_seconds}, '
         f'gross_weight_limit={runtime_settings.gross_weight_limit_g}, '
+        f'tare_weight={runtime_settings.tare_weight_g}, '
         f'lock_version={runtime_settings.lock_version}, '
         f'runtime_zero={runtime_zero:.2f}, retry_interval={RETRY_INTERVAL_SEC}, '
         f'max_retry_count={MAX_RETRY_COUNT}'
@@ -273,11 +308,16 @@ def main() -> None:
     next_queue_flush_at = 0.0
     # 常時起動中も設定更新を確認
     next_settings_sync_at = 0.0
+    # bowl_snapshotの定期送信タイミング
+    next_bowl_snapshot_at = 0.0
+    # 直近送信したfood重量
+    last_snapshot_weight_g: float | None = None
 
     while True:
         now = time.monotonic()
 
         # 設定更新を確認し、変化があればすぐ反映
+        # ロジックを止めずに次ループから新設定で動かす
         if now >= next_settings_sync_at:
             updated_settings = _sync_runtime_settings(runtime_settings.lock_version)
             if updated_settings is not None:
@@ -285,21 +325,25 @@ def main() -> None:
                 runtime_settings = updated_settings
                 detector.config = runtime_settings.detector_config
                 # moving_avg_window変更時は履歴バッファを作り直す
+                # 古い窓サイズのままだと平均値が意図通りにならない
                 history = deque(history, maxlen=runtime_settings.moving_avg_window)
             next_settings_sync_at = now + SETTINGS_SYNC_INTERVAL_SEC
 
         # 1サンプル読み取り
+        # rawはセンサー生値
         raw = read_raw_once(sensor)
         # 校正値を使って g に変換
         grams = convert_raw_to_grams(raw=raw, offset=offset, scale=scale)
 
         # 起動時に測ったゼロ点を差し引いて判定用の重さを作る
+        # 器の個体差や設置ズレの影響をここで吸収する
         net_grams = grams - runtime_zero
         # ノイズ低減のため移動平均で平滑化する
         history.append(net_grams)
         avg_grams = sum(history) / len(history)
 
         # 状態機械を1ステップ進める
+        # 返ってくるeventsには eat_started/eat_finished などが入る
         events = detector.step(avg_grams=avg_grams, now=now)
         for event in events:
             print(event)
@@ -307,7 +351,8 @@ def main() -> None:
             saved_record = append_session_event(path=SESSION_EVENTS_FILE, event_line=event)
             if saved_record:
                 print(f'event=local_saved path={SESSION_EVENTS_FILE.name}')
-                # eat_finishedのみ送信キューへ投入する
+                # eat_finishedのみセッションイベント送信キューへ投入する
+                # eat_startedなど途中イベントは送らない
                 if enqueue_finished_event(
                     path=SESSION_QUEUE_FILE,
                     record=saved_record,
@@ -315,7 +360,56 @@ def main() -> None:
                 ):
                     print(f'event=queue_enqueued path={SESSION_QUEUE_FILE.name}')
 
+                # 食事終了時は現在のfood重量を即時でキューに積む
+                # 終了直後の残量を確実に残すため
+                if saved_record.get('event') == 'eat_finished':
+                    gross_for_snapshot = avg_grams + runtime_zero
+                    food_weight = _to_food_weight_g(
+                        gross_grams=gross_for_snapshot,
+                        tare_weight_g=runtime_settings.tare_weight_g,
+                        gross_limit_g=runtime_settings.gross_weight_limit_g,
+                    )
+                    if food_weight is not None:
+                        # 直近値との差が小さい場合は同じ値の連投を避ける
+                        should_send = (
+                            last_snapshot_weight_g is None
+                            or abs(food_weight - last_snapshot_weight_g) >= BOWL_SNAPSHOT_MIN_DELTA_G
+                        )
+                        if should_send and enqueue_bowl_snapshot(
+                            path=BOWL_SNAPSHOTS_QUEUE_FILE,
+                            device_id=DEVICE_ID,
+                            weight_g=food_weight,
+                            recorded_at=saved_record.get('recorded_at'),
+                        ):
+                            last_snapshot_weight_g = food_weight
+                            print(f'event=bowl_snapshot_enqueued path={BOWL_SNAPSHOTS_QUEUE_FILE.name}')
+
+        # IDLE中のみ5分ごとに現在のfood重量を送信キューへ積む
+        # ごはん追加だけが起きた場合も残量を更新できる
+        if detector.state == 'IDLE' and now >= next_bowl_snapshot_at:
+            gross_for_snapshot = avg_grams + runtime_zero
+            food_weight = _to_food_weight_g(
+                gross_grams=gross_for_snapshot,
+                tare_weight_g=runtime_settings.tare_weight_g,
+                gross_limit_g=runtime_settings.gross_weight_limit_g,
+            )
+            if food_weight is not None:
+                # 変化が小さい場合は送信を省略してノイズ投稿を抑える
+                should_send = (
+                    last_snapshot_weight_g is None
+                    or abs(food_weight - last_snapshot_weight_g) >= BOWL_SNAPSHOT_MIN_DELTA_G
+                )
+                if should_send and enqueue_bowl_snapshot(
+                    path=BOWL_SNAPSHOTS_QUEUE_FILE,
+                    device_id=DEVICE_ID,
+                    weight_g=food_weight,
+                ):
+                    last_snapshot_weight_g = food_weight
+                    print(f'event=bowl_snapshot_enqueued path={BOWL_SNAPSHOTS_QUEUE_FILE.name}')
+            next_bowl_snapshot_at = now + BOWL_SNAPSHOT_INTERVAL_SEC
+
         # 送信キューを定期的にフラッシュする
+        # session_eventsとbowl_snapshotsを別キューで処理する
         if now >= next_queue_flush_at:
             queue_stats = flush_queue(
                 path=SESSION_QUEUE_FILE,
@@ -333,6 +427,23 @@ def main() -> None:
                 print(
                     f"event=queue_flushed sent={queue_stats['sent']} "
                     f"retried={queue_stats['retried']} failed={queue_stats['failed']}"
+                )
+            bowl_queue_stats = flush_queue(
+                path=BOWL_SNAPSHOTS_QUEUE_FILE,
+                retry_interval_sec=RETRY_INTERVAL_SEC,
+                max_retry_count=MAX_RETRY_COUNT,
+                sender=lambda payload: post_bowl_snapshot(
+                    api_base_url=API_BASE_URL,
+                    endpoint_path=DEVICE_BOWL_SNAPSHOT_ENDPOINT,
+                    token=API_TOKEN,
+                    timeout_sec=API_TIMEOUT_SEC,
+                    payload=payload,
+                ),
+            )
+            if bowl_queue_stats['sent'] or bowl_queue_stats['retried'] or bowl_queue_stats['failed']:
+                print(
+                    f"event=bowl_queue_flushed sent={bowl_queue_stats['sent']} "
+                    f"retried={bowl_queue_stats['retried']} failed={bowl_queue_stats['failed']}"
                 )
             next_queue_flush_at = now + QUEUE_FLUSH_INTERVAL_SEC
 

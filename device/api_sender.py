@@ -48,3 +48,25 @@ def post_session_event(
     # DNS失敗や接続拒否など通信エラーはURLErrorになる
     except urllib.error.URLError as exc:
         return False, f'NETWORK {exc.reason}'
+
+
+def post_bowl_snapshot(
+    *,
+    api_base_url: str,
+    endpoint_path: str,
+    token: str,
+    timeout_sec: int,
+    payload: dict,
+) -> tuple[bool, str]:
+    """
+    @description bowl_snapshotをAPIへ送信する
+    @returns 成功可否とメッセージ
+    """
+    # 送信仕様はsession_eventと同じなので共通関数を使う
+    return post_session_event(
+        api_base_url=api_base_url,
+        endpoint_path=endpoint_path,
+        token=token,
+        timeout_sec=timeout_sec,
+        payload=payload,
+    )

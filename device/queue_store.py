@@ -90,6 +90,57 @@ def enqueue_finished_event(path: Path, record: dict[str, str | float], device_id
     return True
 
 
+def enqueue_bowl_snapshot(
+    path: Path,
+    *,
+    device_id: str,
+    weight_g: float,
+    recorded_at: str | None = None,
+) -> bool:
+    """
+    @description bowl_snapshotを送信キューへ投入する
+    @returns キュー投入した場合はTrue
+    """
+    # API仕様で必須なのでdevice_id未設定は弾く
+    if not device_id:
+        return False
+
+    # weight_gが数値でない場合は不正扱い
+    if not isinstance(weight_g, (int, float)):
+        return False
+
+    # 再送管理に使う現在時刻
+    now_epoch = int(time.time())
+    now_iso = datetime.now(timezone.utc).isoformat()
+    # 冪等送信に使うスナップショットID
+    snapshot_id = str(uuid4())
+
+    # API送信用payloadを組み立てる
+    payload: dict[str, str | float] = {
+        'snapshot_id': snapshot_id,
+        'device_id': device_id,
+        'weight_g': float(round(weight_g, 2)),
+        'recorded_at': recorded_at or now_iso,
+    }
+
+    # キュー1件の管理情報
+    queue_item = {
+        'snapshot_id': snapshot_id,
+        'status': 'pending',
+        'attempt_count': 0,
+        'next_retry_at': now_epoch,
+        'last_error': '',
+        'created_at': now_iso,
+        'payload': payload,
+    }
+
+    # ファイルキューを読み込んで末尾に追加して保存
+    records = _load_queue(path)
+    records.append(queue_item)
+    _save_queue(path, records)
+    return True
+
+
 def flush_queue(
     *,
     path: Path,

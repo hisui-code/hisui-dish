@@ -124,6 +124,8 @@ CALIBRATION_FILE = Path(__file__).resolve().parent / 'calibration.json'
 SESSION_EVENTS_FILE = Path(__file__).resolve().parent / 'session_events.jsonl'
 # 送信キュー保存先
 SESSION_QUEUE_FILE = Path(__file__).resolve().parent / 'session_queue.jsonl'
+# bowl_snapshot送信キュー保存先
+BOWL_SNAPSHOTS_QUEUE_FILE = Path(__file__).resolve().parent / 'bowl_snapshots_queue.jsonl'
 # 適用済みDeviceSettings保存先
 APPLIED_SETTINGS_FILE = Path(__file__).resolve().parent / 'device_settings_applied.json'
 
@@ -139,6 +141,12 @@ API_BASE_URL = _env('HISUIDISH_API_BASE', 'http://localhost:8000')
 # DEVICE_EVENT_ENDPOINT:
 # 食事イベント送信先
 DEVICE_EVENT_ENDPOINT = _env('HISUIDISH_EVENT_ENDPOINT', '/api/v1/device/session_events')
+# DEVICE_BOWL_SNAPSHOT_ENDPOINT:
+# bowl_snapshot送信先
+DEVICE_BOWL_SNAPSHOT_ENDPOINT = _env(
+    'HISUIDISH_BOWL_SNAPSHOT_ENDPOINT',
+    '/api/v1/device/bowl_snapshots',
+)
 # API_TOKEN:
 # 本番で X-Api-Token に使う
 API_TOKEN = _env('HISUIDISH_API_TOKEN', '')
@@ -161,6 +169,15 @@ DEVICE_SETTINGS_VERSION_ENDPOINT = _env(
 # SETTINGS_SYNC_INTERVAL_SEC:
 # 常時起動中にversionを確認する間隔
 SETTINGS_SYNC_INTERVAL_SEC = _env_int('SETTINGS_SYNC_INTERVAL_SEC', 10)
+# BOWL_SNAPSHOT_INTERVAL_SEC:
+# IDLE中の定期送信間隔
+BOWL_SNAPSHOT_INTERVAL_SEC = _env_int('BOWL_SNAPSHOT_INTERVAL_SEC', 300)
+# BOWL_SNAPSHOT_MIN_DELTA_G:
+# 直近送信との差分がこの値未満なら送信しない
+BOWL_SNAPSHOT_MIN_DELTA_G = _env_float('BOWL_SNAPSHOT_MIN_DELTA_G', 0.5)
+# DEFAULT_TARE_WEIGHT_G:
+# DeviceSettings未取得時の皿重量フォールバック
+DEFAULT_TARE_WEIGHT_G = _env_float('HISUIDISH_TARE_WEIGHT_G', 0.0)
 
 # 再送キュー設定
 # 仕様どおり 1分ごとに再送する
