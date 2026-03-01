@@ -1,16 +1,21 @@
 import time
 from collections import deque
+from dataclasses import dataclass
 
 from config import (
+    APPLIED_SETTINGS_FILE,
     API_BASE_URL,
     API_TIMEOUT_SEC,
     API_TOKEN,
     CALIBRATION_FILE,
     DEVICE_EVENT_ENDPOINT,
+    DEVICE_SETTINGS_ENDPOINT,
+    DEVICE_SETTINGS_VERSION_ENDPOINT,
     DEVICE_ID,
     DOUT_PIN,
     END_STABLE_SECONDS,
     FINALIZE_SECONDS,
+    GROSS_WEIGHT_LIMIT_G,
     IDLE_UP_SPIKE_IGNORE_G,
     MAX_SESSION_SECONDS,
     MAX_RETRY_COUNT,
@@ -21,6 +26,7 @@ from config import (
     READ_SLEEP_SEC,
     RETRY_INTERVAL_SEC,
     RUNTIME_ZERO_SECONDS,
+    SETTINGS_SYNC_INTERVAL_SEC,
     SESSION_QUEUE_FILE,
     START_CONFIRM_SECONDS,
     STABILITY_EPSILON_G,
@@ -29,10 +35,24 @@ from config import (
 )
 from api_sender import post_session_event
 from calibration_store import load_calibration
+from device_settings_client import fetch_settings, fetch_version
+from device_settings_store import load_applied_lock_version, load_applied_state, save_applied_state
 from eating_state_machine import EatingDetector, EatingDetectorConfig
 from hx711_reader import cleanup_gpio, convert_raw_to_grams, create_sensor, read_raw_once
 from queue_store import enqueue_finished_event, flush_queue
 from session_store import append_session_event
+
+
+@dataclass
+class RuntimeSettings:
+    """
+    @description DeviceSettings同期結果を実行時に使う形へ変換した設定
+    """
+
+    detector_config: EatingDetectorConfig
+    moving_avg_window: int
+    gross_weight_limit_g: float
+    lock_version: int
 
 
 def measure_runtime_zero(sensor, offset: float, scale: float) -> float:
@@ -54,6 +74,165 @@ def measure_runtime_zero(sensor, offset: float, scale: float) -> float:
     return sum(samples) / len(samples)
 
 
+def _build_default_runtime_settings() -> RuntimeSettings:
+    """
+    @description ローカル定数から実行時設定を作る
+    """
+    return RuntimeSettings(
+        detector_config=EatingDetectorConfig(
+            start_threshold_g=START_THRESHOLD_G,
+            start_confirm_seconds=START_CONFIRM_SECONDS,
+            idle_up_spike_ignore_g=IDLE_UP_SPIKE_IGNORE_G,
+            stability_epsilon_g=STABILITY_EPSILON_G,
+            end_stable_seconds=END_STABLE_SECONDS,
+            finalize_seconds=FINALIZE_SECONDS,
+            max_session_seconds=MAX_SESSION_SECONDS,
+            min_consumed_g=MIN_CONSUMED_G,
+        ),
+        moving_avg_window=max(1, MOVING_AVG_WINDOW),
+        gross_weight_limit_g=GROSS_WEIGHT_LIMIT_G,
+        lock_version=-1,
+    )
+
+
+def _build_runtime_settings_from_payload(payload: dict) -> RuntimeSettings:
+    """
+    @description DeviceSettings payloadを状態機械向け設定へ変換する
+    """
+    # start_threshold/start_confirmは今のAPIに無いのでローカル値を使う
+    return RuntimeSettings(
+        detector_config=EatingDetectorConfig(
+            start_threshold_g=START_THRESHOLD_G,
+            start_confirm_seconds=START_CONFIRM_SECONDS,
+            idle_up_spike_ignore_g=IDLE_UP_SPIKE_IGNORE_G,
+            stability_epsilon_g=float(payload['stability_epsilon_g']),
+            end_stable_seconds=float(payload['stable_duration_sec']),
+            finalize_seconds=FINALIZE_SECONDS,
+            max_session_seconds=float(payload['max_session_sec']),
+            min_consumed_g=MIN_CONSUMED_G,
+        ),
+        moving_avg_window=max(1, int(payload['moving_avg_window'])),
+        gross_weight_limit_g=float(payload['gross_weight_limit_g']),
+        lock_version=int(payload['lock_version']),
+    )
+
+
+def _resolve_initial_runtime_settings() -> RuntimeSettings:
+    """
+    @description 起動時にDeviceSettingsを取得し未取得時はローカル既定値へフォールバックする
+    """
+    default_settings = _build_default_runtime_settings()
+    if not DEVICE_ID:
+        print('event=settings_update_failed reason=missing_device_id')
+        return default_settings
+
+    # 前回設定を読み込む
+    # APIに届かないときはこれを使う
+    applied_state = load_applied_state(APPLIED_SETTINGS_FILE)
+    applied_lock_version = load_applied_lock_version(APPLIED_SETTINGS_FILE)
+    cached_settings = applied_state.get('settings') if isinstance(applied_state, dict) else None
+
+    # まず軽いversion APIで更新有無を確認
+    ok, version_payload, reason = fetch_version(
+        api_base_url=API_BASE_URL,
+        endpoint_template=DEVICE_SETTINGS_VERSION_ENDPOINT,
+        device_id=DEVICE_ID,
+        token=API_TOKEN,
+        timeout_sec=API_TIMEOUT_SEC,
+    )
+    if not ok:
+        print(f'event=settings_update_failed reason=version_fetch_{reason}')
+        if isinstance(cached_settings, dict):
+            try:
+                return _build_runtime_settings_from_payload(cached_settings)
+            except (KeyError, TypeError, ValueError):
+                print('event=settings_update_failed reason=invalid_cached_settings')
+        return default_settings
+
+    remote_lock_version = int(version_payload['lock_version'])
+    print(f'event=settings_version_checked remote={remote_lock_version} applied={applied_lock_version}')
+
+    # 前回設定が最新ならそのまま使う
+    if isinstance(cached_settings, dict) and remote_lock_version == applied_lock_version:
+        try:
+            return _build_runtime_settings_from_payload(cached_settings)
+        except (KeyError, TypeError, ValueError):
+            print('event=settings_update_failed reason=invalid_cached_settings')
+
+    # 更新があるときだけ設定本体を取得
+    ok, settings_payload, reason = fetch_settings(
+        api_base_url=API_BASE_URL,
+        endpoint_template=DEVICE_SETTINGS_ENDPOINT,
+        device_id=DEVICE_ID,
+        token=API_TOKEN,
+        timeout_sec=API_TIMEOUT_SEC,
+    )
+    if not ok:
+        print(f'event=settings_update_failed reason=settings_fetch_{reason}')
+        if isinstance(cached_settings, dict):
+            try:
+                return _build_runtime_settings_from_payload(cached_settings)
+            except (KeyError, TypeError, ValueError):
+                print('event=settings_update_failed reason=invalid_cached_settings')
+        return default_settings
+
+    runtime_settings = _build_runtime_settings_from_payload(settings_payload)
+    save_applied_state(
+        path=APPLIED_SETTINGS_FILE,
+        lock_version=runtime_settings.lock_version,
+        settings=settings_payload,
+    )
+    print(f'event=settings_updated lock_version={runtime_settings.lock_version}')
+    return runtime_settings
+
+
+def _sync_runtime_settings(current_lock_version: int) -> RuntimeSettings | None:
+    """
+    @description ループ中にDeviceSettingsの更新有無を確認して差分があれば返す
+    """
+    if not DEVICE_ID:
+        return None
+
+    # 常時起動中もまずversionだけ確認
+    ok, version_payload, reason = fetch_version(
+        api_base_url=API_BASE_URL,
+        endpoint_template=DEVICE_SETTINGS_VERSION_ENDPOINT,
+        device_id=DEVICE_ID,
+        token=API_TOKEN,
+        timeout_sec=API_TIMEOUT_SEC,
+    )
+    if not ok:
+        print(f'event=settings_update_failed reason=version_fetch_{reason}')
+        return None
+
+    remote_lock_version = int(version_payload['lock_version'])
+    print(f'event=settings_version_checked remote={remote_lock_version} applied={current_lock_version}')
+    if remote_lock_version <= current_lock_version:
+        # 変更なしなら何もしない
+        return None
+
+    # versionが増えたときだけ設定本体を取得して反映
+    ok, settings_payload, reason = fetch_settings(
+        api_base_url=API_BASE_URL,
+        endpoint_template=DEVICE_SETTINGS_ENDPOINT,
+        device_id=DEVICE_ID,
+        token=API_TOKEN,
+        timeout_sec=API_TIMEOUT_SEC,
+    )
+    if not ok:
+        print(f'event=settings_update_failed reason=settings_fetch_{reason}')
+        return None
+
+    runtime_settings = _build_runtime_settings_from_payload(settings_payload)
+    save_applied_state(
+        path=APPLIED_SETTINGS_FILE,
+        lock_version=runtime_settings.lock_version,
+        settings=settings_payload,
+    )
+    print(f'event=settings_updated lock_version={runtime_settings.lock_version}')
+    return runtime_settings
+
+
 def main() -> None:
     """
     @description 校正値を適用して重さを監視し食事状態を判定する
@@ -65,38 +244,50 @@ def main() -> None:
     # 起動時の空状態を基準にしてゼロ点ずれを吸収する
     runtime_zero = measure_runtime_zero(sensor=sensor, offset=offset, scale=scale)
 
-    # 短期ノイズを抑えるために移動平均を使う
-    history: deque[float] = deque(maxlen=MOVING_AVG_WINDOW)
+    # 起動時に使う設定を確定
+    runtime_settings = _resolve_initial_runtime_settings()
 
-    detector = EatingDetector(
-        EatingDetectorConfig(
-            start_threshold_g=START_THRESHOLD_G,
-            start_confirm_seconds=START_CONFIRM_SECONDS,
-            idle_up_spike_ignore_g=IDLE_UP_SPIKE_IGNORE_G,
-            stability_epsilon_g=STABILITY_EPSILON_G,
-            end_stable_seconds=END_STABLE_SECONDS,
-            finalize_seconds=FINALIZE_SECONDS,
-            max_session_seconds=MAX_SESSION_SECONDS,
-            min_consumed_g=MIN_CONSUMED_G,
-        )
-    )
+    # 短期ノイズを抑えるために移動平均を使う
+    history: deque[float] = deque(maxlen=runtime_settings.moving_avg_window)
+
+    # 状態機械を設定値で初期化
+    detector = EatingDetector(runtime_settings.detector_config)
 
     print('HisuiDish device start')
     print(
-        f'offset={offset}, scale={scale}, moving_avg_window={MOVING_AVG_WINDOW}, '
-        f'start_threshold={START_THRESHOLD_G}, start_confirm={START_CONFIRM_SECONDS}, '
+        f'offset={offset}, scale={scale}, moving_avg_window={runtime_settings.moving_avg_window}, '
+        f'start_threshold={runtime_settings.detector_config.start_threshold_g}, '
+        f'start_confirm={runtime_settings.detector_config.start_confirm_seconds}, '
         f'idle_up_spike_ignore={IDLE_UP_SPIKE_IGNORE_G}, '
-        f'stability_epsilon={STABILITY_EPSILON_G}, '
-        f'min_consumed={MIN_CONSUMED_G}, '
+        f'stability_epsilon={runtime_settings.detector_config.stability_epsilon_g}, '
+        f'min_consumed={runtime_settings.detector_config.min_consumed_g}, '
+        f'end_stable={runtime_settings.detector_config.end_stable_seconds}, '
+        f'max_session={runtime_settings.detector_config.max_session_seconds}, '
+        f'gross_weight_limit={runtime_settings.gross_weight_limit_g}, '
+        f'lock_version={runtime_settings.lock_version}, '
         f'runtime_zero={runtime_zero:.2f}, retry_interval={RETRY_INTERVAL_SEC}, '
         f'max_retry_count={MAX_RETRY_COUNT}'
     )
 
     # 再送キューは一定間隔で処理する
     next_queue_flush_at = 0.0
+    # 常時起動中も設定更新を確認
+    next_settings_sync_at = 0.0
 
     while True:
         now = time.monotonic()
+
+        # 設定更新を確認し、変化があればすぐ反映
+        if now >= next_settings_sync_at:
+            updated_settings = _sync_runtime_settings(runtime_settings.lock_version)
+            if updated_settings is not None:
+                # 実行中でも再起動せず設定を反映
+                runtime_settings = updated_settings
+                detector.config = runtime_settings.detector_config
+                # moving_avg_window変更時は履歴バッファを作り直す
+                history = deque(history, maxlen=runtime_settings.moving_avg_window)
+            next_settings_sync_at = now + SETTINGS_SYNC_INTERVAL_SEC
+
         # 1サンプル読み取り
         raw = read_raw_once(sensor)
         # 校正値を使って g に変換

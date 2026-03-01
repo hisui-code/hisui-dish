@@ -60,6 +60,9 @@ cat calibration.json
 - `HISUIDISH_EVENT_ENDPOINT`
 - `HISUIDISH_API_TOKEN`
 - `HISUIDISH_DEVICE_ID`
+- `HISUIDISH_DEVICE_SETTINGS_ENDPOINT`
+- `HISUIDISH_DEVICE_SETTINGS_VERSION_ENDPOINT`
+- `SETTINGS_SYNC_INTERVAL_SEC`
 
 ### Development Example
 
@@ -75,6 +78,9 @@ HISUIDISH_API_BASE=http://localhost:8000
 HISUIDISH_EVENT_ENDPOINT=/api/v1/device/session_events
 HISUIDISH_API_TOKEN=dev_token
 HISUIDISH_DEVICE_ID=dev_device_uuid
+HISUIDISH_DEVICE_SETTINGS_ENDPOINT=/api/v1/device_settings/{device_id}
+HISUIDISH_DEVICE_SETTINGS_VERSION_ENDPOINT=/api/v1/device_settings/{device_id}/version
+SETTINGS_SYNC_INTERVAL_SEC=10
 ```
 
 ### Production Example (file switch)
@@ -112,9 +118,20 @@ HISUIDISH_API_BASE=https://api.example.com
 HISUIDISH_EVENT_ENDPOINT=/api/v1/device/session_events
 HISUIDISH_API_TOKEN=prod_token
 HISUIDISH_DEVICE_ID=prod_device_uuid
+HISUIDISH_DEVICE_SETTINGS_ENDPOINT=/api/v1/device_settings/{device_id}
+HISUIDISH_DEVICE_SETTINGS_VERSION_ENDPOINT=/api/v1/device_settings/{device_id}/version
+SETTINGS_SYNC_INTERVAL_SEC=10
 ```
 
 この方式なら、開発/本番切替時もコード変更は不要
+
+## DeviceSettings Sync
+
+- 起動時に `GET /api/v1/device_settings/{device_id}/version` を確認する
+- `lock_version` が未適用より新しいときだけ設定本体を取得する
+- 設定本体は `GET /api/v1/device_settings/{device_id}` で取得する
+- 常時起動中は `SETTINGS_SYNC_INTERVAL_SEC` ごとに version を再確認する
+- 更新があれば再起動せずに判定設定へ即時反映する
 
 ### Environment Toggle by `.env`
 

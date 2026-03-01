@@ -53,6 +53,9 @@ def _build_file_env() -> dict[str, str]:
 
 
 FILE_ENV = _build_file_env()
+# FILE_ENV は起動時に1回だけ作る
+# 実行中に .env を変えても反映されない
+# 反映したいときは再起動する
 
 
 def _env(key: str, default: str = '') -> str:
@@ -60,6 +63,28 @@ def _env(key: str, default: str = '') -> str:
     @description 環境変数を OS -> .envファイル -> 既定値 の優先順で解決する
     """
     return os.getenv(key, FILE_ENV.get(key, default))
+
+
+def _env_int(key: str, default: int) -> int:
+    """
+    @description 環境変数を整数で解決する
+    """
+    raw = _env(key, str(default)).strip()
+    try:
+        return int(raw)
+    except ValueError:
+        return default
+
+
+def _env_float(key: str, default: float) -> float:
+    """
+    @description 環境変数を浮動小数で解決する
+    """
+    raw = _env(key, str(default)).strip()
+    try:
+        return float(raw)
+    except ValueError:
+        return default
 
 # GPIOピン
 DOUT_PIN = 5
@@ -90,6 +115,8 @@ MAX_SESSION_SECONDS = 30 * 60
 # 食事量として扱う最小差分
 # これ未満はノイズとして破棄する
 MIN_CONSUMED_G = 2.0
+# 総重量の上限 監視用途で保持する
+GROSS_WEIGHT_LIMIT_G = _env_float('HISUIDISH_GROSS_WEIGHT_LIMIT_G', 2000.0)
 
 # 校正値保存先
 CALIBRATION_FILE = Path(__file__).resolve().parent / 'calibration.json'
@@ -97,6 +124,8 @@ CALIBRATION_FILE = Path(__file__).resolve().parent / 'calibration.json'
 SESSION_EVENTS_FILE = Path(__file__).resolve().parent / 'session_events.jsonl'
 # 送信キュー保存先
 SESSION_QUEUE_FILE = Path(__file__).resolve().parent / 'session_queue.jsonl'
+# 適用済みDeviceSettings保存先
+APPLIED_SETTINGS_FILE = Path(__file__).resolve().parent / 'device_settings_applied.json'
 
 # キャリブレーション設定
 KNOWN_WEIGHT_G = 100.0
@@ -104,11 +133,34 @@ SAMPLE_COUNT = 30
 SAMPLE_SLEEP_SEC = 0.05
 
 # 送信設定
+# API_BASE_URL:
+# デバイスが通信するAPIサーバ
 API_BASE_URL = _env('HISUIDISH_API_BASE', 'http://localhost:8000')
+# DEVICE_EVENT_ENDPOINT:
+# 食事イベント送信先
 DEVICE_EVENT_ENDPOINT = _env('HISUIDISH_EVENT_ENDPOINT', '/api/v1/device/session_events')
+# API_TOKEN:
+# 本番で X-Api-Token に使う
 API_TOKEN = _env('HISUIDISH_API_TOKEN', '')
+# DEVICE_ID:
+# どのデバイスかを表すID
 DEVICE_ID = _env('HISUIDISH_DEVICE_ID', '')
 API_TIMEOUT_SEC = 5
+# DEVICE_SETTINGS_ENDPOINT:
+# DeviceSettings本体の取得先
+DEVICE_SETTINGS_ENDPOINT = _env(
+    'HISUIDISH_DEVICE_SETTINGS_ENDPOINT',
+    '/api/v1/device_settings/{device_id}',
+)
+# DEVICE_SETTINGS_VERSION_ENDPOINT:
+# lock_versionだけ確認する取得先
+DEVICE_SETTINGS_VERSION_ENDPOINT = _env(
+    'HISUIDISH_DEVICE_SETTINGS_VERSION_ENDPOINT',
+    '/api/v1/device_settings/{device_id}/version',
+)
+# SETTINGS_SYNC_INTERVAL_SEC:
+# 常時起動中にversionを確認する間隔
+SETTINGS_SYNC_INTERVAL_SEC = _env_int('SETTINGS_SYNC_INTERVAL_SEC', 10)
 
 # 再送キュー設定
 # 仕様どおり 1分ごとに再送する

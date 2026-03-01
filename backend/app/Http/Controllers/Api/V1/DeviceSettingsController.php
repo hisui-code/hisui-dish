@@ -35,6 +35,27 @@ class DeviceSettingsController extends Controller
         return response()->json($this->serialize($setting));
     }
 
+    public function version(string $device_id): JsonResponse
+    {
+        $deviceId = $device_id;
+        if (!$this->deviceExists($deviceId)) {
+            return $this->notFound();
+        }
+
+        $setting = DB::table('device_settings')
+            ->where('device_id', $deviceId)
+            ->first(['device_id', 'lock_version', 'updated_at']);
+        if (!$setting) {
+            return $this->notFound();
+        }
+
+        return response()->json([
+            'device_id' => (string) $setting->device_id,
+            'lock_version' => (int) $setting->lock_version,
+            'updated_at' => $this->formatUtcMillis($setting->updated_at ?? null),
+        ]);
+    }
+
     public function update(Request $request, string $device_id): JsonResponse
     {
         $deviceId = $device_id;

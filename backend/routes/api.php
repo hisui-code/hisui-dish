@@ -35,14 +35,17 @@ Route::prefix('v1')
 
         // Device
         Route::post('device/session_events', [DeviceSessionEventsController::class, 'store']);
+        // DeviceSettings（デバイス同期用）
+        // デバイスは api.token のみで設定取得する
+        Route::get('device_settings/{device_id}', [DeviceSettingsController::class, 'show']);
+        Route::get('device_settings/{device_id}/version', [DeviceSettingsController::class, 'version']);
 
         Route::middleware(['api.auth'])->group(function () {
             // Dashboard
             Route::get('dashboard', [DashboardController::class, 'show']);
             Route::get('daily_totals', [DailyTotalsController::class, 'show']);
             Route::get('year_monthly_totals', [YearMonthlyTotalsController::class, 'show']);
-            // DeviceSettings
-            Route::get('device_settings/{device_id}', [DeviceSettingsController::class, 'show']);
+            // DeviceSettings（管理画面更新用）
             Route::put('device_settings/{device_id}', [DeviceSettingsController::class, 'update']);
             Route::patch('device_settings/{device_id}', [DeviceSettingsController::class, 'update']);
             // Log
