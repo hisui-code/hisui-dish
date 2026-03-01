@@ -17,7 +17,7 @@ use Illuminate\Support\Str;
  * - devices: DEVICE_ID を ENV から作成（なければ固定UUID）
  * - device_settings: テーブルが存在すれば、存在するカラムだけ初期化
  * - bowl_snapshots:
- *   - 過去2ヶ月 / 今月 / 先1ヶ月（合計4ヶ月）を対象に生成
+ *   - 過去2ヶ月 / 今月（合計3ヶ月）を対象に生成
  *   - 1日あたり 1〜3件
  *   - JSTの日時で生成し、DB保存はUTCへ変換して recorded_at に保存
  * - device_session_events:
@@ -35,7 +35,7 @@ class HisuiDishSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->log('🧪 Seeding users / devices / bowl_snapshots / device_session_events (past2, current, next1 months)...');
+        $this->log('🧪 Seeding users / devices / bowl_snapshots / device_session_events ...');
 
         DB::transaction(function () {
             $this->seedUsers();
@@ -239,7 +239,7 @@ class HisuiDishSeeder extends Seeder
 
     /**
      * @description
-     * bowl_snapshots を「過去2ヶ月〜先1ヶ月（今月含む）」で生成する
+     * bowl_snapshots を「過去2ヶ月〜今月」で生成する
      *
      * - 生成日時は JST で作る（UIと整合する）
      * - DB保存は recorded_at を UTC へ変換して入れる（timestamptz想定）
@@ -259,12 +259,13 @@ class HisuiDishSeeder extends Seeder
 
         $jst = 'Asia/Tokyo';
 
-        // 今日（JST）
-        $todayJst = CarbonImmutable::now($jst)->startOfDay();
+        // 現在時刻（JST）
+        $nowJst = CarbonImmutable::now($jst);
+        $todayJst = $nowJst->startOfDay();
 
-        // 過去2ヶ月の月初 〜 先1ヶ月の月初（今月含めて 4ヶ月）
+        // 過去2ヶ月の月初 〜 今月の月初（今月含めて 3ヶ月）
         $startMonth = $todayJst->subMonths(2)->startOfMonth();
-        $endMonth = $todayJst->addMonths(1)->startOfMonth();
+        $endMonth = $todayJst->startOfMonth();
 
         $weights = [6, 8, 10, 12, 14];
         $minutes = [0, 10, 20, 30, 40, 50];
@@ -286,6 +287,12 @@ class HisuiDishSeeder extends Seeder
 
                     // JSTの日時を作る
                     $dtJst = $d->setTime($hour, $minute, 0, 0);
+
+                    // 未来時刻のシードは作らない
+                    // 当日の未到来時刻を除外して「今より前」のデータだけ作る
+                    if ($dtJst->greaterThan($nowJst)) {
+                        continue;
+                    }
 
                     // DB保存はUTCへ変換
                     $dtUtc = $dtJst->setTimezone('UTC');
@@ -370,7 +377,11 @@ class HisuiDishSeeder extends Seeder
                     $dtUtc = $dtJst->setTimezone('UTC');
 
                     $eaten = $eatenCandidates[array_rand($eatenCandidates)];
-                    $event = random_int(1, 10) === 1 ? 'eat_discarded' : 'eat_finished';
+                    // 各日最低1件は eat_finished を入れて、0g日が出ないようにする
+                    // 2件目以降は従来どおり一部を discard にする
+                    $event = $i === 0
+                        ? 'eat_finished'
+                        : (random_int(1, 10) === 1 ? 'eat_discarded' : 'eat_finished');
 
                     $row = [
                         'id' => (string) Str::uuid(),
