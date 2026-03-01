@@ -7,7 +7,7 @@ export const deviceSettingsSchema = z.object({
   stable: z.coerce.number().int().gt(0, '1以上の整数を入力してください'),
   maxSess: z.coerce.number().int().gt(0, '1以上の整数を入力してください'),
   tare: z.coerce.number().int().gt(0, '1以上の整数を入力してください'),
-  eps: z.coerce.number().int().gt(0, '1以上の整数を入力してください'),
+  eps: z.coerce.number().gt(0, '0より大きい数値を入力してください'),
   hz: z.coerce.number().int().gt(0, '1以上の整数を入力してください'),
   win: z.coerce.number().int().gt(0, '1以上の整数を入力してください'),
   gross: z.coerce.number().int().gt(0, '1以上の整数を入力してください'),

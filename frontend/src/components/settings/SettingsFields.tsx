@@ -73,6 +73,7 @@ export default function SettingsFields({ values, errors, onChange }: Props) {
           onChange={(n) => onChange('eps', n)}
           min={RANGES.eps.min}
           max={RANGES.eps.max}
+          step={0.01}
           unit={RANGES.eps.unit}
         />
       </Field>
