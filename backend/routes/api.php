@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\DailyTotalsController;
 use App\Http\Controllers\Api\V1\DashboardController;
+use App\Http\Controllers\Api\V1\DeviceBowlSnapshotsController;
 use App\Http\Controllers\Api\V1\DeviceSessionEventsController;
 use App\Http\Controllers\Api\V1\DeviceSettingsController;
 use App\Http\Controllers\Api\V1\HealthController;
@@ -35,6 +36,8 @@ Route::prefix('v1')
 
         // Device
         Route::post('device/session_events', [DeviceSessionEventsController::class, 'store']);
+        Route::post('device/bowl_snapshots', [DeviceBowlSnapshotsController::class, 'store']);
+
         // DeviceSettings（デバイス同期用）
         // デバイスは api.token のみで設定取得する
         Route::get('device_settings/{device_id}', [DeviceSettingsController::class, 'show']);
