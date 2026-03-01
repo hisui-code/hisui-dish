@@ -69,7 +69,7 @@ class DailyTotalsController extends Controller
         $dailyMap = [];
         foreach ($rawDaily as $row) {
             $day = (string) CarbonImmutable::parse($row->d)->day;
-            $dailyMap[$day] = (int) $row->total;
+            $dailyMap[$day] = (float) $row->total;
         }
 
         // 0件の日も含めて配列を返す
@@ -79,7 +79,7 @@ class DailyTotalsController extends Controller
             $dayKey = (string) $day;
             $dailyTotals[] = [
                 'day' => $dayKey,
-                'total' => (int) ($dailyMap[$dayKey] ?? 0),
+                'total' => (float) ($dailyMap[$dayKey] ?? 0),
             ];
         }
 

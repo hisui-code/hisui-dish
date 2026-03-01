@@ -77,7 +77,7 @@ class YearMonthlyTotalsController extends Controller
         $monthlyMap = [];
         foreach ($rawMonthly as $row) {
             $month = (int) $row->m;
-            $monthlyMap[$month] = (int) $row->total;
+            $monthlyMap[$month] = (float) $row->total;
         }
 
         // データが無い月も0で埋めて1〜12月を固定で返す
@@ -85,7 +85,7 @@ class YearMonthlyTotalsController extends Controller
         for ($month = 1; $month <= 12; $month++) {
             $monthlyTotals[] = [
                 'month' => (string) $month,
-                'total' => (int) ($monthlyMap[$month] ?? 0),
+                'total' => (float) ($monthlyMap[$month] ?? 0),
             ];
         }
 

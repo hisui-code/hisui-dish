@@ -17,9 +17,13 @@ use Illuminate\Support\Str;
  * - devices: DEVICE_ID を ENV から作成（なければ固定UUID）
  * - device_settings: テーブルが存在すれば、存在するカラムだけ初期化
  * - bowl_snapshots:
- *   - 過去2ヶ月 / 今月 / 先2ヶ月（合計5ヶ月）を対象に生成
+ *   - 過去2ヶ月 / 今月 / 先1ヶ月（合計4ヶ月）を対象に生成
  *   - 1日あたり 1〜3件
  *   - JSTの日時で生成し、DB保存はUTCへ変換して recorded_at に保存
+ * - device_session_events:
+ *   - 過去2ヶ月 / 今月 / 先1ヶ月（合計4ヶ月）を対象に生成
+ *   - 1日あたり 1〜3件
+ *   - 食事確定イベント（eat_finished）を中心に生成
  */
 class HisuiDishSeeder extends Seeder
 {
@@ -31,13 +35,14 @@ class HisuiDishSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->log('🧪 Seeding users / devices / bowl_snapshots (past2, current, next2 months)...');
+        $this->log('🧪 Seeding users / devices / bowl_snapshots / device_session_events (past2, current, next1 months)...');
 
         DB::transaction(function () {
             $this->seedUsers();
             $deviceId = $this->ensureDevice();
             $this->ensureDeviceSetting($deviceId);
             $this->seedBowlSnapshots($deviceId);
+            $this->seedDeviceSessionEvents($deviceId);
         });
 
         $this->log('✅ Done.');
@@ -234,7 +239,7 @@ class HisuiDishSeeder extends Seeder
 
     /**
      * @description
-     * bowl_snapshots を「過去2ヶ月〜先2ヶ月（今月含む）」で生成する
+     * bowl_snapshots を「過去2ヶ月〜先1ヶ月（今月含む）」で生成する
      *
      * - 生成日時は JST で作る（UIと整合する）
      * - DB保存は recorded_at を UTC へ変換して入れる（timestamptz想定）
@@ -257,9 +262,9 @@ class HisuiDishSeeder extends Seeder
         // 今日（JST）
         $todayJst = CarbonImmutable::now($jst)->startOfDay();
 
-        // 過去2ヶ月の月初 〜 先2ヶ月の月初（今月含めて 5ヶ月）
+        // 過去2ヶ月の月初 〜 先1ヶ月の月初（今月含めて 4ヶ月）
         $startMonth = $todayJst->subMonths(2)->startOfMonth();
-        $endMonth = $todayJst->addMonths(2)->startOfMonth();
+        $endMonth = $todayJst->addMonths(1)->startOfMonth();
 
         $weights = [6, 8, 10, 12, 14];
         $minutes = [0, 10, 20, 30, 40, 50];
@@ -317,5 +322,91 @@ class HisuiDishSeeder extends Seeder
 
         $count = DB::table('bowl_snapshots')->count();
         $this->log("✅ bowl_snapshots seeded. count={$count}");
+    }
+
+    /**
+     * @description
+     * device_session_events を「過去2ヶ月〜先1ヶ月（今月含む）」で生成する
+     *
+     * - 生成日時は JST で作る（UIと整合する）
+     * - DB保存は recorded_at を UTC へ変換して入れる（timestamptz想定）
+     * - 既存 device_session_events は全削除して作り直す
+     *
+     * @param string $deviceId - devices.id
+     * @return void
+     */
+    private function seedDeviceSessionEvents(string $deviceId): void
+    {
+        if (!Schema::hasTable('device_session_events')) {
+            $this->log('⚠️ device_session_events table not found. skip.');
+            return;
+        }
+
+        DB::table('device_session_events')->delete();
+
+        $jst = 'Asia/Tokyo';
+        $todayJst = CarbonImmutable::now($jst)->startOfDay();
+
+        // 過去2ヶ月の月初 〜 先1ヶ月の月初（今月含めて 4ヶ月）
+        $startMonth = $todayJst->subMonths(2)->startOfMonth();
+        $endMonth = $todayJst->addMonths(1)->startOfMonth();
+
+        $eatenCandidates = [3.5, 5.0, 6.5, 8.0, 10.0, 12.5];
+        $minutes = [0, 10, 20, 30, 40, 50];
+
+        $rows = [];
+
+        for ($m = $startMonth; $m->lessThanOrEqualTo($endMonth); $m = $m->addMonth()->startOfMonth()) {
+            $monthBegin = $m->startOfMonth();
+            $monthEnd = $m->endOfMonth();
+
+            for ($d = $monthBegin; $d->lessThanOrEqualTo($monthEnd); $d = $d->addDay()) {
+                $n = random_int(1, 3);
+
+                for ($i = 0; $i < $n; $i++) {
+                    $hour = random_int(6, 22);
+                    $minute = $minutes[array_rand($minutes)];
+                    $dtJst = $d->setTime($hour, $minute, 0, 0);
+                    $dtUtc = $dtJst->setTimezone('UTC');
+
+                    $eaten = $eatenCandidates[array_rand($eatenCandidates)];
+                    $event = random_int(1, 10) === 1 ? 'eat_discarded' : 'eat_finished';
+
+                    $row = [
+                        'id' => (string) Str::uuid(),
+                        'session_id' => (string) Str::uuid(),
+                        'device_id' => $deviceId,
+                        'event' => $event,
+                        'eaten_grams' => $eaten,
+                        'recorded_at' => $dtUtc->format('Y-m-d H:i:s.uP'),
+                    ];
+
+                    if (Schema::hasColumn('device_session_events', 'raw_payload')) {
+                        $row['raw_payload'] = json_encode([
+                            'session_id' => $row['session_id'],
+                            'device_id' => $deviceId,
+                            'event' => $event,
+                            'eaten' => $eaten,
+                            'recorded_at' => $dtUtc->toIso8601String(),
+                        ], JSON_UNESCAPED_UNICODE);
+                    }
+                    if (Schema::hasColumn('device_session_events', 'created_at')) {
+                        $row['created_at'] = now();
+                    }
+                    if (Schema::hasColumn('device_session_events', 'updated_at')) {
+                        $row['updated_at'] = now();
+                    }
+
+                    $rows[] = $row;
+                }
+            }
+        }
+
+        foreach (array_chunk($rows, 1000) as $chunk) {
+            DB::table('device_session_events')->insert($chunk);
+        }
+
+        $count = DB::table('device_session_events')->count();
+        $this->log("✅ device_session_events seeded. count={$count}");
     }
 }
