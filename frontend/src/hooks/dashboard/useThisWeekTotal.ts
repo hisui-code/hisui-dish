@@ -1,5 +1,5 @@
 import { useSuspenseQueries } from '@tanstack/react-query'
-import { fetchLogs } from '@/lib/api/logsApi'
+import { fetchDailyTotals } from '@/lib/api/dashboardApi'
 import { jst } from '@/lib/date'
 import {
   addDaysIsoJst,
@@ -7,15 +7,24 @@ import {
   calcThisWeekTotalMetrics,
   getWeekStartIsoJst,
 } from '@/lib/resources/metricsResource'
-import { logsQueryKey, monthOf } from '@/lib/resources/logsQuery'
 
-import type { LogItem } from '@/types/logs'
+import type { DailyTotals } from '@/types/dashboard'
 import type { ThisWeekTotal } from '@/lib/resources/metricsResource'
 
 /**
- * 今週（月〜日）の合計gを返すHook。
- * 週が月をまたぐ場合に備えて、必要な月ログを最大2ヶ月分だけ取得する。
+ * @description 日別合計を計算用Map(YYYY-MM-DD => total)へ変換する
+ * @param dailyTotals 日別合計配列
+ * @param month 対象月（YYYY-MM）
  */
+function toDailyTotalsMap(dailyTotals: DailyTotals, month: string) {
+  const logs = dailyTotals.map((x) => ({
+    // 日別合計のみ使うので時刻は固定値で十分
+    recordedAtIso: `${month}-${String(x.day).padStart(2, '0')}T00:00:00+09:00`,
+    grams: Number(x.total),
+  }))
+
+  return buildDailyTotals(logs)
+}
 
 /**
  * 今週（月〜日）の合計gを返す。
@@ -31,31 +40,31 @@ export function useThisWeekTotal(): ThisWeekTotal {
   const weekEnd = addDaysIsoJst(weekStart, 6)
 
   // 取得対象の月（週が別月になるケースに対応）
+  const monthOf = (isoDay: string) => jst(`${isoDay}T00:00:00`).format('YYYY-MM')
   const months = Array.from(new Set([monthOf(weekStart), monthOf(weekEnd)]))
 
   // 月ごとのログを取得（monthsの順で結果が返る）
   const results = useSuspenseQueries({
     queries: months.map((m) => ({
-      // m = "YYYY-MM"
-      queryKey: logsQueryKey(m),
-      queryFn: () => fetchLogs(m),
+      queryKey: ['daily_totals', m],
+      queryFn: () => fetchDailyTotals(m),
     })),
   })
 
-  // 月ごとの配列を結合して、週計算に使う1つの配列にまとめる
-  const logs: LogItem[] = results.flatMap((r) => r.data)
-
-  // 日別合計（key=YYYY-MM-DD, value=その日の合計g）
-  const dailyTotals = buildDailyTotals(
-    logs.map((x) => ({
-      recordedAtIso: x.recordedAtIso,
-      grams: x.grams,
-    }))
-  )
+  // 取得した月分を結合して、週計算用の日別Mapを作る
+  const mergedDailyTotals = new Map<string, number>()
+  for (let i = 0; i < months.length; i++) {
+    const month = months[i]
+    const dailyTotals = results[i].data as DailyTotals
+    const map = toDailyTotalsMap(dailyTotals, month)
+    for (const [dateKey, total] of map.entries()) {
+      mergedDailyTotals.set(dateKey, total)
+    }
+  }
 
   // 今週（月〜日）の合計gを返す
   return calcThisWeekTotalMetrics({
     todayIso,
-    dailyTotals,
+    dailyTotals: mergedDailyTotals,
   })
 }
