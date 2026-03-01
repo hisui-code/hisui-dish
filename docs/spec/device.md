@@ -202,6 +202,25 @@ ExecStart=/usr/bin/python3 /opt/hisuidish/device/main.py
 - `HISUIDISH_DEVICE_ID`（対象デバイスID）
 - `HISUIDISH_API_TOKEN`（必要な場合のみ）
 
+### 13.4 環境切替方針
+
+- 環境切替は `device/.env` の `HISUIDISH_ENV` で行う
+- `HISUIDISH_ENV=development` の場合は `device/.env.development` を適用する
+- `HISUIDISH_ENV=production` の場合は `device/.env.production` を適用する
+- 起動コマンドは開発/本番で共通とし、設定ファイルのみを切り替える
+
+### 13.5 設定解決優先順位
+
+- 1. OS環境変数
+- 2. `device/.env` と `device/.env.<env>`
+- 3. コード内既定値
+
+`<env>` の決定順:
+
+- 1. `HISUIDISH_ENV`
+- 2. `APP_ENV`
+- 3. `development`（未指定時）
+
 ## 14. 開発環境（Docker）
 
 ### 14.1 方針

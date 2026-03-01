@@ -64,8 +64,8 @@ cat calibration.json
 ### Development Example
 
 ```bash
-# 開発差分は .env.development に記載しておく
-APP_ENV=development python3 main.py
+# .env の HISUIDISH_ENV を development にして起動する
+python3 main.py
 ```
 
 `.env.development` 例:
@@ -79,7 +79,8 @@ HISUIDISH_DEVICE_ID=dev_device_uuid
 
 ### Production Example (file switch)
 
-`.env` を本番値として運用する場合は、環境指定なしで起動する
+`.env` の `HISUIDISH_ENV=production` で本番へ切り替える  
+起動コマンドは開発/本番で同じ
 
 ```bash
 python3 main.py
@@ -114,3 +115,22 @@ HISUIDISH_DEVICE_ID=prod_device_uuid
 ```
 
 この方式なら、開発/本番切替時もコード変更は不要
+
+### Environment Toggle by `.env`
+
+`.env` の `HISUIDISH_ENV` を変更すると、読み込む環境別ファイルが切り替わる
+
+- `HISUIDISH_ENV=development` -> `.env.development`
+- `HISUIDISH_ENV=production` -> `.env.production`
+
+例:
+
+```env
+# device/.env
+HISUIDISH_ENV=development
+```
+
+```env
+# device/.env
+HISUIDISH_ENV=production
+```

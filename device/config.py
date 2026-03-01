@@ -31,18 +31,21 @@ def _build_file_env() -> dict[str, str]:
     """
     base_dir = Path(__file__).resolve().parent
 
-    # 共通設定を .env から読み込む
+    # 先に .env を読み込む（ここに HISUIDISH_ENV を書けるようにする）
     merged = _load_env_file(base_dir / '.env')
 
     # 対象環境の決定順
-    # 1. HISUIDISH_ENV（デバイス専用の明示指定）
-    # 2. APP_ENV（一般的な環境名）
-    # 3. development（未指定時の既定値）
+    # 1. OS環境変数 HISUIDISH_ENV（明示上書き）
+    # 2. .env 内の HISUIDISH_ENV（通常運用）
+    # 3. OS環境変数 APP_ENV（互換）
+    # 4. development（未指定時）
     target_env = (
         os.getenv('HISUIDISH_ENV', '').strip()
+        or str(merged.get('HISUIDISH_ENV', '')).strip()
         or os.getenv('APP_ENV', '').strip()
         or 'development'
     )
+
     # .env.<env> が存在すれば共通設定に上書きする
     merged.update(_load_env_file(base_dir / f'.env.{target_env}'))
 
