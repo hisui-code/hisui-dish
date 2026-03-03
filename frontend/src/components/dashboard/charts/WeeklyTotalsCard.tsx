@@ -3,13 +3,17 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import WeeklyBarChart from '@/components/charts/WeeklyBarChart'
 import { FaChartLine } from 'react-icons/fa6'
-
-import type { DashboardWeeklyViewModel } from '@/hooks/dashboard/useDashboardPage'
+import type { WeeklyBarChartRow } from '@/components/charts/WeeklyBarChart'
 
 type WeeklyTotalsCardProps = {
-  weekly: DashboardWeeklyViewModel
+  weekly: {
+    rangeLabel: string
+    canNext: boolean
+    onPrev: () => void
+    onNext: () => void
+    series: WeeklyBarChartRow[]
+  }
 }
-
 /**
  * @description
  * 「週ごとの合計」棒グラフ

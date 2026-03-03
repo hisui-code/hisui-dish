@@ -2,7 +2,7 @@ import { FaBowlFood, FaBowlRice } from 'react-icons/fa6'
 import { FaClock } from 'react-icons/fa'
 import { LuUtensils } from 'react-icons/lu'
 import { GiKitchenScale } from 'react-icons/gi'
-import type { DashboardTodayViewModel } from '@/hooks/dashboard/useDashboardPage'
+import type { DashboardTodayViewModel } from '@/hooks/dashboard/useDashboardKpisToday'
 
 type TodayListProps = {
   today: DashboardTodayViewModel

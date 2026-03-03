@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { FiArrowDown, FiArrowUp } from 'react-icons/fi'
 import { FaFish, FaPaw } from 'react-icons/fa'
-import type { DashboardKpisViewModel } from '@/hooks/dashboard/useDashboardPage'
+import type { DashboardKpisViewModel } from '@/hooks/dashboard/useDashboardKpisToday'
 
 type KpisProps = {
   data: DashboardKpisViewModel

@@ -3,12 +3,17 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import SimpleBarChart from '@/components/charts/SimpleBarChart'
 import { FaChartLine } from 'react-icons/fa6'
-import type { DashboardYearMonthlyViewModel } from '@/hooks/dashboard/useDashboardPage'
+import type { YearMonthlyTotals } from '@/types/dashboard'
 
 type YearMonthlyTotalsCardProps = {
-  yearMonthly: DashboardYearMonthlyViewModel
+  yearMonthly: {
+    year: string
+    canNext: boolean
+    onPrev: () => void
+    onNext: () => void
+    series: YearMonthlyTotals
+  }
 }
-
 /**
  * @description
  * 「年別：月ごとの合計（1〜12）」棒グラフ
