@@ -37,6 +37,6 @@ describe('auth redirect', () => {
     )
 
     // 非同期で画面が切り替わるのを待ってから検証
-    expect(await screen.findByRole('heading', { name: 'ログイン' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'HisuiDish' })).toBeInTheDocument()
   })
 })
