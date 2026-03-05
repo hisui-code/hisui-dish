@@ -1,17 +1,14 @@
+import { useQuery } from '@tanstack/react-query'
 import { getDeviceSetting } from '@/lib/api/deviceSettings'
 import type { DeviceSetting } from '@/types/deviceSettings'
-import { useSuspenseQuery } from '@tanstack/react-query'
 
 /**
- * @description デバイス設定を取得するSuspense対応フック
- * @param deviceId デバイスID
- * @param reloadKey 再読み込みを識別するキー
- * @returns デバイス設定データ
+ * @description デバイス設定の取得状態を返す
  */
 export default function useDeviceSetting(deviceId: string, reloadKey: number) {
-  const { data } = useSuspenseQuery<DeviceSetting>({
+  return useQuery<DeviceSetting, Error>({
     queryKey: ['deviceSetting', deviceId, reloadKey],
     queryFn: () => getDeviceSetting(deviceId),
+    retry: false,
   })
-  return data
 }
