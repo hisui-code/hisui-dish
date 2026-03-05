@@ -38,12 +38,10 @@ Route::prefix('v1')
         Route::post('device/session_events', [DeviceSessionEventsController::class, 'store']);
         Route::post('device/bowl_snapshots', [DeviceBowlSnapshotsController::class, 'store']);
 
-        // DeviceSettings（デバイス同期用）
-        // デバイスは api.token のみで設定取得する
-        Route::get('device_settings/{device_id}', [DeviceSettingsController::class, 'show']);
-        Route::get('device_settings/{device_id}/version', [DeviceSettingsController::class, 'version']);
-
         Route::middleware(['api.auth'])->group(function () {
+            // DeviceSettings（取得も更新も認証必須に統一する）
+            Route::get('device_settings/{device_id}', [DeviceSettingsController::class, 'show']);
+            Route::get('device_settings/{device_id}/version', [DeviceSettingsController::class, 'version']);
             // Dashboard
             Route::get('dashboard', [DashboardController::class, 'show']);
             Route::get('daily_totals', [DailyTotalsController::class, 'show']);

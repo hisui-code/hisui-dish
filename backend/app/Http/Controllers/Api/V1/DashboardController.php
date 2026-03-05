@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
  * ダッシュボード表示に必要な集計データを返す API コントローラ
  *
  * 返却する主なデータ:
- * - todayEvents: 今日の食事イベント一覧（JST 表示用の HH:mm と g）
+ * - todayEvents: 今日の記録一覧（JST 表示用の HH:mm と g）
  * - todayTotal: 今日の合計（g）
  * - bowlRemaining: 最新スナップショットの残量（g）
  * - averageDailyIntakeLast3Months: 直近3ヶ月（前々月〜前月）の 1 日平均（g）
@@ -61,7 +61,7 @@ class DashboardController extends Controller
             ->orderByDesc('recorded_at')
             ->first();
 
-        $bowlRemaining = $lastSnapshot ? (float) $lastSnapshot->weight_g : 0.0;
+        $bowlRemaining = $lastSnapshot ? (int) $lastSnapshot->weight_g : 0;
 
         // 今日のイベント（todayEvents）/ 今日の合計（todayTotal）
         // 今日（JST）の 00:00:00〜23:59:59 を UTC に直して検索する
@@ -70,17 +70,16 @@ class DashboardController extends Controller
         $todayStartUtc = $todayStart->setTimezone('UTC');
         $todayEndUtc = $todayEnd->setTimezone('UTC');
 
-        // 今日のログを時系列で取得し、JST の HH:mm 表示に整形
-        // event は eat_finished のみ対象にして確定セッションだけを扱う
-        $todayEventsRows = DB::table('device_session_events')
+        // 今日のログを時系列で取得し、JST の HH:mm 表示に整形する
+        // dashboard は bowl_snapshots を集計元にして既存仕様を維持する
+        $todayEventsRows = DB::table('bowl_snapshots')
             ->where('device_id', $deviceId)
-            ->where('event', 'eat_finished')
             ->whereBetween('recorded_at', [
                 $todayStartUtc->format('Y-m-d H:i:s.u'),
                 $todayEndUtc->format('Y-m-d H:i:s.u'),
             ])
             ->orderBy('recorded_at')
-            ->get(['recorded_at', 'eaten_grams']);
+            ->get(['recorded_at', 'weight_g']);
 
         $todayEvents = $todayEventsRows->map(function ($row) {
             $time = CarbonImmutable::parse($row->recorded_at, 'UTC')
@@ -89,20 +88,19 @@ class DashboardController extends Controller
 
             return [
                 'time' => $time,
-                'g' => (float) $row->eaten_grams,
+                'g' => (float) $row->weight_g,
             ];
         })->all();
 
         // 今日の合計（g）
-        // 集計元は eaten_grams を使う
-        $todayTotal = (float) DB::table('device_session_events')
+        // todayTotal は整数で返して既存レスポンス型を維持する
+        $todayTotal = (int) DB::table('bowl_snapshots')
             ->where('device_id', $deviceId)
-            ->where('event', 'eat_finished')
             ->whereBetween('recorded_at', [
                 $todayStartUtc->format('Y-m-d H:i:s.u'),
                 $todayEndUtc->format('Y-m-d H:i:s.u'),
             ])
-            ->sum('eaten_grams');
+            ->sum('weight_g');
 
         //  直近3ヶ月の 1 日平均（averageDailyIntakeLast3Months）
         // 対象月の「前々月〜前月」(3ヶ月分) を JST 境界で集計し、日次合計の平均を返す
@@ -112,10 +110,9 @@ class DashboardController extends Controller
         $periodEndUtc = $periodEnd->setTimezone('UTC');
 
         // 直近3ヶ月の各日合計を取得（JST 日付で groupBy）
-        $dailyTotals = DB::table('device_session_events')
-            ->selectRaw("DATE(recorded_at AT TIME ZONE 'Asia/Tokyo') AS d, SUM(eaten_grams) AS total")
+        $dailyTotals = DB::table('bowl_snapshots')
+            ->selectRaw("DATE(recorded_at AT TIME ZONE 'Asia/Tokyo') AS d, SUM(weight_g) AS total")
             ->where('device_id', $deviceId)
-            ->where('event', 'eat_finished')
             ->whereBetween('recorded_at', [
                 $periodStartUtc->format('Y-m-d H:i:s.u'),
                 $periodEndUtc->format('Y-m-d H:i:s.u'),
