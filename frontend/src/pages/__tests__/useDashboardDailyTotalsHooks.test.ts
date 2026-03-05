@@ -56,7 +56,7 @@ describe('dashboard daily totals hooks', () => {
     vi.setSystemTime(new Date('2026-03-03T10:00:00+09:00'))
     vi.mocked(fetchDailyTotals).mockResolvedValue([])
 
-    vi.mocked(useSuspenseQueries).mockImplementation((params: never) => {
+    vi.mocked(useSuspenseQueries).mockImplementation((params: unknown) => {
       const { queries } = params as {
         queries: Array<{
           queryKey: readonly string[]
@@ -112,7 +112,7 @@ describe('dashboard daily totals hooks', () => {
     vi.setSystemTime(new Date('2026-03-10T10:00:00+09:00'))
     vi.mocked(fetchDailyTotals).mockResolvedValue([])
 
-    vi.mocked(useSuspenseQueries).mockImplementation((params: never) => {
+    vi.mocked(useSuspenseQueries).mockImplementation((params: unknown) => {
       const { queries } = params as {
         queries: Array<{
           queryKey: readonly string[]
