@@ -1,8 +1,7 @@
-import { fetchLogs } from '@/lib/api/logsApi'
+import { fetchDailyTotals } from '@/lib/api/dashboardApi'
 import { jst } from '@/lib/date'
-import { calcMonthTotalMetrics, type MonthTotalMetrics } from '@/lib/resources/metricsResource'
-import { logsQueryKey } from '@/lib/resources/logsQuery'
-import type { LogItem } from '@/types/logs'
+import { queryKeys } from '@/lib/queryKeys'
+import type { MonthTotalMetrics } from '@/lib/resources/metricsResource'
 import { useSuspenseQuery } from '@tanstack/react-query'
 
 /**
@@ -14,16 +13,15 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 export function useMonthTotalMetrics(month?: string): MonthTotalMetrics {
   const targetMonth = month ?? jst().format('YYYY-MM')
 
-  const { data } = useSuspenseQuery<LogItem[]>({
-    queryKey: logsQueryKey(targetMonth),
-    queryFn: () => fetchLogs(targetMonth),
+  const { data } = useSuspenseQuery({
+    queryKey: queryKeys.dailyTotals(targetMonth),
+    queryFn: () => fetchDailyTotals(targetMonth),
   })
 
-  return calcMonthTotalMetrics({
+  const monthTotalGrams = data.reduce((sum, row) => sum + Number(row.total), 0)
+
+  return {
     month: targetMonth,
-    logs: data.map((x) => ({
-      recordedAtIso: x.recordedAtIso,
-      grams: x.grams,
-    })),
-  })
+    monthTotalGrams,
+  }
 }

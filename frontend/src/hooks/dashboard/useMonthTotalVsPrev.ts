@@ -2,7 +2,7 @@ import { useSuspenseQueries } from '@tanstack/react-query'
 import { fetchDailyTotals } from '@/lib/api/dashboardApi'
 import { jst } from '@/lib/date'
 import { calcMonthTotalVsPrev } from '@/lib/resources/metricsResource'
-
+import { queryKeys } from '@/lib/queryKeys'
 import type { DailyTotals } from '@/types/dashboard'
 import type { MonthTotalVsPrev } from '@/lib/resources/metricsResource'
 
@@ -31,7 +31,7 @@ export function useMonthTotalVsPrev(month?: string): MonthTotalVsPrev {
 
   const results = useSuspenseQueries({
     queries: [targetMonth, prevMonth].map((m) => ({
-      queryKey: ['daily_totals', m],
+      queryKey: queryKeys.dailyTotals(m),
       queryFn: () => fetchDailyTotals(m),
     })),
   })

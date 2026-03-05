@@ -1,15 +1,14 @@
 import { useSuspenseQueries } from '@tanstack/react-query'
-import { fetchLogs } from '@/lib/api/logsApi'
+import { fetchDailyTotals } from '@/lib/api/dashboardApi'
 import { jst } from '@/lib/date'
 import {
   addDaysIsoJst,
-  buildDailyTotals,
   calcTodayVsPrevWeekMetrics,
   getWeekStartIsoJst,
 } from '@/lib/resources/metricsResource'
-import { logsQueryKey, monthOf } from '@/lib/resources/logsQuery'
+import { monthOf } from '@/lib/resources/logsQuery'
+import { queryKeys } from '@/lib/queryKeys'
 
-import type { LogItem } from '@/types/logs'
 import type { TodayVsPrevWeekMetrics } from '@/lib/resources/metricsResource'
 
 /**
@@ -33,26 +32,20 @@ export function useTodayVsPrevWeekMetrics(): TodayVsPrevWeekMetrics {
   // 月ごとのログを取得（monthsの順で結果が返る）
   const results = useSuspenseQueries({
     queries: months.map((m) => ({
-      // m = "YYYY-MM"
-      queryKey: logsQueryKey(m),
-      queryFn: () => fetchLogs(m),
+      queryKey: queryKeys.dailyTotals(m),
+      queryFn: () => fetchDailyTotals(m),
     })),
   })
 
-  // 月ごとの配列を結合して、週計算に使う1つの配列にまとめる
-  const logs: LogItem[] = results.flatMap((r) => r.data)
+  const dailyTotals = new Map<string, number>()
+  for (let i = 0; i < months.length; i++) {
+    const month = months[i]
+    const rows = results[i].data
+    for (const row of rows) {
+      const day = String(row.day).padStart(2, '0')
+      dailyTotals.set(`${month}-${day}`, Number(row.total))
+    }
+  }
 
-  // 日別合計（key=YYYY-MM-DD, value=その日の合計g）
-  const dailyTotals = buildDailyTotals(
-    logs.map((x) => ({
-      recordedAtIso: x.recordedAtIso,
-      grams: x.grams,
-    }))
-  )
-
-  // 今日の合計g と 前週(月〜日)の1日平均g を比較して返す
-  return calcTodayVsPrevWeekMetrics({
-    todayIso,
-    dailyTotals,
-  })
+  return calcTodayVsPrevWeekMetrics({ todayIso, dailyTotals })
 }

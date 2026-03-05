@@ -1,6 +1,7 @@
 import { useSuspenseQueries } from '@tanstack/react-query'
 import { fetchDailyTotals } from '@/lib/api/dashboardApi'
 import { jst } from '@/lib/date'
+import { queryKeys } from '@/lib/queryKeys'
 import {
   addDaysIsoJst,
   buildDailyTotals,
@@ -46,7 +47,7 @@ export function useThisWeekTotal(): ThisWeekTotal {
   // 月ごとのログを取得（monthsの順で結果が返る）
   const results = useSuspenseQueries({
     queries: months.map((m) => ({
-      queryKey: ['daily_totals', m],
+      queryKey: queryKeys.dailyTotals(m),
       queryFn: () => fetchDailyTotals(m),
     })),
   })
