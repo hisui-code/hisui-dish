@@ -2,7 +2,7 @@
 ROOT := $(abspath ..)
 COMPOSE := docker compose -f $(ROOT)/infra/docker/docker-compose.dev.yml
 
-API := api
+API := api-laravel
 WEB := web
 DB := db
 
@@ -42,7 +42,7 @@ dev:
 
 # 疎通確認
 health:
-	curl -i http://localhost:3000/api/v1/health || true
+	curl -i http://localhost:8000/api/v1/health || true
 
 # web-dev（エイリアス）
 web-dev: dev

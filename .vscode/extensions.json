@@ -2,7 +2,6 @@
   "recommendations": [
     // api
     "Shopify.ruby-lsp",
-    "Shopify.ruby-lsp-rails",
     "streetsidesoftware.code-spell-checker",
     // web
     "dbaeumer.vscode-eslint", // ESLint

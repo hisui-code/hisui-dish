@@ -147,7 +147,7 @@ class HisuiDishSeeder extends Seeder
      * Device を1件作成/確保して device_id を返す
      *
      * - DEVICE_ID があればそれを使用
-     * - なければ Rails版と同じ固定UUIDを使う
+     * - なければ既定の固定UUIDを使う
      * - code / name カラムが存在すれば入れる
      *
      * @return string device_id

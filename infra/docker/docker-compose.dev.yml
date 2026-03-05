@@ -12,27 +12,6 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
-  api:
-    build:
-      context: ../..
-      dockerfile: infra/docker/api.Dockerfile
-      args:
-        RUBY_VERSION: 3.4.5
-    depends_on:
-      - db
-    environment:
-      RAILS_ENV: development
-      TZ: Asia/Tokyo
-      CORS_ORIGINS: http://localhost:5173,http://localhost:3001
-      DATABASE_URL: postgres://postgres:postgres@db:5432/hisuidish_rails_development
-    volumes:
-      - ../../backend-archive:/app # ← ルートの hisuidish-api を /app にマウント
-      - bundle_cache:/usr/local/bundle
-    ports:
-      - "3000:3000"
-    env_file:
-      - ../../.env
-
   api-laravel:
     build:
       context: ../..
@@ -74,7 +53,7 @@ services:
       - ../../frontend:/app:cached
     command: npm run dev -- --host 0.0.0.0 --port 5173
     depends_on:
-      - api
+      - api-laravel
     env_file:
       - ../../.env
 
@@ -91,6 +70,5 @@ services:
       - api-laravel
 
 volumes:
-  bundle_cache:
   composer_cache:
   pgdata:

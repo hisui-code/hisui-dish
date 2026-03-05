@@ -9,7 +9,7 @@ async function parseJsonSafely(res: Response) {
   }
 }
 
-// Web側から Rails API を呼ぶときの共有HTTPクライアント
+// Web側から API を呼ぶときの共有HTTPクライアント
 export async function req<T>(path: string, init: RequestInit = {}): Promise<T> {
   const url = `${API_BASE}${path}`
   const headers = new Headers(init?.headers)
