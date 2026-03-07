@@ -18,6 +18,7 @@ class DashboardTest extends TestCase
         $this->ensureDevicesTable();
         $this->ensureDeviceSettingsTable();
         $this->ensureBowlSnapshotsTable();
+        $this->ensureDeviceSessionEventsTable();
     }
 
     protected function tearDown(): void
@@ -37,18 +38,21 @@ class DashboardTest extends TestCase
             CarbonImmutable::create(2026, 2, 10, 12, 0, 0, 'Asia/Tokyo')
         );
 
+        DB::table('device_session_events')->where('device_id', $deviceId)->delete();
+
+        // 今日イベント（JST 09:15 / 18:45）になるようUTCで投入する
+        $this->insertSessionEvent($deviceId, '2026-02-10 00:15:00', 30);
+        $this->insertSessionEvent($deviceId, '2026-02-10 09:45:00', 20);
+
+        // 直近3ヶ月平均（11月〜1月）を 60 にするためのデータを投入する
+        $this->insertSessionEvent($deviceId, '2025-11-05 03:00:00', 40);
+        $this->insertSessionEvent($deviceId, '2025-11-05 05:00:00', 60);
+        $this->insertSessionEvent($deviceId, '2025-12-20 02:00:00', 50);
+        $this->insertSessionEvent($deviceId, '2026-01-15 04:00:00', 30);
+
+        // bowlRemaining 用の最新スナップショットだけは bowl_snapshots を使う
         DB::table('bowl_snapshots')->where('device_id', $deviceId)->delete();
-
-        $this->insertSnapshot($deviceId, '2026-02-05 03:00:00', 100);
-        $this->insertSnapshot($deviceId, '2026-02-05 04:00:00', 50);
-        $this->insertSnapshot($deviceId, '2026-02-10 00:15:00', 30);
-        $this->insertSnapshot($deviceId, '2026-02-10 09:45:00', 20);
         $this->insertSnapshot($deviceId, '2026-02-11 00:00:00', 77);
-
-        $this->insertSnapshot($deviceId, '2025-11-05 03:00:00', 40);
-        $this->insertSnapshot($deviceId, '2025-11-05 05:00:00', 60);
-        $this->insertSnapshot($deviceId, '2025-12-20 02:00:00', 50);
-        $this->insertSnapshot($deviceId, '2026-01-15 04:00:00', 30);
 
         $response = $this->get('/api/v1/dashboard?month=' . $month . '&device_id=' . $deviceId, [
             'Authorization' => 'Bearer ' . $token,
@@ -95,6 +99,7 @@ class DashboardTest extends TestCase
         );
 
         DB::table('bowl_snapshots')->where('device_id', $deviceId)->delete();
+        DB::table('device_session_events')->where('device_id', $deviceId)->delete();
 
         $response = $this->get('/api/v1/dashboard?device_id=' . $deviceId, [
             'Authorization' => 'Bearer ' . $token,
@@ -170,12 +175,24 @@ class DashboardTest extends TestCase
         ]);
     }
 
+    private function insertSessionEvent(string $deviceId, string $recordedAtUtc, int $eatenGrams): void
+    {
+        DB::table('device_session_events')->insert([
+            'id' => (string) Str::uuid(),
+            'session_id' => (string) Str::uuid(),
+            'device_id' => $deviceId,
+            'event' => 'eat_finished',
+            'recorded_at' => $recordedAtUtc,
+            'eaten_grams' => $eatenGrams,
+            'created_at' => $recordedAtUtc,
+            'updated_at' => $recordedAtUtc,
+        ]);
+    }
+
     private function seedUser(): string
     {
-        $email = 'dashboard@example.com';
+        $email = 'dashboard-'.uniqid('', true).'@example.com';
         $plainToken = Str::random(40);
-
-        DB::table('users')->where('email', $email)->delete();
         $userId = DB::table('users')->insertGetId([
             'email' => $email,
             'password' => password_hash('password', PASSWORD_BCRYPT),
@@ -325,6 +342,29 @@ CREATE TABLE IF NOT EXISTS bowl_snapshots (
   device_id VARCHAR(255) NOT NULL,
   weight_g INTEGER NOT NULL,
   recorded_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ
+)
+SQL);
+    }
+
+    private function ensureDeviceSessionEventsTable(): void
+    {
+        $row = DB::selectOne("SELECT to_regclass('public.device_session_events') as name");
+        $exists = $row && $row->name !== null;
+
+        if ($exists) {
+            return;
+        }
+
+        DB::statement(<<<SQL
+CREATE TABLE IF NOT EXISTS device_session_events (
+  id VARCHAR(255) PRIMARY KEY,
+  session_id VARCHAR(255) NOT NULL UNIQUE,
+  device_id VARCHAR(255) NOT NULL,
+  event VARCHAR(64) NOT NULL,
+  recorded_at TIMESTAMPTZ NOT NULL,
+  eaten_grams INTEGER,
   created_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ
 )
