@@ -93,7 +93,7 @@ PD_SCK_PIN = 6
 # 計測周期
 READ_SLEEP_SEC = 0.1
 # 移動平均のサンプル数
-MOVING_AVG_WINDOW = 10
+MOVING_AVG_WINDOW = 5
 # 起動時ゼロ補正の計測秒
 RUNTIME_ZERO_SECONDS = 3.0
 
@@ -101,7 +101,7 @@ RUNTIME_ZERO_SECONDS = 3.0
 # 小さくしすぎると接触ノイズで誤開始しやすい
 START_THRESHOLD_G = 1.0
 # 開始判定の継続秒 この秒数dropが続いたら開始する
-START_CONFIRM_SECONDS = 0.5
+START_CONFIRM_SECONDS = 0.3
 # 待機中の上方向スパイク許容幅 これを超える増加はbaseline更新しない
 IDLE_UP_SPIKE_IGNORE_G = 5.0
 # 安定判定 隣接サンプル差がこの値以下なら安定寄りとみなす
@@ -175,6 +175,23 @@ BOWL_SNAPSHOT_INTERVAL_SEC = _env_int('BOWL_SNAPSHOT_INTERVAL_SEC', 300)
 # BOWL_SNAPSHOT_MIN_DELTA_G:
 # 直近送信との差分がこの値未満なら送信しない
 BOWL_SNAPSHOT_MIN_DELTA_G = _env_float('BOWL_SNAPSHOT_MIN_DELTA_G', 0.5)
+# BOWL_PRESENT_THRESHOLD_G:
+# 皿ありとみなす下限重量
+# 起動時ゼロ補正後ではなく総重量 grams で判定する
+BOWL_PRESENT_THRESHOLD_G = _env_float('HISUIDISH_BOWL_PRESENT_THRESHOLD_G', 200.0)
+# BOWL_PRESENT_CONFIRM_SECONDS:
+# 皿あり判定が継続する必要秒
+# 皿を置く途中の一時的な通過値では反応しないようにする
+BOWL_PRESENT_CONFIRM_SECONDS = _env_float('HISUIDISH_BOWL_PRESENT_CONFIRM_SECONDS', 1.0)
+# BOWL_ABSENT_THRESHOLD_G:
+# 皿なしへ戻す上限重量
+# presentより低くしてヒステリシスを持たせる
+# 着脱境界で present / absent が揺れないよう閾値を分ける
+BOWL_ABSENT_THRESHOLD_G = _env_float('HISUIDISH_BOWL_ABSENT_THRESHOLD_G', 100.0)
+# BOWL_ABSENT_CONFIRM_SECONDS:
+# 皿なし判定が継続する必要秒
+# 一瞬の持ち上がりや接触ノイズで absent へ戻らないようにする
+BOWL_ABSENT_CONFIRM_SECONDS = _env_float('HISUIDISH_BOWL_ABSENT_CONFIRM_SECONDS', 1.0)
 # DEFAULT_TARE_WEIGHT_G:
 # DeviceSettings未取得時の皿重量フォールバック
 DEFAULT_TARE_WEIGHT_G = _env_float('HISUIDISH_TARE_WEIGHT_G', 0.0)
@@ -192,6 +209,9 @@ QUEUE_FLUSH_INTERVAL_SEC = 1.0
 MIN_VALID_GRAMS = _env_float('HISUIDISH_MIN_VALID_GRAMS', -100.0)
 # 直前有効サンプルとの差分が大きすぎる場合は無視する
 MAX_VALID_NET_JUMP_G = _env_float('HISUIDISH_MAX_VALID_NET_JUMP_G', 50.0)
+# 大きな上方向ジャンプがこの秒数続いたら新しい基準として受け入れる
+# 皿を置き直したときに永続的に無視し続けるのを避ける
+JUMP_ACCEPT_SECONDS = _env_float('HISUIDISH_JUMP_ACCEPT_SECONDS', 1.5)
 # 異常に大きい重量はグリッチとして無視する
 # 上限判定は gross_weight_limit + このマージンで判定する
 MAX_VALID_GRAMS_MARGIN = _env_float('HISUIDISH_MAX_VALID_GRAMS_MARGIN', 200.0)

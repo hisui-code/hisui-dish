@@ -7,6 +7,10 @@ from config import (
     API_BASE_URL,
     API_TIMEOUT_SEC,
     API_TOKEN,
+    BOWL_ABSENT_CONFIRM_SECONDS,
+    BOWL_ABSENT_THRESHOLD_G,
+    BOWL_PRESENT_CONFIRM_SECONDS,
+    BOWL_PRESENT_THRESHOLD_G,
     BOWL_SNAPSHOTS_QUEUE_FILE,
     BOWL_SNAPSHOT_INTERVAL_SEC,
     BOWL_SNAPSHOT_MIN_DELTA_G,
@@ -22,6 +26,7 @@ from config import (
     FINALIZE_SECONDS,
     GROSS_WEIGHT_LIMIT_G,
     IDLE_UP_SPIKE_IGNORE_G,
+    JUMP_ACCEPT_SECONDS,
     MAX_SESSION_SECONDS,
     MAX_VALID_GRAMS_MARGIN,
     MAX_VALID_NET_JUMP_G,
@@ -45,7 +50,7 @@ from api_sender import post_bowl_snapshot, post_session_event
 from calibration_store import load_calibration
 from device_settings_client import fetch_settings, fetch_version
 from device_settings_store import load_applied_lock_version, load_applied_state, save_applied_state
-from eating_state_machine import EatingDetector, EatingDetectorConfig
+from eating_state_machine import EatingDetector, EatingDetectorConfig, EatingState
 from hx711_reader import cleanup_gpio, convert_raw_to_grams, create_sensor, read_raw_once
 from queue_store import enqueue_bowl_snapshot, enqueue_finished_event, flush_queue
 from session_store import append_session_event
@@ -317,6 +322,18 @@ def main() -> None:
     last_snapshot_weight_g: float | None = None
     # 直前の有効サンプル（異常値除外後）を保持する
     last_valid_net_grams: float | None = None
+    # 皿の有無を前段で判定し、食事状態機械は皿あり時だけ動かす
+    # 皿なし状態では食事開始や終了を判定しない
+    bowl_present = False
+    # 皿あり候補が始まった時刻
+    bowl_present_since = 0.0
+    # 皿なし候補が始まった時刻
+    bowl_absent_since = 0.0
+    # 大きな上方向ジャンプを新しい基準として受け入れるための保留情報
+    # 皿を置き直した直後は jump として弾かれるため、一定時間続く場合だけ採用する
+    pending_jump_started_at = 0.0
+    # jump 保留開始時の直前有効値
+    pending_jump_origin_net_grams: float | None = None
 
     while True:
         now = time.monotonic()
@@ -363,11 +380,119 @@ def main() -> None:
             time.sleep(READ_SLEEP_SEC)
             continue
 
+        # 皿なし状態では食事判定を動かさない
+        # 皿を置いたことが一定時間続いた時だけIDLEへ入る
+        if not bowl_present:
+            # 皿の有無はランタイムゼロ補正後ではなく総重量で判定する
+            # 皿を載せたまま起動すると net_grams は 0 付近になるため
+            if grams >= BOWL_PRESENT_THRESHOLD_G:
+                if bowl_present_since == 0.0:
+                    # しきい値を超えた瞬間を記録して継続判定を始める
+                    bowl_present_since = now
+                elif now - bowl_present_since >= BOWL_PRESENT_CONFIRM_SECONDS:
+                    # 一定時間皿あり重量が続いたので、ここから食事判定を有効化する
+                    bowl_present = True
+                    bowl_present_since = 0.0
+                    bowl_absent_since = 0.0
+                    # 皿ありへ切り替わるときは古い履歴を捨てて、その時点の値を新しい基準にする
+                    history.clear()
+                    history.append(net_grams)
+                    last_valid_net_grams = net_grams
+                    pending_jump_started_at = 0.0
+                    pending_jump_origin_net_grams = None
+                    detector.state = EatingState.IDLE
+                    detector.baseline_grams = net_grams
+                    detector.prev_avg_grams = net_grams
+                    last_snapshot_weight_g = None
+                    print(
+                        f'event=bowl_present grams={grams:.2f} net_grams={net_grams:.2f} '
+                        f'confirm_seconds={BOWL_PRESENT_CONFIRM_SECONDS:.2f}'
+                    )
+            else:
+                # 途中でしきい値を下回ったら present 候補をやり直す
+                bowl_present_since = 0.0
+
+            # 皿なし中は食事状態機械を進めず、総重量の監視だけを行う
+            print(
+                f'state=NO_BOWL raw={raw:.2f} grams={grams:.2f} '
+                f'net_grams={net_grams:.2f} baseline=NA'
+            )
+            time.sleep(READ_SLEEP_SEC)
+            continue
+
+        # 皿あり状態でも、取り外されたことが一定時間続けば皿なしへ戻す
+        if grams <= BOWL_ABSENT_THRESHOLD_G:
+            if bowl_absent_since == 0.0:
+                # 皿なし候補が始まった時刻を記録する
+                bowl_absent_since = now
+            elif now - bowl_absent_since >= BOWL_ABSENT_CONFIRM_SECONDS:
+                # 一定時間皿なし重量が続いたので、食事判定を停止して基準を捨てる
+                bowl_present = False
+                bowl_present_since = 0.0
+                bowl_absent_since = 0.0
+                history.clear()
+                last_valid_net_grams = None
+                last_snapshot_weight_g = None
+                pending_jump_started_at = 0.0
+                pending_jump_origin_net_grams = None
+                # 次回の皿あり遷移まで baseline を持たない
+                detector.state = EatingState.IDLE
+                detector.baseline_grams = None
+                detector.prev_avg_grams = None
+                print(
+                    f'event=bowl_absent grams={grams:.2f} net_grams={net_grams:.2f} '
+                    f'confirm_seconds={BOWL_ABSENT_CONFIRM_SECONDS:.2f}'
+                )
+                print(
+                    f'state=NO_BOWL raw={raw:.2f} grams={grams:.2f} '
+                    f'net_grams={net_grams:.2f} baseline=NA'
+                )
+                time.sleep(READ_SLEEP_SEC)
+                continue
+        else:
+            # 皿あり重量へ戻ったら absent 候補を解除する
+            bowl_absent_since = 0.0
+
         # 直前有効値から急変しすぎるサンプルは捨てる
         if (
             last_valid_net_grams is not None
             and abs(net_grams - last_valid_net_grams) > MAX_VALID_NET_JUMP_G
         ):
+            jump_delta = net_grams - last_valid_net_grams
+
+            # 皿を置いた直後のような上方向ジャンプは、一定時間続けば新しい基準として受け入れる
+            # 単発のグリッチは継続しない前提で、ここではまだ状態機械へ流さない
+            if jump_delta > 0:
+                # 保留開始時点の有効値を覚えておき、その基準より高い状態が続くかを見る
+                # 乗せている途中は値が段階的に上がるので、現在値の近さでは判定しない
+                if pending_jump_origin_net_grams is None:
+                    # 最初の jump を見つけた時点で継続確認を始める
+                    pending_jump_started_at = now
+                    pending_jump_origin_net_grams = last_valid_net_grams
+                elif now - pending_jump_started_at >= JUMP_ACCEPT_SECONDS:
+                    # 上方向 jump が続いたので、皿の置き直しなど環境変化として採用する
+                    prev_net_grams = last_valid_net_grams
+                    last_valid_net_grams = net_grams
+                    # 古い平均窓を捨てて、新しい重量に履歴を合わせる
+                    history.clear()
+                    history.append(net_grams)
+                    # baseline も同じ値へ揃えて、直後に誤って食事開始しないようにする
+                    detector.baseline_grams = net_grams
+                    detector.prev_avg_grams = net_grams
+                    pending_jump_started_at = 0.0
+                    pending_jump_origin_net_grams = None
+                    print(
+                        f'event=sample_jump_accepted net_grams={net_grams:.2f} '
+                        f'prev={prev_net_grams:.2f} accept_seconds={JUMP_ACCEPT_SECONDS:.2f}'
+                    )
+                    time.sleep(READ_SLEEP_SEC)
+                    continue
+            else:
+                # 下方向 jump は皿外しやグリッチの可能性があるため採用せず破棄する
+                # 皿外しは上段の bowl_absent 判定で扱う
+                pending_jump_started_at = 0.0
+                pending_jump_origin_net_grams = None
+
             print(
                 f'event=sample_ignored reason=jump raw={raw:.2f} '
                 f'net_grams={net_grams:.2f} prev={last_valid_net_grams:.2f} '
@@ -377,6 +502,9 @@ def main() -> None:
             continue
 
         # ここまで通過した値だけ有効サンプルとして保持する
+        # 有効サンプルが来たので jump 保留は解除する
+        pending_jump_started_at = 0.0
+        pending_jump_origin_net_grams = None
         last_valid_net_grams = net_grams
 
         # ノイズ低減のため移動平均で平滑化する
