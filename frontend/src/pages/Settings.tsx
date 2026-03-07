@@ -1,11 +1,10 @@
-import { useState } from 'react'
-import DeviceSettingsForm from '../components/settings/DeviceSettingsForm'
 import SettingsSkeleton from '../components/skeletons/SettingsSkeleton'
 import { resolveDeviceId } from '@/lib/api/config'
 import useDeviceSetting from '@/hooks/settings/useDeviceSetting'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { FaCog } from 'react-icons/fa'
 import GenericErrorPage from '@/components/layout/GenericErrorPage'
+import DeviceSettingsForm from '@/components/settings/DeviceSettingsForm'
 
 const deviceId = resolveDeviceId()
 
@@ -13,8 +12,7 @@ const deviceId = resolveDeviceId()
  * @description 設定画面の中身を表示する
  */
 function SettingsInner() {
-  const [ver, setVer] = useState(0)
-  const query = useDeviceSetting(deviceId, ver)
+  const query = useDeviceSetting(deviceId)
 
   // 取得中はローディング表示を出す
   if (query.isLoading) {
@@ -28,7 +26,11 @@ function SettingsInner() {
 
   return (
     <div className="w-full max-w-2xl">
-      <DeviceSettingsForm initial={query.data} onReload={() => setVer((v) => v + 1)} />
+      <DeviceSettingsForm
+        key={query.data.lock_version}
+        initial={query.data}
+        onReload={() => void query.refetch()}
+      />
     </div>
   )
 }

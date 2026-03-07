@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import type { DeviceSetting } from '@/types/deviceSettings'
 import { updateDeviceSetting } from '@/lib/api/deviceSettings'
 import SettingsFields from './SettingsFields'
@@ -12,25 +12,23 @@ type Props = {
 }
 
 export default function DeviceSettingsForm({ initial, onReload }: Props) {
-  const base = useMemo(() => initial, [initial])
-
-  // 入力値
-  const [f, setF] = useState<FormState>(() => toFormState(base))
+  // フォームの初期値はマウント時のサーバー値を基準にする
+  const [f, setF] = useState<FormState>(() => toFormState(initial))
   const setField = <K extends keyof FormState>(k: K, val: number) =>
     setF((prev) => ({ ...prev, [k]: val }))
 
   // メタ & UI
-  const [lockVersion, setLockVersion] = useState<number>(base.lock_version)
-  const [updatedAt, setUpdatedAt] = useState<string>(base.updated_at)
+  const [lockVersion, setLockVersion] = useState<number>(initial.lock_version)
+  const [updatedAt, setUpdatedAt] = useState<string>(initial.updated_at)
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState<string>('')
 
   const errors = validate(f)
   const hasError = Object.keys(errors).length > 0
-  const dirty = isDirty(f, base)
+  const dirty = isDirty(f, initial)
 
   const onReset = () => {
-    setF(toFormState(base))
+    setF(toFormState(initial))
     setMsg('')
   }
 
@@ -42,7 +40,7 @@ export default function DeviceSettingsForm({ initial, onReload }: Props) {
     }
     setSaving(true)
     try {
-      const next = await updateDeviceSetting(base.device_id, {
+      const next = await updateDeviceSetting(initial.device_id, {
         stable_duration_sec: f.stable,
         max_session_sec: f.maxSess,
         tare_weight: f.tare,
