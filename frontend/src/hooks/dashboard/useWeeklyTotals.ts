@@ -89,7 +89,7 @@ export function useWeeklyTotalsMetrics(args: {
   /**
    * @description
    * 取得したログを表示範囲内に絞る
-   * recordedAtIso は ISO 文字列想定なので slice(0,10) で日付キーにする
+   * recordedAtIso を JST の日付へ正規化して範囲判定に使う
    */
   const logsInRange = useMemo(() => {
     const all: LogItem[] = []
@@ -102,7 +102,7 @@ export function useWeeklyTotalsMetrics(args: {
     const end = endIso
 
     return all.filter((x) => {
-      const d = x.recordedAtIso.slice(0, 10)
+      const d = jst(x.recordedAtIso).format('YYYY-MM-DD')
       return d >= start && d <= end
     })
   }, [results, weekStartIso, endIso])

@@ -1,4 +1,5 @@
 import { resolveDeviceId } from '../api/config'
+import { jst } from '@/lib/date'
 
 /**
  * React Query のキャッシュキー。
@@ -14,5 +15,5 @@ export const logsQueryKey = (month: string) => {
  * APIが月指定なので、取得対象の月を作る。
  */
 export function monthOf(isoDate: string): string {
-  return isoDate.slice(0, 7)
+  return jst(`${isoDate}T00:00:00`).format('YYYY-MM')
 }

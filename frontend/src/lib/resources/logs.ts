@@ -60,7 +60,7 @@ export function filterLogs(
   const q = query.trim()
 
   // まず対象月だけに絞って、他月のログを除外する
-  const monthFiltered = logs.filter((x) => x.recordedAtIso.slice(0, 7) === month)
+  const monthFiltered = logs.filter((x) => dayjs(x.recordedAtIso).format('YYYY-MM') === month)
 
   // 次に選択中の時間帯で絞り込む
   const bandFiltered =
@@ -75,7 +75,7 @@ export function filterLogs(
 
   return bandFiltered.filter((x) => {
     // 日単位の検索に使うため、日付部分だけを取り出す
-    const isoDate = x.recordedAtIso.slice(0, 10)
+    const isoDate = dayjs(x.recordedAtIso).format('YYYY-MM-DD')
 
     if (!Number.isNaN(dayNumber)) {
       // 数値入力の時は「13日」のような日の検索として扱う
@@ -99,7 +99,7 @@ export function groupLogsByDay(logs: LogItem[]): LogGroup[] {
   const sortedLogs = [...logs].sort((a, b) => b.recordedAtIso.localeCompare(a.recordedAtIso))
 
   for (const item of sortedLogs) {
-    const dayKey = item.recordedAtIso.slice(0, 10)
+    const dayKey = dayjs(item.recordedAtIso).format('YYYY-MM-DD')
 
     // 日付ごとのグループがまだ無ければここで作る
     const group =
