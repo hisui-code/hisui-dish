@@ -5,7 +5,7 @@ import type { LogItem, LogGroup, TimeBand } from '@/types/logs'
 
 dayjs.locale('ja')
 
-// 時間帯ラベル
+// 画面上で使う時間帯フィルターの表示名
 export const timeBandLabels: Record<TimeBand, string> = {
   all: 'すべて',
   morning: '朝',
@@ -14,21 +14,30 @@ export const timeBandLabels: Record<TimeBand, string> = {
   night: '夜',
 }
 
-// ISO文字列をHH:mmに変換
+/**
+ * @description ログの記録時刻を一覧表示用の `HH:mm` に変換する
+ */
 export function formatTime(iso: string): string {
   return dayjs(iso).format('HH:mm')
 }
 
-// 初期表示の月(YYYY-MM)
+/**
+ * @description ログ画面を開いた時に最初に表示する対象月を返す
+ */
 export function getDefaultMonth(): string {
   return dayjs().format('YYYY-MM')
 }
 
-// 日付表示 MM月DD(曜日) 形式
+/**
+ * @description 日ごとの見出しに使う日付ラベルを返す
+ */
 export function formatDayLabel(iso: string): string {
   return dayjs(iso).format('M/D(dd)')
 }
 
+/**
+ * @description 記録時刻から時間帯フィルター用の区分を返す
+ */
 export function getTimeBand(iso: string): TimeBand {
   const h = dayjs(iso).hour()
 
@@ -38,8 +47,10 @@ export function getTimeBand(iso: string): TimeBand {
   return 'night' // 22:00〜4:59 夜・深夜
 }
 
-// フィルター
-
+/**
+ * @description ログ一覧を月、時間帯、検索文字列で絞り込む
+ * 画面表示用のフィルターだけを担当し、元データは変更しない
+ */
 export function filterLogs(
   logs: LogItem[],
   month: string,
@@ -48,51 +59,49 @@ export function filterLogs(
 ): LogItem[] {
   const q = query.trim()
 
-  // 1. 月フィルタ（YYYY-MM 部分で一致）
+  // まず対象月だけに絞って、他月のログを除外する
   const monthFiltered = logs.filter((x) => x.recordedAtIso.slice(0, 7) === month)
 
-  // 2. 時間帯フィルタ（朝/昼/夕方/夜）
+  // 次に選択中の時間帯で絞り込む
   const bandFiltered =
     timeBand === 'all'
       ? monthFiltered
       : monthFiltered.filter((x) => getTimeBand(x.recordedAtIso) === timeBand)
 
-  // 3. 日の検索
-
-  // 日付けの入力がなければ処理しない
+  // 検索文字がなければ、月と時間帯で絞った結果をそのまま返す
   if (!q) return bandFiltered
 
   const dayNumber = Number(q)
 
   return bandFiltered.filter((x) => {
-    const isoDate = x.recordedAtIso.slice(0, 10) // 例: "2025-12-13"の部分だけを切り出す
+    // 日単位の検索に使うため、日付部分だけを取り出す
+    const isoDate = x.recordedAtIso.slice(0, 10)
 
     if (!Number.isNaN(dayNumber)) {
-      // 数値として解釈できる場合は「日」を優先して判定（1〜31）
-      const day2 = String(dayNumber).padStart(2, '0') // "1" -> "01"
-      const targetPrefix = `${month}-${day2}` // 例: "2025-12-13"
+      // 数値入力の時は「13日」のような日の検索として扱う
+      const day2 = String(dayNumber).padStart(2, '0')
+      const targetPrefix = `${month}-${day2}`
       return isoDate.startsWith(targetPrefix)
     }
 
-    // それ以外の入力は、そのまま日付文字列に対する部分一致でざっくり検索
-    // 例: "13" -> "2025-12-13" にマッチ
+    // 数値以外は日付文字列への部分一致として扱う
     return isoDate.includes(q)
   })
 }
 
 /**
- * ログを日付ごとにまとめるロジック
- * - 「どの順で表示するか」だけを決めている
+ * @description ログを日付ごとにまとめて一覧表示用の配列へ変換する
  */
 export function groupLogsByDay(logs: LogItem[]): LogGroup[] {
   const map = new Map<string, LogGroup>()
 
-  // ログの配列を降順に並び替え
+  // 新しい記録を先頭に出すため、時刻の降順に並べ替える
   const sortedLogs = [...logs].sort((a, b) => b.recordedAtIso.localeCompare(a.recordedAtIso))
 
   for (const item of sortedLogs) {
     const dayKey = item.recordedAtIso.slice(0, 10)
 
+    // 日付ごとのグループがまだ無ければここで作る
     const group =
       map.get(dayKey) ??
       (() => {
@@ -111,14 +120,18 @@ export function groupLogsByDay(logs: LogItem[]): LogGroup[] {
   return Array.from(map.values())
 }
 
-// 指定された "YYYY-MM" 文字列を基準に、月を前後にシフトする
+/**
+ * @description 表示中の月を前後へ移動したい時の月文字列を返す
+ */
 export function shiftMonth(month: string, offset: number): string {
   const d = dayjs(`${month}-01`)
   if (!d.isValid()) return month
   return d.add(offset, 'month').format('YYYY-MM')
 }
 
-// YYYY-MMをYYYY年MM月に変換
+/**
+ * @description `YYYY-MM` を画面表示用の月ラベルへ変換する
+ */
 export function formatMonthLabel(month: string): string {
   const d = dayjs(`${month}-01`)
   if (!d.isValid()) return month

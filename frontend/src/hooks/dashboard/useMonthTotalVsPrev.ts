@@ -26,9 +26,12 @@ function toMetricsLogsFromDailyTotals(dailyTotals: DailyTotals, month: string) {
  * @returns 今月と前月の合計g比較結果
  */
 export function useMonthTotalVsPrev(month?: string): MonthTotalVsPrev {
+  // 未指定時はJSTの今月を基準にする
   const targetMonth = month ?? jst().format('YYYY-MM')
+  // 比較対象として前月を求める
   const prevMonth = jst(`${targetMonth}-01`).subtract(1, 'month').format('YYYY-MM')
 
+  // 今月と前月の日別合計を同時に取得する
   const results = useSuspenseQueries({
     queries: [targetMonth, prevMonth].map((m) => ({
       queryKey: queryKeys.dailyTotals(m),
@@ -39,6 +42,7 @@ export function useMonthTotalVsPrev(month?: string): MonthTotalVsPrev {
   const monthDailyTotals = results[0].data as DailyTotals
   const prevDailyTotals = results[1].data as DailyTotals
 
+  // 日別合計を比較用の形式へ変換して、今月と前月の差分を計算する
   return calcMonthTotalVsPrev({
     month: targetMonth,
     monthLogs: toMetricsLogsFromDailyTotals(monthDailyTotals, targetMonth),

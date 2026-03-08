@@ -28,6 +28,7 @@ function buildMonthKeysInRange(args: { startIso: string; endIso: string }): stri
   let cur = jst(`${startIso}T00:00:00`).startOf('month')
   const end = jst(`${endIso}T00:00:00`).startOf('month')
 
+  // 開始月から終了月までを1ヶ月ずつ進めて取得対象を作る
   while (cur.isSame(end) || cur.isBefore(end)) {
     keys.push(cur.format('YYYY-MM'))
     cur = cur.add(1, 'month')
@@ -93,6 +94,7 @@ export function useWeeklyTotalsMetrics(args: {
   const logsInRange = useMemo(() => {
     const all: LogItem[] = []
     for (const r of results) {
+      // 月ごとに取ったログをいったん1つにまとめる
       all.push(...(r.data as LogItem[]))
     }
 
@@ -113,6 +115,7 @@ export function useWeeklyTotalsMetrics(args: {
   const dailyTotals = useMemo(() => {
     return buildDailyTotals(
       logsInRange.map((x) => ({
+        // ログ一覧用のデータから日別集計に必要な形だけを取り出す
         recordedAtIso: x.recordedAtIso,
         grams: x.grams,
       }))

@@ -54,7 +54,7 @@ export type TodayVsPrevWeekMetrics = {
  * - key: `YYYY-MM-DD`（JST基準）
  * - value: その日の合計（g）
  *
- * `recordedAtIso` が `+09:00` を含む想定なので `slice(0, 10)` で JST 日付キーが安定する
+ * `recordedAtIso` は JST 基準で解釈し、`YYYY-MM-DD` に正規化して日付キーを作る
  *
  * @param logs - 集計対象ログ配列（最小表現）
  * @returns 日別合計Map（key=YYYY-MM-DD, value=合計g）
@@ -228,10 +228,6 @@ export function calcMonthTotalMetrics(args: {
 /**
  * @description
  * 今月合計と前月合計を比較するためのデータ
- *
- * - `diffGrams` は `monthTotalGrams - prevMonthTotalGrams`
- * - `diffPct` は `diffGrams / prevMonthTotalGrams`
- *   - 前月合計が 0 の場合は `null`
  */
 export type MonthTotalVsPrev = {
   /** @description 対象月（"YYYY-MM"） */
@@ -253,9 +249,6 @@ export type MonthTotalVsPrev = {
 /**
  * @description
  * 指定月ログの合計gを返す（集計の共通処理）
- *
- * - 月判定は `recordedAtIso.slice(0, 7) === month` による
- * - `recordedAtIso` は ISO 文字列を想定（先頭7文字が "YYYY-MM"）
  *
  * @param args - 入力
  * @param args.month - 対象月（"YYYY-MM"）

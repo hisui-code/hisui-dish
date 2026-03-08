@@ -37,6 +37,7 @@ export function useTodayVsPrevWeekMetrics(): TodayVsPrevWeekMetrics {
     })),
   })
 
+  // 日別合計を YYYY-MM-DD => total の形へ並べ替えて比較処理へ渡す
   const dailyTotals = new Map<string, number>()
   for (let i = 0; i < months.length; i++) {
     const month = months[i]
@@ -47,5 +48,6 @@ export function useTodayVsPrevWeekMetrics(): TodayVsPrevWeekMetrics {
     }
   }
 
+  // 今日の合計と前週1日平均を比較し、表示用メトリクスを返す
   return calcTodayVsPrevWeekMetrics({ todayIso, dailyTotals })
 }

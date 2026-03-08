@@ -26,7 +26,7 @@ export default function StatusLine({ msg, hasError, dirty }: Props) {
           <span className="text-amber-600">未保存の変更があります</span>
         </>
       ) : (
-        <span className="text-neutral-500">すべての値は範囲内の整数</span>
+        <span className="text-neutral-500">すべての値は許可された範囲内です</span>
       )}
     </div>
   )

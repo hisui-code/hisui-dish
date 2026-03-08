@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoggedIn(true)
   }
 
-  // メール+パスワードで API を叩いてログインするユーティリティ（必要なら使う）
+  // メールアドレスとパスワードでログインし、認証状態へ反映する
   const loginWithPassword = async (email: string, password: string) => {
     // ログインAPIの応答からトークンを取り出して認証状態に反映する
     const body = await apiLogin(email, password)

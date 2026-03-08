@@ -8,6 +8,10 @@ type TodayListProps = {
   today: DashboardTodayViewModel
 }
 
+/**
+ * @description 今日の食事回数、合計量、各食事イベントを一覧表示する
+ * ダッシュボード上で今日の記録だけを素早く確認できるようにする
+ */
 export default function TodayList({ today }: TodayListProps) {
   return (
     <div className="mt-6 overflow-hidden rounded-3xl bg-white ring-1 ring-black/5">
@@ -36,6 +40,7 @@ export default function TodayList({ today }: TodayListProps) {
           </div>
         </div>
       </div>
+      {/* 記録がある時は時刻ごとの一覧を出し、無い時は空状態を出す */}
       {today.hasEvents ? (
         <ul className="divide-y divide-neutral-100">
           {today.events.map((e, index) => (
