@@ -7,7 +7,7 @@
 /**
  * @description API のベースURL
  */
-export const API_BASE = (import.meta.env.VITE_API_BASE as string) ?? ''
+export const API_BASE = (import.meta.env.VITE_API_BASE as string) || ''
 
 /**
  * @description DEVICE_ID（UUID）
