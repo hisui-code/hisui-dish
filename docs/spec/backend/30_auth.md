@@ -19,6 +19,7 @@ Web 利用者のログイン方法と、API を使う時の認証、認可のル
 
 - Web 利用者は `login` で `auth_token` を受け取る
 - その後は `Authorization: Bearer {auth_token}` を付けて API を使う
+- Device は `X-Api-Token` を付けて Device 専用 API を使う
 - Backend は受け取ったトークンからユーザーを特定する
 - トークンは `personal_access_tokens` に保存する
 
@@ -124,11 +125,11 @@ Web 利用者のログイン方法と、API を使う時の認証、認可のル
 - `admin` 以外が管理者 API を呼んだ時は `403`
 - エラーコードは `forbidden`
 
-## DeviceSettings と集計 API
+## Web 利用者向け API
 
 ### 何をするか
 
-ダッシュボード、ログ、DeviceSettings などの API は、ログイン済みユーザーだけが使える。
+ダッシュボード、ログ、DeviceSettings の取得と更新などの API は、ログイン済みユーザーだけが使える。
 
 ### 対象
 
@@ -138,15 +139,18 @@ Web 利用者のログイン方法と、API を使う時の認証、認可のル
 - `GET /api/v1/logs`
 - `DELETE /api/v1/logs/{log_id}`
 - `GET /api/v1/device_settings/{device_id}`
-- `GET /api/v1/device_settings/{device_id}/version`
 - `PATCH /api/v1/device_settings/{device_id}`
 - `PUT /api/v1/device_settings/{device_id}`
+- `GET /api/v1/me`
+- `POST /api/v1/logout`
+- `GET /api/v1/users/{user_id}`
+- `PATCH /api/v1/users/{user_id}`
 
 ## Device 系 API
 
 ### 何をするか
 
-`/api/v1` 配下の API は、必要に応じて `X-Api-Token` でも保護する。
+Device が送信や設定同期に使う API は、`X-Api-Token` で保護する。
 
 ### ルール
 
@@ -158,6 +162,18 @@ Web 利用者のログイン方法と、API を使う時の認証、認可のル
 
 ### 対象
 
-- `/api/v1` 配下の API 全体
 - `POST /api/v1/device/session_events`
 - `POST /api/v1/device/bowl_snapshots`
+- `GET /api/v1/device/device_settings/{device_id}`
+- `GET /api/v1/device/device_settings/{device_id}/version`
+
+## 公開 API
+
+### 何をするか
+
+稼働確認やログイン開始に使う API は、利用前の状態でも呼べるように公開する。
+
+### 対象
+
+- `GET /api/v1/health`
+- `POST /api/v1/login`

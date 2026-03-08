@@ -62,3 +62,18 @@
 
 - Device は `lock_version` を保持する
 - Web 更新時は楽観ロックを使う
+
+## 2026-03-09: Device API と Web API は認証方式を分ける
+
+理由:
+
+- Device と Web 利用者では認証の前提が異なる
+- Web API 全体に `X-Api-Token` を要求すると、frontend まで device 用の秘密情報を持つことになる
+- DeviceSettings の取得は device の同期用途、更新は Web 管理画面の用途で責務が異なる
+
+影響:
+
+- `health` と `login` は公開 API とする
+- Device の送信 API と DeviceSettings 取得 API は `X-Api-Token` で保護する
+- Dashboard、Logs、Users、DeviceSettings 更新 API は `Authorization: Bearer ...` で保護する
+- DeviceSettings 取得 API は `/api/v1/device/device_settings/...` に分離する

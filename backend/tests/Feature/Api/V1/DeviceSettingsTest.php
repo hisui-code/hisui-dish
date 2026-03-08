@@ -244,10 +244,10 @@ class DeviceSettingsTest extends TestCase
         ]);
     }
 
-    public function test_device_settings_requires_api_token_in_production(): void
+    public function test_web_device_settings_does_not_require_api_token_in_production(): void
     {
         // テストケース
-        // production環境ではX-Api-Tokenが不正なら403になる
+        // production環境でもWeb用のDeviceSettings取得はBearer認証だけで使える
         $token = $this->seedUser();
         $deviceId = $this->seedDevice();
 
@@ -274,6 +274,42 @@ class DeviceSettingsTest extends TestCase
 
         $response = $this->get('/api/v1/device_settings/' . $deviceId, [
             'Authorization' => 'Bearer ' . $token,
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'device_id' => $deviceId,
+        ]);
+    }
+
+    public function test_device_device_settings_requires_api_token_in_production(): void
+    {
+        // テストケース
+        // production環境ではDevice用のDeviceSettings取得にX-Api-Tokenが必要
+        $deviceId = $this->seedDevice();
+
+        DB::table('device_settings')->where('device_id', $deviceId)->delete();
+        DB::table('device_settings')->insert([
+            'device_id' => $deviceId,
+            'stable_duration_sec' => 180,
+            'max_session_sec' => 600,
+            'lock_version' => 0,
+            'tare_weight' => 250,
+            'stability_epsilon_g' => 5,
+            'sampling_hz' => 10,
+            'moving_avg_window' => 5,
+            'gross_weight_limit_g' => 2000,
+            'created_at' => now('UTC'),
+            'updated_at' => now('UTC'),
+        ]);
+
+        putenv('API_TOKEN=secret-token');
+        $_ENV['API_TOKEN'] = 'secret-token';
+        $_SERVER['API_TOKEN'] = 'secret-token';
+
+        config(['app.env' => 'production']);
+
+        $response = $this->get('/api/v1/device/device_settings/' . $deviceId, [
             'X-Api-Token' => 'wrong-token',
         ]);
 

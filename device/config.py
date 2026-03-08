@@ -158,13 +158,13 @@ API_TIMEOUT_SEC = 5
 # DeviceSettings本体の取得先
 DEVICE_SETTINGS_ENDPOINT = _env(
     'HISUIDISH_DEVICE_SETTINGS_ENDPOINT',
-    '/api/v1/device_settings/{device_id}',
+    '/api/v1/device/device_settings/{device_id}',
 )
 # DEVICE_SETTINGS_VERSION_ENDPOINT:
 # lock_versionだけ確認する取得先
 DEVICE_SETTINGS_VERSION_ENDPOINT = _env(
     'HISUIDISH_DEVICE_SETTINGS_VERSION_ENDPOINT',
-    '/api/v1/device_settings/{device_id}/version',
+    '/api/v1/device/device_settings/{device_id}/version',
 )
 # SETTINGS_SYNC_INTERVAL_SEC:
 # 常時起動中にversionを確認する間隔

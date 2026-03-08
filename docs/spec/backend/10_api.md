@@ -9,6 +9,8 @@ Backend が提供する API をまとめている。
 - Device から送られたデータを保存する API
 - `POST /api/v1/device/session_events`
 - `POST /api/v1/device/bowl_snapshots`
+- `GET /api/v1/device/device_settings/{device_id}`
+- `GET /api/v1/device/device_settings/{device_id}/version`
 
 詳細:
 
@@ -30,9 +32,8 @@ Backend が提供する API をまとめている。
 
 ## DeviceSettings 系
 
-- Device が使う設定を取得、更新する API
+- Web 管理画面が DeviceSettings を取得、更新する API
 - `GET /api/v1/device_settings/{device_id}`
-- `GET /api/v1/device_settings/{device_id}/version`
 - `PUT /api/v1/device_settings/{device_id}`
 - `PATCH /api/v1/device_settings/{device_id}`
 

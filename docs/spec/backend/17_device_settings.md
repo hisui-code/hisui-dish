@@ -2,14 +2,15 @@
 
 ## 対象 API
 
+- `GET /api/v1/device/device_settings/{device_id}`
+- `GET /api/v1/device/device_settings/{device_id}/version`
 - `GET /api/v1/device_settings/{device_id}`
-- `GET /api/v1/device_settings/{device_id}/version`
 - `PUT /api/v1/device_settings/{device_id}`
 - `PATCH /api/v1/device_settings/{device_id}`
 
 ## 目的
 
-Device 側の判定設定を取得、更新する。
+Device が使う判定設定を取得し、Web 管理画面から更新する。
 
 ## 用語
 
@@ -26,7 +27,10 @@ Device 側の判定設定を取得、更新する。
 
 ### 動作
 
-Device が今使う設定の本体を返す。
+今使う設定の本体を返す。
+
+- Device 専用 API として `X-Api-Token` で保護する
+- Web 管理画面用には `GET /api/v1/device_settings/{device_id}` を `Authorization: Bearer ...` で保護する
 
 - `device_id` が存在しない時は `404`
 - 設定が無い時は `404`
@@ -38,12 +42,15 @@ Device が今使う設定の本体を返す。
 設定本体を取り直す必要があるか確認するための情報を返す。
 
 - Device 側が軽い差分確認をするために使う
+- Device 専用 API として `X-Api-Token` で保護する
 
 ## update
 
 ### 動作
 
-DeviceSettings を更新し、更新後の設定を返す。
+Web 管理画面から DeviceSettings を更新し、更新後の設定を返す。
+
+- Web 利用者用 API として `Authorization: Bearer ...` で保護する
 
 - 必須項目が不足している時は `422`
 - 数値でない時は `422`

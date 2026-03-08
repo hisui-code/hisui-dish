@@ -28,43 +28,46 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::prefix('v1')
-    ->middleware(['api.token'])
-    ->group(function () {
-        Route::get('health', [HealthController::class, 'show']);
-        Route::post('login', [SessionsController::class, 'create']);
+Route::prefix('v1')->group(function () {
+    // 公開API
+    Route::get('health', [HealthController::class, 'show']);
+    Route::post('login', [SessionsController::class, 'create']);
 
-        // Device
-        Route::post('device/session_events', [DeviceSessionEventsController::class, 'store']);
-        Route::post('device/bowl_snapshots', [DeviceBowlSnapshotsController::class, 'store']);
-
-        Route::middleware(['api.auth'])->group(function () {
-            // DeviceSettings（取得も更新も認証必須に統一する）
+    // Device専用API
+    Route::prefix('device')
+        ->middleware(['api.token'])
+        ->group(function () {
+            Route::post('session_events', [DeviceSessionEventsController::class, 'store']);
+            Route::post('bowl_snapshots', [DeviceBowlSnapshotsController::class, 'store']);
             Route::get('device_settings/{device_id}', [DeviceSettingsController::class, 'show']);
             Route::get('device_settings/{device_id}/version', [DeviceSettingsController::class, 'version']);
-            // Dashboard
-            Route::get('dashboard', [DashboardController::class, 'show']);
-            Route::get('daily_totals', [DailyTotalsController::class, 'show']);
-            Route::get('year_monthly_totals', [YearMonthlyTotalsController::class, 'show']);
-            // DeviceSettings（管理画面更新用）
-            Route::put('device_settings/{device_id}', [DeviceSettingsController::class, 'update']);
-            Route::patch('device_settings/{device_id}', [DeviceSettingsController::class, 'update']);
-            // Log
-            Route::get('logs', [LogsController::class, 'index']);
-            Route::delete('logs/{log_id}', [LogsController::class, 'destroy']);
-            // User
-            Route::get('me', [UsersController::class, 'me']);
-            Route::get('users/{user_id}', [UsersController::class, 'show']);
-            Route::patch('users/{user_id}', [UsersController::class, 'update']);
-            // Logout
-            Route::post('logout', [SessionsController::class, 'destroy']);
-
-            // Users
-            Route::middleware(['require.admin'])->group(function () {
-                Route::get('users', [UsersController::class, 'index']);
-                Route::post('users', [UsersController::class, 'store']);
-                Route::delete('users/{user_id}', [UsersController::class, 'destroy']);
-            });
         });
 
+    // Web ユーザー使用API
+    Route::middleware(['api.auth'])->group(function () {
+        // Dashboard
+        Route::get('dashboard', [DashboardController::class, 'show']);
+        Route::get('daily_totals', [DailyTotalsController::class, 'show']);
+        Route::get('year_monthly_totals', [YearMonthlyTotalsController::class, 'show']);
+        // DeviceSettings（管理画面取得、更新用）
+        Route::get('device_settings/{device_id}', [DeviceSettingsController::class, 'show']);
+        Route::put('device_settings/{device_id}', [DeviceSettingsController::class, 'update']);
+        Route::patch('device_settings/{device_id}', [DeviceSettingsController::class, 'update']);
+        // Log
+        Route::get('logs', [LogsController::class, 'index']);
+        Route::delete('logs/{log_id}', [LogsController::class, 'destroy']);
+        // User
+        Route::get('me', [UsersController::class, 'me']);
+        Route::get('users/{user_id}', [UsersController::class, 'show']);
+        Route::patch('users/{user_id}', [UsersController::class, 'update']);
+        // Logout
+        Route::post('logout', [SessionsController::class, 'destroy']);
+
+        // Users
+        Route::middleware(['require.admin'])->group(function () {
+            Route::get('users', [UsersController::class, 'index']);
+            Route::post('users', [UsersController::class, 'store']);
+            Route::delete('users/{user_id}', [UsersController::class, 'destroy']);
+        });
     });
+});
