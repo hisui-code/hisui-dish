@@ -40,6 +40,7 @@ from config import (
     RETRY_INTERVAL_SEC,
     RUNTIME_ZERO_SECONDS,
     SETTINGS_SYNC_INTERVAL_SEC,
+    START_COOLDOWN_AFTER_JUMP_SECONDS,
     SESSION_QUEUE_FILE,
     START_CONFIRM_SECONDS,
     STABILITY_EPSILON_G,
@@ -329,11 +330,13 @@ def main() -> None:
     bowl_present_since = 0.0
     # 皿なし候補が始まった時刻
     bowl_absent_since = 0.0
-    # 大きな上方向ジャンプを新しい基準として受け入れるための保留情報
-    # 皿を置き直した直後は jump として弾かれるため、一定時間続く場合だけ採用する
+    # 大きな変化をすぐ異常値と決めつけず、一時保留して様子を見る
+    # 猫の顔や手が一瞬乗ったあと元へ戻ることがあるため、継続した変化だけ採用する
     pending_jump_started_at = 0.0
     # jump 保留開始時の直前有効値
     pending_jump_origin_net_grams: float | None = None
+    # 保留中 jump の方向 1 は上方向、-1 は下方向
+    pending_jump_direction = 0
 
     while True:
         now = time.monotonic()
@@ -400,8 +403,9 @@ def main() -> None:
                     last_valid_net_grams = net_grams
                     pending_jump_started_at = 0.0
                     pending_jump_origin_net_grams = None
+                    pending_jump_direction = 0
                     detector.state = EatingState.IDLE
-                    detector.baseline_grams = net_grams
+                    detector.tracking_baseline_grams = net_grams
                     detector.prev_avg_grams = net_grams
                     last_snapshot_weight_g = None
                     print(
@@ -435,9 +439,10 @@ def main() -> None:
                 last_snapshot_weight_g = None
                 pending_jump_started_at = 0.0
                 pending_jump_origin_net_grams = None
-                # 次回の皿あり遷移まで baseline を持たない
+                pending_jump_direction = 0
+                # 次回の皿あり遷移まで待機追従基準を持たない
                 detector.state = EatingState.IDLE
-                detector.baseline_grams = None
+                detector.tracking_baseline_grams = None
                 detector.prev_avg_grams = None
                 print(
                     f'event=bowl_absent grams={grams:.2f} net_grams={net_grams:.2f} '
@@ -459,39 +464,43 @@ def main() -> None:
             and abs(net_grams - last_valid_net_grams) > MAX_VALID_NET_JUMP_G
         ):
             jump_delta = net_grams - last_valid_net_grams
+            jump_direction = 1 if jump_delta > 0 else -1
 
-            # 皿を置いた直後のような上方向ジャンプは、一定時間続けば新しい基準として受け入れる
-            # 単発のグリッチは継続しない前提で、ここではまだ状態機械へ流さない
-            if jump_delta > 0:
-                # 保留開始時点の有効値を覚えておき、その基準より高い状態が続くかを見る
-                # 乗せている途中は値が段階的に上がるので、現在値の近さでは判定しない
-                if pending_jump_origin_net_grams is None:
-                    # 最初の jump を見つけた時点で継続確認を始める
-                    pending_jump_started_at = now
-                    pending_jump_origin_net_grams = last_valid_net_grams
-                elif now - pending_jump_started_at >= JUMP_ACCEPT_SECONDS:
-                    # 上方向 jump が続いたので、皿の置き直しなど環境変化として採用する
-                    prev_net_grams = last_valid_net_grams
-                    last_valid_net_grams = net_grams
-                    # 古い平均窓を捨てて、新しい重量に履歴を合わせる
-                    history.clear()
-                    history.append(net_grams)
-                    # baseline も同じ値へ揃えて、直後に誤って食事開始しないようにする
-                    detector.baseline_grams = net_grams
-                    detector.prev_avg_grams = net_grams
-                    pending_jump_started_at = 0.0
-                    pending_jump_origin_net_grams = None
-                    print(
-                        f'event=sample_jump_accepted net_grams={net_grams:.2f} '
-                        f'prev={prev_net_grams:.2f} accept_seconds={JUMP_ACCEPT_SECONDS:.2f}'
+            # 一瞬の接触ノイズか、本当に新しい重量帯へ移ったのかを見分ける
+            # 同じ方向の変化が続いた時だけ新しい値として採用する
+            if (
+                pending_jump_origin_net_grams is None
+                or pending_jump_direction != jump_direction
+            ):
+                pending_jump_started_at = now
+                pending_jump_origin_net_grams = last_valid_net_grams
+                pending_jump_direction = jump_direction
+            elif now - pending_jump_started_at >= JUMP_ACCEPT_SECONDS:
+                prev_net_grams = last_valid_net_grams
+                last_valid_net_grams = net_grams
+                # 古い平均窓を捨てて、新しい重量帯に履歴を合わせる
+                history.clear()
+                history.append(net_grams)
+                # IDLEでは待機追従基準も更新する
+                if detector.state == EatingState.IDLE:
+                    detector.tracking_baseline_grams = net_grams
+                    # 接触スパイク後は開始重量候補を作り直してから再判定する
+                    detector.start_detection_cooldown(
+                        now=now,
+                        seconds=START_COOLDOWN_AFTER_JUMP_SECONDS,
                     )
-                    time.sleep(READ_SLEEP_SEC)
-                    continue
-            else:
-                # 下方向 jump は皿外しやグリッチの可能性があるため採用せず破棄する
-                # 皿外しは上段の bowl_absent 判定で扱う
+                # 直後の平均との差分が暴れないように前回平均は揃える
+                detector.prev_avg_grams = net_grams
                 pending_jump_started_at = 0.0
                 pending_jump_origin_net_grams = None
+                pending_jump_direction = 0
+                print(
+                    f'event=sample_jump_accepted net_grams={net_grams:.2f} '
+                    f'prev={prev_net_grams:.2f} direction={"up" if jump_direction > 0 else "down"} '
+                    f'accept_seconds={JUMP_ACCEPT_SECONDS:.2f}'
+                )
+                time.sleep(READ_SLEEP_SEC)
+                continue
 
             print(
                 f'event=sample_ignored reason=jump raw={raw:.2f} '
@@ -503,8 +512,10 @@ def main() -> None:
 
         # ここまで通過した値だけ有効サンプルとして保持する
         # 有効サンプルが来たので jump 保留は解除する
+        recovered_from_pending_jump = pending_jump_origin_net_grams is not None
         pending_jump_started_at = 0.0
         pending_jump_origin_net_grams = None
+        pending_jump_direction = 0
         last_valid_net_grams = net_grams
 
         # ノイズ低減のため移動平均で平滑化する
@@ -513,6 +524,13 @@ def main() -> None:
 
         # 状態機械を1ステップ進める
         # 返ってくるeventsには eat_started/eat_finished などが入る
+        if recovered_from_pending_jump and detector.state == EatingState.IDLE:
+            # 接触スパイク後に元の重量帯へ戻った場合も開始判定を少し止める
+            # スパイク直前の履歴を残すと開始重量が高めに出やすいため作り直す
+            detector.start_detection_cooldown(
+                now=now,
+                seconds=START_COOLDOWN_AFTER_JUMP_SECONDS,
+            )
         events = detector.step(avg_grams=avg_grams, now=now)
         for event in events:
             print(event)
@@ -616,7 +634,11 @@ def main() -> None:
                 )
             next_queue_flush_at = now + QUEUE_FLUSH_INTERVAL_SEC
 
-        baseline = detector.baseline_grams if detector.baseline_grams is not None else 0.0
+        baseline = (
+            detector.tracking_baseline_grams
+            if detector.tracking_baseline_grams is not None
+            else 0.0
+        )
 
         # 常時ログ 生値と判定状態を同時に確認できるようにする
         print(

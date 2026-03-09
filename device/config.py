@@ -102,6 +102,9 @@ RUNTIME_ZERO_SECONDS = 3.0
 START_THRESHOLD_G = 1.0
 # 開始判定の継続秒 この秒数dropが続いたら開始する
 START_CONFIRM_SECONDS = 0.3
+# 大きな接触スパイクの直後に開始判定を止める秒数
+# 手や顔が一瞬乗った直後は基準が不安定なため、少し待ってから開始判定を再開する
+START_COOLDOWN_AFTER_JUMP_SECONDS = _env_float('HISUIDISH_START_COOLDOWN_AFTER_JUMP_SECONDS', 2.0)
 # 待機中の上方向スパイク許容幅 これを超える増加はbaseline更新しない
 IDLE_UP_SPIKE_IGNORE_G = 5.0
 # 安定判定 隣接サンプル差がこの値以下なら安定寄りとみなす

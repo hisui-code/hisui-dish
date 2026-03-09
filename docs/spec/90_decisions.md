@@ -77,3 +77,16 @@
 - Device の送信 API と DeviceSettings 取得 API は `X-Api-Token` で保護する
 - Dashboard、Logs、Users、DeviceSettings 更新 API は `Authorization: Bearer ...` で保護する
 - DeviceSettings 取得 API は `/api/v1/device/device_settings/...` に分離する
+
+## 2026-03-10: Device の baseline は待機追従用と開始判定用に分ける
+
+理由:
+
+- 待機中の重さの中心を追う値と、食べ始め直前の基準を 1 つで兼務すると誤判定しやすい
+- 接触スパイクや補充のあとに基準が中途半端な位置に残ると、実際には食べていないのに開始判定しやすい
+
+影響:
+
+- 待機中は `tracking_baseline` をゆっくり追従させる
+- 食事開始候補に入った時は `start_reference_weight` を固定する
+- 開始候補への遷移と開始確定で使う基準を分ける
