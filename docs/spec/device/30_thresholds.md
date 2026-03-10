@@ -20,9 +20,9 @@
 | `MOVING_AVG_WINDOW`            | 平均を取るサンプル数                             | 重さの揺れをならして判定を安定させるため       |
 | `MAX_VALID_NET_JUMP_G`         | 急に大きく変わった値をどこで除外するか           | おかしな値をそのまま判定に使わないため         |
 | `JUMP_ACCEPT_SECONDS`          | 大きな変化を新しい基準として受け入れるまでの時間 | 単発ノイズと継続する変化を分けるため           |
-| `BOWL_PRESENT_THRESHOLD_G`     | 皿ありとみなす重さ                               | 皿がある時だけ食事判定を動かすため             |
+| `BOWL_PRESENT_MARGIN_G`        | `tare_weight` に何g足したら皿ありとみなすか      | 空皿の個体差に合わせて皿あり判定を調整するため |
 | `BOWL_PRESENT_CONFIRM_SECONDS` | 皿ありと決めるまでの時間                         | 皿を置く途中で誤って判定しないため             |
-| `BOWL_ABSENT_THRESHOLD_G`      | 皿なしへ戻す重さ                                 | 皿を外したあとに食事判定を止めるため           |
+| `BOWL_ABSENT_MARGIN_G`         | `tare_weight` に何g足したら皿なしへ戻すか        | 皿あり判定との間にヒステリシスを持たせるため   |
 | `BOWL_ABSENT_CONFIRM_SECONDS`  | 皿なしと決めるまでの時間                         | 一瞬の持ち上がりで皿なしにしないため           |
 
 ## 各値の詳細
@@ -137,16 +137,16 @@
 - 皿を置き直した直後は大きな jump が出る
 - 単発ノイズは弾きたいが、継続する環境変化は受け入れないと復帰できない
 
-### `BOWL_PRESENT_THRESHOLD_G`
+### `BOWL_PRESENT_MARGIN_G`
 
 何の判定か:
 
-- 皿が乗っているとみなすための重さの下限を決める
+- `tare_weight` に何g足したら皿が乗っているとみなすかを決める
 
 なぜ必要か:
 
 - 皿が無い状態まで食事判定すると、着脱と食事量の減少が混ざる
-- 皿あり時だけ食事状態機械を動かしたい
+- 空皿の重さは器ごとに違うため、固定値より相対判定の方が実機差に強い
 
 ### `BOWL_PRESENT_CONFIRM_SECONDS`
 
@@ -159,16 +159,16 @@
 - 皿を置く途中の一瞬の通過値で present に入ると不安定になる
 - 継続して乗っていることを確認してから開始したい
 
-### `BOWL_ABSENT_THRESHOLD_G`
+### `BOWL_ABSENT_MARGIN_G`
 
 何の判定か:
 
-- 皿なしへ戻すための重さの上限を決める
+- `tare_weight` に何g足したら皿なしへ戻すかを決める
 
 なぜ必要か:
 
 - 皿が外れたあとも present のままだと、古い待機基準を引きずる
-- present と absent で閾値を分けることで、境界付近の揺れを吸収できる
+- present と absent で margin を分けることで、境界付近の揺れを吸収できる
 
 ### `BOWL_ABSENT_CONFIRM_SECONDS`
 
@@ -186,7 +186,7 @@
 - 開始が遅いなら `MOVING_AVG_WINDOW` と `START_CONFIRM_SECONDS` を見る
 - ノイズで開始しやすいなら `START_THRESHOLD_G` と `MIN_CONSUMED_G` を見る
 - 終了が遅い、または早すぎるなら `STABILITY_EPSILON_G` `END_STABLE_SECONDS` `FINALIZE_SECONDS` を見る
-- 皿の着脱で詰まるなら `BOWL_*` と `JUMP_ACCEPT_SECONDS` を見る
+- 皿の着脱で詰まるなら `BOWL_*_MARGIN_G` と `JUMP_ACCEPT_SECONDS` を見る
 
 ## 調整パターン
 
@@ -307,13 +307,13 @@
 
 まず見る値:
 
-- `BOWL_PRESENT_THRESHOLD_G`
+- `BOWL_PRESENT_MARGIN_G`
 - `BOWL_PRESENT_CONFIRM_SECONDS`
 - `JUMP_ACCEPT_SECONDS`
 
 考え方:
 
-- 皿ありとみなす重さが高すぎると present に入れない
+- `tare_weight` からの margin が大きすぎると present に入れない
 - 確認時間が長すぎると present へ切り替わりにくい
 - 大きな変化を新しい基準として受け入れるまでが長すぎる場合もある
 
@@ -325,12 +325,12 @@
 
 まず見る値:
 
-- `BOWL_ABSENT_THRESHOLD_G`
+- `BOWL_ABSENT_MARGIN_G`
 - `BOWL_ABSENT_CONFIRM_SECONDS`
 
 考え方:
 
-- 皿なしとみなす重さが低すぎると absent に戻れない
+- `tare_weight` からの margin が高すぎると absent に戻れない
 - 確認時間が長すぎると切り替わりが遅くなる
 
 ### 皿の置き直しで詰まる

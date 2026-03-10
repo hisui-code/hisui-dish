@@ -90,3 +90,17 @@
 - 待機中は `tracking_baseline` をゆっくり追従させる
 - 食事開始候補に入った時は `start_reference_weight` を固定する
 - 開始候補への遷移と開始確定で使う基準を分ける
+
+## 2026-03-10: 皿あり判定は固定重量ではなく `tare_weight` 基準で行う
+
+理由:
+
+- 空皿の重さは器や設置状態でずれる
+- 固定の present threshold だと、実機の空皿が `NO_BOWL` のままになることがある
+- DeviceSettings から来る `tare_weight` を基準にした方が、実機差を吸収しやすい
+
+影響:
+
+- Device の皿あり / 皿なし判定は `tare_weight + margin` で行う
+- present / absent の差は margin の差で持つ
+- 固定 threshold ではなく margin を調整値として扱う

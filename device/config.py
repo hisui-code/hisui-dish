@@ -178,19 +178,18 @@ BOWL_SNAPSHOT_INTERVAL_SEC = _env_int('BOWL_SNAPSHOT_INTERVAL_SEC', 300)
 # BOWL_SNAPSHOT_MIN_DELTA_G:
 # 直近送信との差分がこの値未満なら送信しない
 BOWL_SNAPSHOT_MIN_DELTA_G = _env_float('BOWL_SNAPSHOT_MIN_DELTA_G', 0.5)
-# BOWL_PRESENT_THRESHOLD_G:
-# 皿ありとみなす下限重量
-# 起動時ゼロ補正後ではなく総重量 grams で判定する
-BOWL_PRESENT_THRESHOLD_G = _env_float('HISUIDISH_BOWL_PRESENT_THRESHOLD_G', 200.0)
+# BOWL_PRESENT_MARGIN_G:
+# tare_weight に何g足したら皿ありとみなすか
+# 空皿の重さは器ごとにずれるため固定閾値ではなく相対値で持つ
+BOWL_PRESENT_MARGIN_G = _env_float('HISUIDISH_BOWL_PRESENT_MARGIN_G', 10.0)
 # BOWL_PRESENT_CONFIRM_SECONDS:
 # 皿あり判定が継続する必要秒
 # 皿を置く途中の一時的な通過値では反応しないようにする
 BOWL_PRESENT_CONFIRM_SECONDS = _env_float('HISUIDISH_BOWL_PRESENT_CONFIRM_SECONDS', 1.0)
-# BOWL_ABSENT_THRESHOLD_G:
-# 皿なしへ戻す上限重量
-# presentより低くしてヒステリシスを持たせる
-# 着脱境界で present / absent が揺れないよう閾値を分ける
-BOWL_ABSENT_THRESHOLD_G = _env_float('HISUIDISH_BOWL_ABSENT_THRESHOLD_G', 100.0)
+# BOWL_ABSENT_MARGIN_G:
+# tare_weight に何g足したら皿なしへ戻すか
+# presentより低い margin にしてヒステリシスを持たせる
+BOWL_ABSENT_MARGIN_G = _env_float('HISUIDISH_BOWL_ABSENT_MARGIN_G', 5.0)
 # BOWL_ABSENT_CONFIRM_SECONDS:
 # 皿なし判定が継続する必要秒
 # 一瞬の持ち上がりや接触ノイズで absent へ戻らないようにする

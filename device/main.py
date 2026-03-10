@@ -8,9 +8,9 @@ from config import (
     API_TIMEOUT_SEC,
     API_TOKEN,
     BOWL_ABSENT_CONFIRM_SECONDS,
-    BOWL_ABSENT_THRESHOLD_G,
+    BOWL_ABSENT_MARGIN_G,
     BOWL_PRESENT_CONFIRM_SECONDS,
-    BOWL_PRESENT_THRESHOLD_G,
+    BOWL_PRESENT_MARGIN_G,
     BOWL_SNAPSHOTS_QUEUE_FILE,
     BOWL_SNAPSHOT_INTERVAL_SEC,
     BOWL_SNAPSHOT_MIN_DELTA_G,
@@ -155,6 +155,22 @@ def _to_food_weight_g(*, gross_grams: float, tare_weight_g: float, gross_limit_g
         return 0.0
 
     return food_weight
+
+
+def _build_bowl_thresholds(*, tare_weight_g: float) -> tuple[float, float]:
+    """
+    @description tare_weight を基準に皿あり / 皿なし判定の実効閾値を作る
+    """
+    # 固定値ではなく tare_weight からの相対値で判定する
+    # 空皿の個体差があっても present / absent を調整しやすくする
+    bowl_present_threshold_g = tare_weight_g + BOWL_PRESENT_MARGIN_G
+    bowl_absent_threshold_g = tare_weight_g + BOWL_ABSENT_MARGIN_G
+
+    # absent の方が高いと present / absent が逆転するので補正する
+    if bowl_absent_threshold_g >= bowl_present_threshold_g:
+        bowl_absent_threshold_g = bowl_present_threshold_g - 1.0
+
+    return bowl_present_threshold_g, bowl_absent_threshold_g
 
 
 def _resolve_initial_runtime_settings() -> RuntimeSettings:
@@ -308,6 +324,8 @@ def main() -> None:
         f'max_session={runtime_settings.detector_config.max_session_seconds}, '
         f'gross_weight_limit={runtime_settings.gross_weight_limit_g}, '
         f'tare_weight={runtime_settings.tare_weight_g}, '
+        f'bowl_present_margin={BOWL_PRESENT_MARGIN_G}, '
+        f'bowl_absent_margin={BOWL_ABSENT_MARGIN_G}, '
         f'lock_version={runtime_settings.lock_version}, '
         f'runtime_zero={runtime_zero:.2f}, retry_interval={RETRY_INTERVAL_SEC}, '
         f'max_retry_count={MAX_RETRY_COUNT}'
@@ -363,6 +381,9 @@ def main() -> None:
         # 起動時に測ったゼロ点を差し引いて判定用の重さを作る
         # 器の個体差や設置ズレの影響をここで吸収する
         net_grams = grams - runtime_zero
+        bowl_present_threshold_g, bowl_absent_threshold_g = _build_bowl_thresholds(
+            tare_weight_g=runtime_settings.tare_weight_g
+        )
 
         # 異常に小さい重量はグリッチとして捨てる
         if grams < MIN_VALID_GRAMS:
@@ -388,7 +409,7 @@ def main() -> None:
         if not bowl_present:
             # 皿の有無はランタイムゼロ補正後ではなく総重量で判定する
             # 皿を載せたまま起動すると net_grams は 0 付近になるため
-            if grams >= BOWL_PRESENT_THRESHOLD_G:
+            if grams >= bowl_present_threshold_g:
                 if bowl_present_since == 0.0:
                     # しきい値を超えた瞬間を記録して継続判定を始める
                     bowl_present_since = now
@@ -410,6 +431,7 @@ def main() -> None:
                     last_snapshot_weight_g = None
                     print(
                         f'event=bowl_present grams={grams:.2f} net_grams={net_grams:.2f} '
+                        f'threshold={bowl_present_threshold_g:.2f} '
                         f'confirm_seconds={BOWL_PRESENT_CONFIRM_SECONDS:.2f}'
                     )
             else:
@@ -425,7 +447,7 @@ def main() -> None:
             continue
 
         # 皿あり状態でも、取り外されたことが一定時間続けば皿なしへ戻す
-        if grams <= BOWL_ABSENT_THRESHOLD_G:
+        if grams <= bowl_absent_threshold_g:
             if bowl_absent_since == 0.0:
                 # 皿なし候補が始まった時刻を記録する
                 bowl_absent_since = now
@@ -446,6 +468,7 @@ def main() -> None:
                 detector.prev_avg_grams = None
                 print(
                     f'event=bowl_absent grams={grams:.2f} net_grams={net_grams:.2f} '
+                    f'threshold={bowl_absent_threshold_g:.2f} '
                     f'confirm_seconds={BOWL_ABSENT_CONFIRM_SECONDS:.2f}'
                 )
                 print(
