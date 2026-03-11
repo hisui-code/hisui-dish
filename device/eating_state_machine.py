@@ -62,20 +62,27 @@ class EatingDetector:
         # 開始直前の安定重量を算出するため、待機中の重量を短期保持する
         self._idle_reference_samples: deque[float] = deque(maxlen=30)
 
-    def reset_idle_reference(self) -> None:
+    def reset_idle_reference(self, *, clear_samples: bool = True) -> None:
         """
         @description 待機中の開始重量候補を捨てて作り直す
         """
-        self._idle_reference_samples.clear()
+        if clear_samples:
+            self._idle_reference_samples.clear()
         self._start_candidate_since = 0.0
         self._start_reference_grams = None
         self._up_spike_since = 0.0
 
-    def start_detection_cooldown(self, *, now: float, seconds: float) -> None:
+    def start_detection_cooldown(
+        self,
+        *,
+        now: float,
+        seconds: float,
+        clear_samples: bool = True,
+    ) -> None:
         """
         @description 接触スパイク直後は開始判定を一時停止する
         """
-        self.reset_idle_reference()
+        self.reset_idle_reference(clear_samples=clear_samples)
         self._start_cooldown_until = now + seconds
 
     def step(self, avg_grams: float, now: float) -> list[str]:

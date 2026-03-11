@@ -507,10 +507,12 @@ def main() -> None:
                 # IDLEでは待機追従基準も更新する
                 if detector.state == EatingState.IDLE:
                     detector.tracking_baseline_grams = net_grams
-                    # 接触スパイク後は開始重量候補を作り直してから再判定する
+                    # 上方向jump直後は開始判定だけを止め、直前の安定参照は残す
+                    # 接触スパイクが戻った時に高い帯を開始重量として固定しないため
                     detector.start_detection_cooldown(
                         now=now,
                         seconds=START_COOLDOWN_AFTER_JUMP_SECONDS,
+                        clear_samples=jump_direction < 0,
                     )
                 # 直後の平均との差分が暴れないように前回平均は揃える
                 detector.prev_avg_grams = net_grams
@@ -548,11 +550,12 @@ def main() -> None:
         # 状態機械を1ステップ進める
         # 返ってくるeventsには eat_started/eat_finished などが入る
         if recovered_from_pending_jump and detector.state == EatingState.IDLE:
-            # 接触スパイク後に元の重量帯へ戻った場合も開始判定を少し止める
-            # スパイク直前の履歴を残すと開始重量が高めに出やすいため作り直す
+            # 接触スパイク後に元の重量帯へ戻った場合は、直前の安定参照を残したまま再開する
+            # 元の帯に戻った差分まで食事量に含めないため
             detector.start_detection_cooldown(
                 now=now,
                 seconds=START_COOLDOWN_AFTER_JUMP_SECONDS,
+                clear_samples=False,
             )
         events = detector.step(avg_grams=avg_grams, now=now)
         for event in events:
