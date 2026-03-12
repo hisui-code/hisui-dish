@@ -107,6 +107,16 @@ START_CONFIRM_SECONDS = 0.3
 START_COOLDOWN_AFTER_JUMP_SECONDS = _env_float('HISUIDISH_START_COOLDOWN_AFTER_JUMP_SECONDS', 2.0)
 # 待機中の上方向スパイク許容幅 これを超える増加はbaseline更新しない
 IDLE_UP_SPIKE_IGNORE_G = 5.0
+# idle_ref を上方向へ更新する時、この値以上の増加は長め安定を要求する
+IDLE_REFERENCE_UP_UPDATE_THRESHOLD_G = _env_float(
+    'HISUIDISH_IDLE_REFERENCE_UP_UPDATE_THRESHOLD_G',
+    8.0,
+)
+# 大きな上方向増加を idle_ref へ採用する前に必要な安定継続秒
+IDLE_REFERENCE_UP_UPDATE_SECONDS = _env_float(
+    'HISUIDISH_IDLE_REFERENCE_UP_UPDATE_SECONDS',
+    10.0,
+)
 # 安定判定 隣接サンプル差がこの値以下なら安定寄りとみなす
 STABILITY_EPSILON_G = 0.2
 # 安定継続秒 この秒数安定したら終了方向へ進める

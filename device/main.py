@@ -26,6 +26,8 @@ from config import (
     FINALIZE_SECONDS,
     GROSS_WEIGHT_LIMIT_G,
     IDLE_UP_SPIKE_IGNORE_G,
+    IDLE_REFERENCE_UP_UPDATE_SECONDS,
+    IDLE_REFERENCE_UP_UPDATE_THRESHOLD_G,
     JUMP_ACCEPT_SECONDS,
     MAX_SESSION_SECONDS,
     MAX_VALID_GRAMS_MARGIN,
@@ -101,6 +103,8 @@ def _build_default_runtime_settings() -> RuntimeSettings:
             start_threshold_g=START_THRESHOLD_G,
             start_confirm_seconds=START_CONFIRM_SECONDS,
             idle_up_spike_ignore_g=IDLE_UP_SPIKE_IGNORE_G,
+            idle_reference_up_update_threshold_g=IDLE_REFERENCE_UP_UPDATE_THRESHOLD_G,
+            idle_reference_up_update_seconds=IDLE_REFERENCE_UP_UPDATE_SECONDS,
             stability_epsilon_g=STABILITY_EPSILON_G,
             end_stable_seconds=END_STABLE_SECONDS,
             finalize_seconds=FINALIZE_SECONDS,
@@ -125,6 +129,8 @@ def _build_runtime_settings_from_payload(payload: dict) -> RuntimeSettings:
             start_threshold_g=START_THRESHOLD_G,
             start_confirm_seconds=START_CONFIRM_SECONDS,
             idle_up_spike_ignore_g=IDLE_UP_SPIKE_IGNORE_G,
+            idle_reference_up_update_threshold_g=IDLE_REFERENCE_UP_UPDATE_THRESHOLD_G,
+            idle_reference_up_update_seconds=IDLE_REFERENCE_UP_UPDATE_SECONDS,
             stability_epsilon_g=float(payload['stability_epsilon_g']),
             end_stable_seconds=float(payload['stable_duration_sec']),
             finalize_seconds=FINALIZE_SECONDS,
@@ -428,6 +434,7 @@ def main() -> None:
                     detector.state = EatingState.IDLE
                     detector.tracking_baseline_grams = net_grams
                     detector.prev_avg_grams = net_grams
+                    detector.seed_idle_reference(gross_grams=grams)
                     last_snapshot_weight_g = None
                     print(
                         f'event=bowl_present grams={grams:.2f} net_grams={net_grams:.2f} '
@@ -441,7 +448,7 @@ def main() -> None:
             # 皿なし中は食事状態機械を進めず、総重量の監視だけを行う
             print(
                 f'state=NO_BOWL raw={raw:.2f} grams={grams:.2f} '
-                f'net_grams={net_grams:.2f} baseline=NA'
+                f'net_grams={net_grams:.2f} start_baseline=NA idle_ref=NA'
             )
             time.sleep(READ_SLEEP_SEC)
             continue
@@ -466,6 +473,7 @@ def main() -> None:
                 detector.state = EatingState.IDLE
                 detector.tracking_baseline_grams = None
                 detector.prev_avg_grams = None
+                detector.clear_idle_reference()
                 print(
                     f'event=bowl_absent grams={grams:.2f} net_grams={net_grams:.2f} '
                     f'threshold={bowl_absent_threshold_g:.2f} '
@@ -473,7 +481,7 @@ def main() -> None:
                 )
                 print(
                     f'state=NO_BOWL raw={raw:.2f} grams={grams:.2f} '
-                    f'net_grams={net_grams:.2f} baseline=NA'
+                    f'net_grams={net_grams:.2f} start_baseline=NA idle_ref=NA'
                 )
                 time.sleep(READ_SLEEP_SEC)
                 continue
@@ -557,7 +565,12 @@ def main() -> None:
                 seconds=START_COOLDOWN_AFTER_JUMP_SECONDS,
                 clear_samples=False,
             )
-        events = detector.step(avg_grams=avg_grams, now=now)
+        avg_gross_grams = avg_grams + runtime_zero
+        events = detector.step(
+            avg_grams=avg_grams,
+            gross_avg_grams=avg_gross_grams,
+            now=now,
+        )
         for event in events:
             print(event)
             # 完了イベントはローカルに追記保存する
@@ -576,7 +589,10 @@ def main() -> None:
                 # 食事終了時は現在のfood重量を即時でキューに積む
                 # 終了直後の残量を確実に残すため
                 if saved_record.get('event') == 'eat_finished':
-                    gross_for_snapshot = avg_grams + runtime_zero
+                    gross_for_snapshot = avg_gross_grams
+                    finish_weight = saved_record.get('finish')
+                    if isinstance(finish_weight, (int, float)):
+                        gross_for_snapshot = float(finish_weight)
                     food_weight = _to_food_weight_g(
                         gross_grams=gross_for_snapshot,
                         tare_weight_g=runtime_settings.tare_weight_g,
@@ -665,11 +681,14 @@ def main() -> None:
             if detector.tracking_baseline_grams is not None
             else 0.0
         )
+        idle_reference = detector.idle_reference_gross_grams
 
         # 常時ログ 生値と判定状態を同時に確認できるようにする
         print(
             f'state={detector.state} raw={raw:.2f} grams={grams:.2f} '
-            f'net_grams={net_grams:.2f} avg_grams={avg_grams:.2f} baseline={baseline:.2f}'
+            f'net_grams={net_grams:.2f} avg_grams={avg_grams:.2f} '
+            f'start_baseline={baseline:.2f} '
+            f'idle_ref={(f"{idle_reference:.2f}" if idle_reference is not None else "NA")}'
         )
 
         time.sleep(READ_SLEEP_SEC)

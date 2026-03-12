@@ -16,7 +16,7 @@ def _parse_event_line(event_line: str) -> dict[str, str | float]:
 
         key, value = token.split('=', 1)
         # 数値として扱いたい項目だけfloatへ変換する
-        if key in {'eaten'}:
+        if key in {'eaten', 'idle_last', 'finish', 'current', 'drop'}:
             try:
                 parsed[key] = float(value)
             except ValueError:
