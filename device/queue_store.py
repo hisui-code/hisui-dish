@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import time
 from datetime import datetime, timezone
@@ -63,7 +65,8 @@ def enqueue_finished_event(path: Path, record: dict[str, str | float], device_id
     # 冪等送信に使うセッションID
     session_id = str(uuid4())
 
-    # API送信用payloadを組み立てる
+    # queue側では送信に必要な最小項目だけを持ち、元ログ全文は持たない
+    # 再送中にフォーマット差分の影響を受けにくくするため
     payload: dict[str, str | float] = {
         'session_id': session_id,
         'device_id': device_id,
@@ -72,7 +75,8 @@ def enqueue_finished_event(path: Path, record: dict[str, str | float], device_id
         'recorded_at': record.get('recorded_at', now_iso),
     }
 
-    # キュー1件の管理情報
+    # payloadとは別に再送制御用の状態を持つ
+    # これを分けると sender 側はHTTP送信だけに集中できる
     queue_item = {
         'session_id': session_id,
         'status': 'pending',
@@ -115,7 +119,7 @@ def enqueue_bowl_snapshot(
     # 冪等送信に使うスナップショットID
     snapshot_id = str(uuid4())
 
-    # API送信用payloadを組み立てる
+    # snapshot は比較用のノイズを減らすため保存時点で丸める
     payload: dict[str, str | float] = {
         'snapshot_id': snapshot_id,
         'device_id': device_id,
@@ -170,7 +174,7 @@ def flush_queue(
         if int(item.get('next_retry_at', 0)) > now_epoch:
             continue
 
-        # senderにはHTTP送信処理を渡している
+        # senderはHTTP送信だけを担当し、再送可否の判断はここに集約する
         ok, message = sender(item['payload'])
         if ok:
             # 成功したらsentに確定する
@@ -180,7 +184,7 @@ def flush_queue(
             sent += 1
             continue
 
-        # 失敗時は試行回数を増やして再送スケジュールを更新する
+        # 失敗時は送信結果だけを見て、次回時刻と最終状態をここで決める
         attempt_count = int(item.get('attempt_count', 0)) + 1
         item['attempt_count'] = attempt_count
         item['last_error'] = message

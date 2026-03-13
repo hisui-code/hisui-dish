@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import urllib.error
 import urllib.request
@@ -19,7 +21,7 @@ def post_session_event(
     # APIベースURLとエンドポイントを結合して送信先URLを作る
     url = f"{api_base_url.rstrip('/')}{endpoint_path}"
 
-    # JSON POSTの共通ヘッダ
+    # 両APIで同じ認証ヘッダを使うので、この関数を送信の共通入口にする
     headers = {'Content-Type': 'application/json'}
     if token:
         # 本番のAPIトークン検証で使うヘッダ
@@ -62,7 +64,7 @@ def post_bowl_snapshot(
     @description bowl_snapshotをAPIへ送信する
     @returns 成功可否とメッセージ
     """
-    # 送信仕様はsession_eventと同じなので共通関数を使う
+    # endpoint 以外の送信仕様は共通なので分岐させず委譲する
     return post_session_event(
         api_base_url=api_base_url,
         endpoint_path=endpoint_path,

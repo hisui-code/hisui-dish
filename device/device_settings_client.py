@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import urllib.error
 import urllib.request
@@ -73,7 +75,7 @@ def fetch_version(
         return False, None, 'INVALID_PAYLOAD'
 
     lock_version = payload.get('lock_version')
-    # lock_versionが数値でなければ不正
+    # version API は lock_version だけが契約なので、ここが壊れていたら即不採用にする
     if not isinstance(lock_version, int):
         return False, None, 'INVALID_LOCK_VERSION'
 
@@ -111,7 +113,7 @@ def fetch_settings(
     if not isinstance(payload, dict):
         return False, None, 'INVALID_PAYLOAD'
 
-    # 必須キー不足は不正として弾く
+    # 欠落キーを先に弾くと、後段の int/float 変換失敗と原因を分けて追える
     missing = REQUIRED_SETTING_KEYS - set(payload.keys())
     if missing:
         return False, None, f'MISSING_KEYS {sorted(missing)}'

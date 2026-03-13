@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -35,7 +37,7 @@ def build_session_record(event_line: str) -> dict[str, str | float] | None:
     @description 保存対象イベントを正規化してレコード化する
     @returns 保存対象なら辞書 それ以外はNone
     """
-    # 保存対象はセッション結果のみ
+    # 中間イベントまで保存すると backend 側の集計対象と混ざるため除外する
     if not (
         event_line.startswith('event=eat_finished')
         or event_line.startswith('event=eat_discarded')

@@ -108,6 +108,28 @@ class EatingDetectorTest(unittest.TestCase):
         self.assertEqual(EatingState.IDLE, self.detector.state)
         self.assertIsNone(self.detector.idle_reference_gross_grams)
 
+    def test_discarded_when_consumed_is_below_minimum(self) -> None:
+        self.feed([100.0, 100.0, 100.0, 100.0], start_at=0.0)
+
+        events = self.feed(
+            [94.0, 90.0, 90.0, 90.0, 99.5, 99.5, 99.5, 99.5, 99.5, 99.5],
+            start_at=0.4,
+        )
+
+        self.assertIn(
+            'event=eat_discarded reason=below_min_consumed '
+            'idle_last=100.00 finish=99.50 eaten=0.50',
+            events,
+        )
+
+    def test_aborted_when_idle_reference_is_missing(self) -> None:
+        self.feed([100.0, 100.0, 100.0, 100.0], start_at=0.0)
+        self.detector.idle_reference_gross_grams = None
+
+        events = self.feed([94.0, 90.0, 90.0, 90.0, 90.0], start_at=0.4)
+
+        self.assertIn('event=eat_aborted reason=missing_idle_reference', events)
+
 
 if __name__ == '__main__':
     unittest.main()
