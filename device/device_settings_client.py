@@ -4,6 +4,8 @@ import json
 import urllib.error
 import urllib.request
 
+from retry_policy import retry_network_request
+
 
 REQUIRED_SETTING_KEYS = {
     'device_id',
@@ -43,6 +45,14 @@ def _request_json(*, url: str, token: str, timeout_sec: int) -> dict:
         return json.loads(body)
 
 
+@retry_network_request()
+def _request_json_with_retry(*, url: str, token: str, timeout_sec: int) -> dict:
+    """
+    @description 一時的な通信失敗だけ短い再試行付きで JSON GET を実行する
+    """
+    return _request_json(url=url, token=token, timeout_sec=timeout_sec)
+
+
 def fetch_version(
     *,
     api_base_url: str,
@@ -63,7 +73,7 @@ def fetch_version(
     )
 
     try:
-        payload = _request_json(url=url, token=token, timeout_sec=timeout_sec)
+        payload = _request_json_with_retry(url=url, token=token, timeout_sec=timeout_sec)
     except urllib.error.HTTPError as exc:
         return False, None, f'HTTP {exc.code}'
     except urllib.error.URLError as exc:
@@ -102,7 +112,7 @@ def fetch_settings(
     )
 
     try:
-        payload = _request_json(url=url, token=token, timeout_sec=timeout_sec)
+        payload = _request_json_with_retry(url=url, token=token, timeout_sec=timeout_sec)
     except urllib.error.HTTPError as exc:
         return False, None, f'HTTP {exc.code}'
     except urllib.error.URLError as exc:

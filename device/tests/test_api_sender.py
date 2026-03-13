@@ -49,7 +49,7 @@ class ApiSenderTest(unittest.TestCase):
                 hdrs=None,
                 fp=None,
             ),
-        ):
+        ), patch('retry_policy.time.sleep', return_value=None):
             ok, message = post_session_event(
                 api_base_url='https://example.com',
                 endpoint_path='/api/v1/device/session_events',
@@ -60,6 +60,22 @@ class ApiSenderTest(unittest.TestCase):
 
         self.assertFalse(ok)
         self.assertEqual('HTTP 500', message)
+
+    def test_post_session_event_retries_transient_network_error(self) -> None:
+        with patch(
+            'urllib.request.urlopen',
+            side_effect=[urllib.error.URLError('temporary'), _FakeResponse(200)],
+        ), patch('retry_policy.time.sleep', return_value=None):
+            ok, message = post_session_event(
+                api_base_url='https://example.com',
+                endpoint_path='/api/v1/device/session_events',
+                token='token',
+                timeout_sec=3,
+                payload={'event': 'eat_finished'},
+            )
+
+        self.assertTrue(ok)
+        self.assertEqual('HTTP 200', message)
 
     def test_post_bowl_snapshot_reuses_session_sender_logic(self) -> None:
         # snapshot だけ別実装に分岐して送信仕様がズレないように固定する

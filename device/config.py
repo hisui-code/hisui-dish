@@ -191,7 +191,8 @@ BOWL_SNAPSHOT_MIN_DELTA_G = _env_float('BOWL_SNAPSHOT_MIN_DELTA_G', 0.5)
 # BOWL_PRESENT_MARGIN_G:
 # tare_weight に何g足したら皿ありとみなすか
 # 空皿の重さは器ごとにずれるため固定閾値ではなく相対値で持つ
-BOWL_PRESENT_MARGIN_G = _env_float('HISUIDISH_BOWL_PRESENT_MARGIN_G', 10.0)
+# 少量フードしか残っていない皿でも復帰できるよう既定値を下げる
+BOWL_PRESENT_MARGIN_G = _env_float('HISUIDISH_BOWL_PRESENT_MARGIN_G', 5.0)
 # BOWL_PRESENT_CONFIRM_SECONDS:
 # 皿あり判定が継続する必要秒
 # 皿を置く途中の一時的な通過値では反応しないようにする
@@ -199,7 +200,8 @@ BOWL_PRESENT_CONFIRM_SECONDS = _env_float('HISUIDISH_BOWL_PRESENT_CONFIRM_SECOND
 # BOWL_ABSENT_MARGIN_G:
 # tare_weight に何g足したら皿なしへ戻すか
 # presentより低い margin にしてヒステリシスを持たせる
-BOWL_ABSENT_MARGIN_G = _env_float('HISUIDISH_BOWL_ABSENT_MARGIN_G', 5.0)
+# present と少し差を残しつつ、軽い皿でも present を維持しやすくする
+BOWL_ABSENT_MARGIN_G = _env_float('HISUIDISH_BOWL_ABSENT_MARGIN_G', 3.0)
 # BOWL_ABSENT_CONFIRM_SECONDS:
 # 皿なし判定が継続する必要秒
 # 一瞬の持ち上がりや接触ノイズで absent へ戻らないようにする

@@ -4,6 +4,31 @@ import json
 import urllib.error
 import urllib.request
 
+from retry_policy import retry_network_request
+
+
+def _post_json(*, url: str, headers: dict[str, str], timeout_sec: int, payload: dict) -> int:
+    """
+    @description JSON payload を POST して HTTP status を返す
+    """
+    req = urllib.request.Request(
+        url=url,
+        data=json.dumps(payload, ensure_ascii=False).encode('utf-8'),
+        headers=headers,
+        method='POST',
+    )
+
+    with urllib.request.urlopen(req, timeout=timeout_sec) as res:
+        return res.getcode()
+
+
+@retry_network_request()
+def _post_json_with_retry(*, url: str, headers: dict[str, str], timeout_sec: int, payload: dict) -> int:
+    """
+    @description 一時的な通信失敗だけ短い再試行付きで JSON POST を実行する
+    """
+    return _post_json(url=url, headers=headers, timeout_sec=timeout_sec, payload=payload)
+
 
 def post_session_event(
     *,
@@ -29,21 +54,17 @@ def post_session_event(
         # 既存の認証方式と互換を保つためBearerも付与する
         headers['Authorization'] = f'Bearer {token}'
 
-    # payloadをJSON文字列へ変換してHTTP POSTリクエストを作る
-    req = urllib.request.Request(
-        url=url,
-        data=json.dumps(payload, ensure_ascii=False).encode('utf-8'),
-        headers=headers,
-        method='POST',
-    )
-
     try:
-        # タイムアウト付きで送信し、HTTPステータスで成功判定する
-        with urllib.request.urlopen(req, timeout=timeout_sec) as res:
-            status = res.getcode()
-            if 200 <= status < 300:
-                return True, f'HTTP {status}'
-            return False, f'HTTP {status}'
+        # 送信単位の短い retry はここで吸収し、queue には最終結果だけ返す
+        status = _post_json_with_retry(
+            url=url,
+            headers=headers,
+            timeout_sec=timeout_sec,
+            payload=payload,
+        )
+        if 200 <= status < 300:
+            return True, f'HTTP {status}'
+        return False, f'HTTP {status}'
     # サーバーが4xx/5xxを返した場合はHTTPErrorになる
     except urllib.error.HTTPError as exc:
         return False, f'HTTP {exc.code}'

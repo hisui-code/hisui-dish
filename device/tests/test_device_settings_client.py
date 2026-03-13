@@ -1,6 +1,7 @@
 import json
 import sys
 import unittest
+import urllib.error
 from pathlib import Path
 from unittest.mock import patch
 
@@ -94,3 +95,31 @@ class DeviceSettingsClientTest(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIsNone(payload)
         self.assertEqual('INVALID_PAYLOAD', reason)
+
+    def test_fetch_version_retries_transient_network_error(self) -> None:
+        class _FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb) -> None:
+                return None
+
+            def read(self) -> bytes:
+                return b'{"lock_version": 2}'
+
+        with patch(
+            'urllib.request.urlopen',
+            side_effect=[urllib.error.URLError('temporary'), _FakeResponse()],
+        ), patch('retry_policy.time.sleep', return_value=None):
+            ok, payload, reason = fetch_version(
+                api_base_url='https://example.com',
+                endpoint_template='/api/v1/device/device_settings/{device_id}/version',
+                device_id='device-1',
+                token='token',
+                timeout_sec=3,
+            )
+
+        self.assertTrue(ok)
+        assert payload is not None
+        self.assertEqual(2, payload['lock_version'])
+        self.assertEqual('OK', reason)

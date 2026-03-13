@@ -23,6 +23,16 @@
 4. 一定時間続いたら皿なしへ戻す
 5. 皿なしへ戻る時は、待機追従用の基準と開始判定用の履歴をクリアする
 
+## 既定値
+
+- `BOWL_PRESENT_MARGIN_G = 5.0`
+- `BOWL_ABSENT_MARGIN_G = 3.0`
+- `BOWL_PRESENT_CONFIRM_SECONDS = 1.0`
+- `BOWL_ABSENT_CONFIRM_SECONDS = 1.0`
+
+少量のフードが残った皿でも `NO_BOWL` から復帰しやすくするため、
+皿あり margin は `tare_weight + 5g` を既定にする
+
 ## なぜ必要か
 
 - 皿を置く、外す時の重さの変化を、食事と区別するため
