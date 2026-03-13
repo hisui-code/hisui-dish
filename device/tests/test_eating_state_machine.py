@@ -15,7 +15,7 @@ class EatingDetectorTest(unittest.TestCase):
                 start_threshold_g=5.0,
                 start_confirm_seconds=0.2,
                 idle_up_spike_ignore_g=3.0,
-                idle_reference_up_update_threshold_g=8.0,
+                idle_reference_up_update_threshold_g=4.0,
                 idle_reference_up_update_seconds=0.6,
                 stability_epsilon_g=0.5,
                 end_stable_seconds=0.2,

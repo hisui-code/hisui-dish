@@ -110,7 +110,7 @@ IDLE_UP_SPIKE_IGNORE_G = 5.0
 # idle_ref を上方向へ更新する時、この値以上の増加は長め安定を要求する
 IDLE_REFERENCE_UP_UPDATE_THRESHOLD_G = _env_float(
     'HISUIDISH_IDLE_REFERENCE_UP_UPDATE_THRESHOLD_G',
-    8.0,
+    4.0,
 )
 # 大きな上方向増加を idle_ref へ採用する前に必要な安定継続秒
 IDLE_REFERENCE_UP_UPDATE_SECONDS = _env_float(
