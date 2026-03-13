@@ -51,12 +51,15 @@ from config import (
 )
 from api_sender import post_bowl_snapshot, post_session_event
 from calibration_store import load_calibration
+from device_logger import get_logger, log_event, log_fields, log_state
 from device_settings_client import fetch_settings, fetch_version
 from device_settings_store import load_applied_lock_version, load_applied_state, save_applied_state
 from eating_state_machine import EatingDetector, EatingDetectorConfig, EatingState
 from hx711_reader import cleanup_gpio, convert_raw_to_grams, create_sensor, read_raw_once
 from queue_store import enqueue_bowl_snapshot, enqueue_finished_event, flush_queue
 from session_store import append_session_event
+
+LOGGER = get_logger()
 
 
 @dataclass
@@ -186,7 +189,7 @@ def _parse_remote_lock_version(version_payload: dict) -> int | None:
     try:
         return int(version_payload['lock_version'])
     except (KeyError, TypeError, ValueError):
-        print('event=settings_update_failed reason=invalid_version_payload')
+        log_event(LOGGER, 'settings_update_failed', reason='invalid_version_payload')
         return None
 
 
@@ -196,7 +199,7 @@ def _resolve_initial_runtime_settings() -> RuntimeSettings:
     """
     default_settings = _build_default_runtime_settings()
     if not DEVICE_ID:
-        print('event=settings_update_failed reason=missing_device_id')
+        log_event(LOGGER, 'settings_update_failed', reason='missing_device_id')
         return default_settings
 
     # 前回適用済み設定を読み込む
@@ -214,12 +217,12 @@ def _resolve_initial_runtime_settings() -> RuntimeSettings:
         timeout_sec=API_TIMEOUT_SEC,
     )
     if not ok:
-        print(f'event=settings_update_failed reason=version_fetch_{reason}')
+        log_event(LOGGER, 'settings_update_failed', reason=f'version_fetch_{reason}')
         if isinstance(cached_settings, dict):
             try:
                 return _build_runtime_settings_from_payload(cached_settings)
             except (KeyError, TypeError, ValueError):
-                print('event=settings_update_failed reason=invalid_cached_settings')
+                log_event(LOGGER, 'settings_update_failed', reason='invalid_cached_settings')
         return default_settings
 
     remote_lock_version = _parse_remote_lock_version(version_payload)
@@ -228,17 +231,22 @@ def _resolve_initial_runtime_settings() -> RuntimeSettings:
             try:
                 return _build_runtime_settings_from_payload(cached_settings)
             except (KeyError, TypeError, ValueError):
-                print('event=settings_update_failed reason=invalid_cached_settings')
+                log_event(LOGGER, 'settings_update_failed', reason='invalid_cached_settings')
         return default_settings
 
-    print(f'event=settings_version_checked remote={remote_lock_version} applied={applied_lock_version}')
+    log_event(
+        LOGGER,
+        'settings_version_checked',
+        remote=remote_lock_version,
+        applied=applied_lock_version,
+    )
 
     # 前回設定が最新ならAPI本体を取りに行かずそのまま使う
     if isinstance(cached_settings, dict) and remote_lock_version == applied_lock_version:
         try:
             return _build_runtime_settings_from_payload(cached_settings)
         except (KeyError, TypeError, ValueError):
-            print('event=settings_update_failed reason=invalid_cached_settings')
+            log_event(LOGGER, 'settings_update_failed', reason='invalid_cached_settings')
 
     # 更新があるときだけ設定本体を取得して通信量を抑える
     ok, settings_payload, reason = fetch_settings(
@@ -249,12 +257,12 @@ def _resolve_initial_runtime_settings() -> RuntimeSettings:
         timeout_sec=API_TIMEOUT_SEC,
     )
     if not ok:
-        print(f'event=settings_update_failed reason=settings_fetch_{reason}')
+        log_event(LOGGER, 'settings_update_failed', reason=f'settings_fetch_{reason}')
         if isinstance(cached_settings, dict):
             try:
                 return _build_runtime_settings_from_payload(cached_settings)
             except (KeyError, TypeError, ValueError):
-                print('event=settings_update_failed reason=invalid_cached_settings')
+                log_event(LOGGER, 'settings_update_failed', reason='invalid_cached_settings')
         return default_settings
 
     runtime_settings = _build_runtime_settings_from_payload(settings_payload)
@@ -263,7 +271,7 @@ def _resolve_initial_runtime_settings() -> RuntimeSettings:
         lock_version=runtime_settings.lock_version,
         settings=settings_payload,
     )
-    print(f'event=settings_updated lock_version={runtime_settings.lock_version}')
+    log_event(LOGGER, 'settings_updated', lock_version=runtime_settings.lock_version)
     return runtime_settings
 
 
@@ -283,14 +291,19 @@ def _sync_runtime_settings(current_lock_version: int) -> RuntimeSettings | None:
         timeout_sec=API_TIMEOUT_SEC,
     )
     if not ok:
-        print(f'event=settings_update_failed reason=version_fetch_{reason}')
+        log_event(LOGGER, 'settings_update_failed', reason=f'version_fetch_{reason}')
         return None
 
     remote_lock_version = _parse_remote_lock_version(version_payload)
     if remote_lock_version is None:
         return None
 
-    print(f'event=settings_version_checked remote={remote_lock_version} applied={current_lock_version}')
+    log_event(
+        LOGGER,
+        'settings_version_checked',
+        remote=remote_lock_version,
+        applied=current_lock_version,
+    )
     if remote_lock_version <= current_lock_version:
         # 変更なしなら何もしない
         return None
@@ -305,7 +318,7 @@ def _sync_runtime_settings(current_lock_version: int) -> RuntimeSettings | None:
         timeout_sec=API_TIMEOUT_SEC,
     )
     if not ok:
-        print(f'event=settings_update_failed reason=settings_fetch_{reason}')
+        log_event(LOGGER, 'settings_update_failed', reason=f'settings_fetch_{reason}')
         return None
 
     runtime_settings = _build_runtime_settings_from_payload(settings_payload)
@@ -314,7 +327,7 @@ def _sync_runtime_settings(current_lock_version: int) -> RuntimeSettings | None:
         lock_version=runtime_settings.lock_version,
         settings=settings_payload,
     )
-    print(f'event=settings_updated lock_version={runtime_settings.lock_version}')
+    log_event(LOGGER, 'settings_updated', lock_version=runtime_settings.lock_version)
     return runtime_settings
 
 
@@ -340,23 +353,27 @@ def main() -> None:
     # 状態機械を設定値で初期化
     detector = EatingDetector(runtime_settings.detector_config)
 
-    print('HisuiDish device start')
-    print(
-        f'offset={offset}, scale={scale}, moving_avg_window={runtime_settings.moving_avg_window}, '
-        f'start_threshold={runtime_settings.detector_config.start_threshold_g}, '
-        f'start_confirm={runtime_settings.detector_config.start_confirm_seconds}, '
-        f'idle_up_spike_ignore={IDLE_UP_SPIKE_IGNORE_G}, '
-        f'stability_epsilon={runtime_settings.detector_config.stability_epsilon_g}, '
-        f'min_consumed={runtime_settings.detector_config.min_consumed_g}, '
-        f'end_stable={runtime_settings.detector_config.end_stable_seconds}, '
-        f'max_session={runtime_settings.detector_config.max_session_seconds}, '
-        f'gross_weight_limit={runtime_settings.gross_weight_limit_g}, '
-        f'tare_weight={runtime_settings.tare_weight_g}, '
-        f'bowl_present_margin={BOWL_PRESENT_MARGIN_G}, '
-        f'bowl_absent_margin={BOWL_ABSENT_MARGIN_G}, '
-        f'lock_version={runtime_settings.lock_version}, '
-        f'runtime_zero={runtime_zero:.2f}, retry_interval={RETRY_INTERVAL_SEC}, '
-        f'max_retry_count={MAX_RETRY_COUNT}'
+    LOGGER.info('HisuiDish device start')
+    log_fields(
+        LOGGER,
+        offset=offset,
+        scale=scale,
+        moving_avg_window=runtime_settings.moving_avg_window,
+        start_threshold=runtime_settings.detector_config.start_threshold_g,
+        start_confirm=runtime_settings.detector_config.start_confirm_seconds,
+        idle_up_spike_ignore=IDLE_UP_SPIKE_IGNORE_G,
+        stability_epsilon=runtime_settings.detector_config.stability_epsilon_g,
+        min_consumed=runtime_settings.detector_config.min_consumed_g,
+        end_stable=runtime_settings.detector_config.end_stable_seconds,
+        max_session=runtime_settings.detector_config.max_session_seconds,
+        gross_weight_limit=runtime_settings.gross_weight_limit_g,
+        tare_weight=runtime_settings.tare_weight_g,
+        bowl_present_margin=BOWL_PRESENT_MARGIN_G,
+        bowl_absent_margin=BOWL_ABSENT_MARGIN_G,
+        lock_version=runtime_settings.lock_version,
+        runtime_zero=runtime_zero,
+        retry_interval=RETRY_INTERVAL_SEC,
+        max_retry_count=MAX_RETRY_COUNT,
     )
 
     # 再送キューは一定間隔で処理する
@@ -415,9 +432,13 @@ def main() -> None:
 
         # 異常に小さい重量はグリッチとして捨てる
         if grams < MIN_VALID_GRAMS:
-            print(
-                f'event=sample_ignored reason=below_min raw={raw:.2f} '
-                f'grams={grams:.2f} min_valid={MIN_VALID_GRAMS:.2f}'
+            log_event(
+                LOGGER,
+                'sample_ignored',
+                reason='below_min',
+                raw=raw,
+                grams=grams,
+                min_valid=MIN_VALID_GRAMS,
             )
             time.sleep(READ_SLEEP_SEC)
             continue
@@ -425,9 +446,13 @@ def main() -> None:
         # 異常に大きい重量はグリッチとして捨てる
         max_valid_grams = runtime_settings.gross_weight_limit_g + MAX_VALID_GRAMS_MARGIN
         if grams > max_valid_grams:
-            print(
-                f'event=sample_ignored reason=above_max raw={raw:.2f} '
-                f'grams={grams:.2f} max_valid={max_valid_grams:.2f}'
+            log_event(
+                LOGGER,
+                'sample_ignored',
+                reason='above_max',
+                raw=raw,
+                grams=grams,
+                max_valid=max_valid_grams,
             )
             time.sleep(READ_SLEEP_SEC)
             continue
@@ -458,19 +483,27 @@ def main() -> None:
                     detector.prev_avg_grams = net_grams
                     detector.seed_idle_reference(gross_grams=grams)
                     last_snapshot_weight_g = None
-                    print(
-                        f'event=bowl_present grams={grams:.2f} net_grams={net_grams:.2f} '
-                        f'threshold={bowl_present_threshold_g:.2f} '
-                        f'confirm_seconds={BOWL_PRESENT_CONFIRM_SECONDS:.2f}'
+                    log_event(
+                        LOGGER,
+                        'bowl_present',
+                        grams=grams,
+                        net_grams=net_grams,
+                        threshold=bowl_present_threshold_g,
+                        confirm_seconds=BOWL_PRESENT_CONFIRM_SECONDS,
                     )
             else:
                 # 途中でしきい値を下回ったら present 候補をやり直す
                 bowl_present_since = 0.0
 
             # 皿なし中は食事状態機械を進めず、総重量の監視だけを行う
-            print(
-                f'state=NO_BOWL raw={raw:.2f} grams={grams:.2f} '
-                f'net_grams={net_grams:.2f} start_baseline=NA idle_ref=NA'
+            log_state(
+                LOGGER,
+                'NO_BOWL',
+                raw=raw,
+                grams=grams,
+                net_grams=net_grams,
+                start_baseline='NA',
+                idle_ref='NA',
             )
             time.sleep(READ_SLEEP_SEC)
             continue
@@ -484,7 +517,7 @@ def main() -> None:
                 # 一定時間皿なし重量が続いたので、食事判定を停止して基準を捨てる
                 if detector.state != EatingState.IDLE:
                     for event_line in detector.abort_current_session(reason='bowl_removed'):
-                        print(event_line)
+                        LOGGER.info(event_line)
 
                 bowl_present = False
                 bowl_present_since = 0.0
@@ -500,14 +533,22 @@ def main() -> None:
                 detector.tracking_baseline_grams = None
                 detector.prev_avg_grams = None
                 detector.clear_idle_reference()
-                print(
-                    f'event=bowl_absent grams={grams:.2f} net_grams={net_grams:.2f} '
-                    f'threshold={bowl_absent_threshold_g:.2f} '
-                    f'confirm_seconds={BOWL_ABSENT_CONFIRM_SECONDS:.2f}'
+                log_event(
+                    LOGGER,
+                    'bowl_absent',
+                    grams=grams,
+                    net_grams=net_grams,
+                    threshold=bowl_absent_threshold_g,
+                    confirm_seconds=BOWL_ABSENT_CONFIRM_SECONDS,
                 )
-                print(
-                    f'state=NO_BOWL raw={raw:.2f} grams={grams:.2f} '
-                    f'net_grams={net_grams:.2f} start_baseline=NA idle_ref=NA'
+                log_state(
+                    LOGGER,
+                    'NO_BOWL',
+                    raw=raw,
+                    grams=grams,
+                    net_grams=net_grams,
+                    start_baseline='NA',
+                    idle_ref='NA',
                 )
                 time.sleep(READ_SLEEP_SEC)
                 continue
@@ -553,18 +594,25 @@ def main() -> None:
                 pending_jump_started_at = 0.0
                 pending_jump_origin_net_grams = None
                 pending_jump_direction = 0
-                print(
-                    f'event=sample_jump_accepted net_grams={net_grams:.2f} '
-                    f'prev={prev_net_grams:.2f} direction={"up" if jump_direction > 0 else "down"} '
-                    f'accept_seconds={JUMP_ACCEPT_SECONDS:.2f}'
+                log_event(
+                    LOGGER,
+                    'sample_jump_accepted',
+                    net_grams=net_grams,
+                    prev=prev_net_grams,
+                    direction='up' if jump_direction > 0 else 'down',
+                    accept_seconds=JUMP_ACCEPT_SECONDS,
                 )
                 time.sleep(READ_SLEEP_SEC)
                 continue
 
-            print(
-                f'event=sample_ignored reason=jump raw={raw:.2f} '
-                f'net_grams={net_grams:.2f} prev={last_valid_net_grams:.2f} '
-                f'max_jump={MAX_VALID_NET_JUMP_G:.2f}'
+            log_event(
+                LOGGER,
+                'sample_ignored',
+                reason='jump',
+                raw=raw,
+                net_grams=net_grams,
+                prev=last_valid_net_grams,
+                max_jump=MAX_VALID_NET_JUMP_G,
             )
             time.sleep(READ_SLEEP_SEC)
             continue
@@ -598,11 +646,11 @@ def main() -> None:
             now=now,
         )
         for event in events:
-            print(event)
+            LOGGER.info(event)
             # 完了イベントはローカルに追記保存する
             saved_record = append_session_event(path=SESSION_EVENTS_FILE, event_line=event)
             if saved_record:
-                print(f'event=local_saved path={SESSION_EVENTS_FILE.name}')
+                log_event(LOGGER, 'local_saved', path=SESSION_EVENTS_FILE.name)
                 # eat_finishedのみセッションイベント送信キューへ投入する
                 # eat_startedなど途中イベントは送らない
                 if enqueue_finished_event(
@@ -610,7 +658,7 @@ def main() -> None:
                     record=saved_record,
                     device_id=DEVICE_ID,
                 ):
-                    print(f'event=queue_enqueued path={SESSION_QUEUE_FILE.name}')
+                    log_event(LOGGER, 'queue_enqueued', path=SESSION_QUEUE_FILE.name)
 
                 # 食事終了時は現在のfood重量を即時でキューに積む
                 # 終了直後の残量を確実に残すため
@@ -637,7 +685,11 @@ def main() -> None:
                             recorded_at=saved_record.get('recorded_at'),
                         ):
                             last_snapshot_weight_g = food_weight
-                            print(f'event=bowl_snapshot_enqueued path={BOWL_SNAPSHOTS_QUEUE_FILE.name}')
+                            log_event(
+                                LOGGER,
+                                'bowl_snapshot_enqueued',
+                                path=BOWL_SNAPSHOTS_QUEUE_FILE.name,
+                            )
 
         # IDLE中のみ5分ごとに現在のfood重量を送信キューへ積む
         # ごはん追加だけが起きた場合も残量を更新できる
@@ -660,7 +712,7 @@ def main() -> None:
                     weight_g=food_weight,
                 ):
                     last_snapshot_weight_g = food_weight
-                    print(f'event=bowl_snapshot_enqueued path={BOWL_SNAPSHOTS_QUEUE_FILE.name}')
+                    log_event(LOGGER, 'bowl_snapshot_enqueued', path=BOWL_SNAPSHOTS_QUEUE_FILE.name)
             next_bowl_snapshot_at = now + BOWL_SNAPSHOT_INTERVAL_SEC
 
         # 送信キューを定期的にフラッシュする
@@ -679,9 +731,12 @@ def main() -> None:
                 ),
             )
             if queue_stats['sent'] or queue_stats['retried'] or queue_stats['failed']:
-                print(
-                    f"event=queue_flushed sent={queue_stats['sent']} "
-                    f"retried={queue_stats['retried']} failed={queue_stats['failed']}"
+                log_event(
+                    LOGGER,
+                    'queue_flushed',
+                    sent=queue_stats['sent'],
+                    retried=queue_stats['retried'],
+                    failed=queue_stats['failed'],
                 )
             bowl_queue_stats = flush_queue(
                 path=BOWL_SNAPSHOTS_QUEUE_FILE,
@@ -696,9 +751,12 @@ def main() -> None:
                 ),
             )
             if bowl_queue_stats['sent'] or bowl_queue_stats['retried'] or bowl_queue_stats['failed']:
-                print(
-                    f"event=bowl_queue_flushed sent={bowl_queue_stats['sent']} "
-                    f"retried={bowl_queue_stats['retried']} failed={bowl_queue_stats['failed']}"
+                log_event(
+                    LOGGER,
+                    'bowl_queue_flushed',
+                    sent=bowl_queue_stats['sent'],
+                    retried=bowl_queue_stats['retried'],
+                    failed=bowl_queue_stats['failed'],
                 )
             next_queue_flush_at = now + QUEUE_FLUSH_INTERVAL_SEC
 
@@ -710,11 +768,15 @@ def main() -> None:
         idle_reference = detector.idle_reference_gross_grams
 
         # 常時ログ 生値と判定状態を同時に確認できるようにする
-        print(
-            f'state={detector.state} raw={raw:.2f} grams={grams:.2f} '
-            f'net_grams={net_grams:.2f} avg_grams={avg_grams:.2f} '
-            f'start_baseline={baseline:.2f} '
-            f'idle_ref={(f"{idle_reference:.2f}" if idle_reference is not None else "NA")}'
+        log_state(
+            LOGGER,
+            detector.state,
+            raw=raw,
+            grams=grams,
+            net_grams=net_grams,
+            avg_grams=avg_grams,
+            start_baseline=baseline,
+            idle_ref=idle_reference,
         )
 
         time.sleep(READ_SLEEP_SEC)
