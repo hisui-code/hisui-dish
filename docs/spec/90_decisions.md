@@ -145,3 +145,16 @@
 - `idle_last_weight` は方向別に更新条件を分ける
 - 大きな上方向増加は、通常より長い安定継続を満たしたときだけ新しい基準として採用する
 - 一時的な接触荷重は `idle_last_weight` に昇格しにくくなる
+
+## 2026-03-13: 皿外れで中断したセッションは理由付きで `eat_aborted` を残す
+
+理由:
+
+- `MEASURING` や `STABILIZING` 中に皿が外れると、何も残さず状態だけ消えると原因追跡ができない
+- 実機では皿ずれ、掃除中の持ち上げ、接触不良を完全には避けられない
+
+影響:
+
+- 皿なし確定時に進行中セッションがあれば `eat_aborted reason=bowl_removed` を出す
+- backend 集計対象は従来どおり `eat_finished` と `eat_discarded` のまま維持する
+- `eat_aborted` は device の状態遷移ログとしてだけ扱う

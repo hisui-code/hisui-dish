@@ -460,6 +460,10 @@ def main() -> None:
                 bowl_absent_since = now
             elif now - bowl_absent_since >= BOWL_ABSENT_CONFIRM_SECONDS:
                 # 一定時間皿なし重量が続いたので、食事判定を停止して基準を捨てる
+                if detector.state != EatingState.IDLE:
+                    for event_line in detector.abort_current_session(reason='bowl_removed'):
+                        print(event_line)
+
                 bowl_present = False
                 bowl_present_since = 0.0
                 bowl_absent_since = 0.0

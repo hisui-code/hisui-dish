@@ -212,6 +212,21 @@ class EatingDetector:
             f'finish={finish_weight:.2f} eaten={eaten:.2f}'
         ]
 
+    def abort_current_session(self, *, reason: str) -> list[str]:
+        """
+        @description 進行中セッションを理由付きで中断して待機状態へ戻す
+        """
+        if self.state == EatingState.IDLE:
+            return []
+
+        self._abort_reason = reason
+        self.tracking_baseline_grams = None
+        self.reset_start_reference()
+        self.clear_idle_reference()
+        self._finish_stable_gross_samples.clear()
+        self.state = EatingState.IDLE
+        return [f'event=eat_aborted reason={reason}']
+
     def step(self, *, avg_grams: float, gross_avg_grams: float, now: float) -> list[str]:
         """
         @description 1サンプルぶん状態を進めてイベントログを返す

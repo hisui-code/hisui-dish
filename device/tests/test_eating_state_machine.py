@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from eating_state_machine import EatingDetector, EatingDetectorConfig  # noqa: E402
+from eating_state_machine import EatingDetector, EatingDetectorConfig, EatingState  # noqa: E402
 
 
 class EatingDetectorTest(unittest.TestCase):
@@ -97,6 +97,16 @@ class EatingDetectorTest(unittest.TestCase):
         )
 
         self.assertAlmostEqual(self.detector.idle_reference_gross_grams or 0.0, 190.0, places=2)
+
+    def test_abort_current_session_emits_bowl_removed_event(self) -> None:
+        self.feed([100.0, 100.0, 100.0, 100.0], start_at=0.0)
+        self.feed([94.0, 90.0, 90.0, 90.0], start_at=0.4)
+
+        events = self.detector.abort_current_session(reason='bowl_removed')
+
+        self.assertEqual(['event=eat_aborted reason=bowl_removed'], events)
+        self.assertEqual(EatingState.IDLE, self.detector.state)
+        self.assertIsNone(self.detector.idle_reference_gross_grams)
 
 
 if __name__ == '__main__':
