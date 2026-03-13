@@ -62,6 +62,7 @@
 
 - Device は `lock_version` を保持する
 - Web 更新時は楽観ロックを使う
+- version API の `lock_version` が壊れている時は更新を捨てて継続する
 
 ## 2026-03-09: Device API と Web API は認証方式を分ける
 

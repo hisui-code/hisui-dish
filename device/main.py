@@ -179,6 +179,17 @@ def _build_bowl_thresholds(*, tare_weight_g: float) -> tuple[float, float]:
     return bowl_present_threshold_g, bowl_absent_threshold_g
 
 
+def _parse_remote_lock_version(version_payload: dict) -> int | None:
+    """
+    @description version API の lock_version を安全に整数化する
+    """
+    try:
+        return int(version_payload['lock_version'])
+    except (KeyError, TypeError, ValueError):
+        print('event=settings_update_failed reason=invalid_version_payload')
+        return None
+
+
 def _resolve_initial_runtime_settings() -> RuntimeSettings:
     """
     @description 起動時にDeviceSettingsを取得し未取得時はローカル既定値へフォールバックする
@@ -211,7 +222,15 @@ def _resolve_initial_runtime_settings() -> RuntimeSettings:
                 print('event=settings_update_failed reason=invalid_cached_settings')
         return default_settings
 
-    remote_lock_version = int(version_payload['lock_version'])
+    remote_lock_version = _parse_remote_lock_version(version_payload)
+    if remote_lock_version is None:
+        if isinstance(cached_settings, dict):
+            try:
+                return _build_runtime_settings_from_payload(cached_settings)
+            except (KeyError, TypeError, ValueError):
+                print('event=settings_update_failed reason=invalid_cached_settings')
+        return default_settings
+
     print(f'event=settings_version_checked remote={remote_lock_version} applied={applied_lock_version}')
 
     # 前回設定が最新ならAPI本体を取りに行かずそのまま使う
@@ -267,7 +286,10 @@ def _sync_runtime_settings(current_lock_version: int) -> RuntimeSettings | None:
         print(f'event=settings_update_failed reason=version_fetch_{reason}')
         return None
 
-    remote_lock_version = int(version_payload['lock_version'])
+    remote_lock_version = _parse_remote_lock_version(version_payload)
+    if remote_lock_version is None:
+        return None
+
     print(f'event=settings_version_checked remote={remote_lock_version} applied={current_lock_version}')
     if remote_lock_version <= current_lock_version:
         # 変更なしなら何もしない
