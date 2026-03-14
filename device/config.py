@@ -115,7 +115,7 @@ IDLE_REFERENCE_UP_UPDATE_THRESHOLD_G = _env_float(
 # 大きな上方向増加を idle_ref へ採用する前に必要な安定継続秒
 IDLE_REFERENCE_UP_UPDATE_SECONDS = _env_float(
     'HISUIDISH_IDLE_REFERENCE_UP_UPDATE_SECONDS',
-    10.0,
+    20.0,
 )
 # 安定判定 隣接サンプル差がこの値以下なら安定寄りとみなす
 STABILITY_EPSILON_G = 0.2
