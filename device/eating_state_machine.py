@@ -74,6 +74,7 @@ class EatingDetector:
         self._idle_stable_gross_samples: deque[float] = deque(maxlen=10)
         # 大きな上方向増加を idle_ref へ昇格させる前の保留窓
         self._idle_ref_up_candidate_since = 0.0
+        self._idle_ref_up_anchor_gross_grams: float | None = None
         self._idle_ref_up_samples: deque[float] = deque(maxlen=30)
         # 食事量算出で使う開始時の IDLE 安定総重量
         self._meal_idle_start_weight = 0.0
@@ -99,6 +100,7 @@ class EatingDetector:
         self.idle_reference_gross_grams = None
         self._idle_stable_gross_samples.clear()
         self._idle_ref_up_candidate_since = 0.0
+        self._idle_ref_up_anchor_gross_grams = None
         self._idle_ref_up_samples.clear()
 
     def seed_idle_reference(self, *, gross_grams: float) -> None:
@@ -109,7 +111,58 @@ class EatingDetector:
         self._idle_stable_gross_samples.clear()
         self._idle_stable_gross_samples.append(gross_grams)
         self._idle_ref_up_candidate_since = 0.0
+        self._idle_ref_up_anchor_gross_grams = None
         self._idle_ref_up_samples.clear()
+
+    def suspend_idle_reference_update(self) -> None:
+        """
+        @description 一時的に idle_ref 更新用の保留窓を捨てる
+        """
+        self._idle_stable_gross_samples.clear()
+        self._idle_ref_up_candidate_since = 0.0
+        self._idle_ref_up_anchor_gross_grams = None
+        self._idle_ref_up_samples.clear()
+
+    def hold_idle_reference_for_upward_variation(
+        self,
+        *,
+        gross_avg_grams: float,
+        now: float,
+    ) -> None:
+        """
+        @description 上方向変動中の idle_ref 候補を元の基準で保留する
+        """
+        if self.idle_reference_gross_grams is None:
+            return
+
+        self._idle_stable_gross_samples.clear()
+        if self._idle_ref_up_candidate_since == 0.0:
+            self._idle_ref_up_candidate_since = now
+            self._idle_ref_up_anchor_gross_grams = self.idle_reference_gross_grams
+            self._idle_ref_up_samples.clear()
+
+        anchor = self._idle_ref_up_anchor_gross_grams
+        if anchor is None:
+            anchor = self.idle_reference_gross_grams
+            self._idle_ref_up_anchor_gross_grams = anchor
+
+        if gross_avg_grams <= anchor:
+            self.suspend_idle_reference_update()
+            return
+
+        self._idle_ref_up_samples.append(gross_avg_grams)
+        if gross_avg_grams - anchor < self.config.idle_reference_up_update_threshold_g:
+            return
+
+        if (
+            now - self._idle_ref_up_candidate_since
+            >= self.config.idle_reference_up_update_seconds
+        ):
+            self.idle_reference_gross_grams = float(median(self._idle_ref_up_samples))
+            self._idle_stable_gross_samples.append(self.idle_reference_gross_grams)
+            self._idle_ref_up_candidate_since = 0.0
+            self._idle_ref_up_anchor_gross_grams = None
+            self._idle_ref_up_samples.clear()
 
     def start_detection_cooldown(
         self,
@@ -130,9 +183,7 @@ class EatingDetector:
         """
         # 開始判定中やクールダウン中は食事量基準を動かさない
         if now < self._start_cooldown_until or self._start_candidate_since != 0.0:
-            self._idle_stable_gross_samples.clear()
-            self._idle_ref_up_candidate_since = 0.0
-            self._idle_ref_up_samples.clear()
+            self.suspend_idle_reference_update()
             return
 
         # 直前との差が小さい時だけ IDLE 安定値として採用する
@@ -140,9 +191,7 @@ class EatingDetector:
             self.prev_avg_grams is None
             or abs(avg_grams - self.prev_avg_grams) > self.config.stability_epsilon_g
         ):
-            self._idle_stable_gross_samples.clear()
-            self._idle_ref_up_candidate_since = 0.0
-            self._idle_ref_up_samples.clear()
+            self.suspend_idle_reference_update()
             return
 
         if self.idle_reference_gross_grams is None:
@@ -150,26 +199,24 @@ class EatingDetector:
             self.idle_reference_gross_grams = float(median(self._idle_stable_gross_samples))
             return
 
+        if self._idle_ref_up_candidate_since != 0.0:
+            self.hold_idle_reference_for_upward_variation(
+                gross_avg_grams=gross_avg_grams,
+                now=now,
+            )
+            return
+
         increase_from_idle_reference = gross_avg_grams - self.idle_reference_gross_grams
         if increase_from_idle_reference >= self.config.idle_reference_up_update_threshold_g:
             # 大きな上方向増加は補充候補として保留し、短い接触荷重では採用しない
-            if self._idle_ref_up_candidate_since == 0.0:
-                self._idle_ref_up_candidate_since = now
-                self._idle_ref_up_samples.clear()
-
-            self._idle_ref_up_samples.append(gross_avg_grams)
-            if (
-                now - self._idle_ref_up_candidate_since
-                >= self.config.idle_reference_up_update_seconds
-            ):
-                self.idle_reference_gross_grams = float(median(self._idle_ref_up_samples))
-                self._idle_stable_gross_samples.clear()
-                self._idle_stable_gross_samples.append(self.idle_reference_gross_grams)
-                self._idle_ref_up_candidate_since = 0.0
-                self._idle_ref_up_samples.clear()
+            self.hold_idle_reference_for_upward_variation(
+                gross_avg_grams=gross_avg_grams,
+                now=now,
+            )
             return
 
         self._idle_ref_up_candidate_since = 0.0
+        self._idle_ref_up_anchor_gross_grams = None
         self._idle_ref_up_samples.clear()
         self._idle_stable_gross_samples.append(gross_avg_grams)
         self.idle_reference_gross_grams = float(median(self._idle_stable_gross_samples))
@@ -313,11 +360,19 @@ class EatingDetector:
                 # 条件を外れたら開始候補をリセットする
                 self._start_candidate_since = 0.0
                 self._start_reference_grams = None
-                self._refresh_idle_reference(
-                    avg_grams=avg_grams,
-                    gross_avg_grams=gross_avg_grams,
-                    now=now,
-                )
+                if increase_from_baseline >= self.config.start_threshold_g:
+                    # 食前接触のような上方向変動では元の idle_ref を基準に保留する
+                    # 段階的な上振れで idle_ref が途中追随しないようにする
+                    self.hold_idle_reference_for_upward_variation(
+                        gross_avg_grams=gross_avg_grams,
+                        now=now,
+                    )
+                else:
+                    self._refresh_idle_reference(
+                        avg_grams=avg_grams,
+                        gross_avg_grams=gross_avg_grams,
+                        now=now,
+                    )
 
         elif self.state == EatingState.MEASURING:
             # 変動が小さい期間を数えて終了方向へ遷移する

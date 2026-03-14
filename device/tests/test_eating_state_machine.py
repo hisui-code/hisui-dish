@@ -98,6 +98,54 @@ class EatingDetectorTest(unittest.TestCase):
 
         self.assertAlmostEqual(self.detector.idle_reference_gross_grams or 0.0, 190.0, places=2)
 
+    def test_stepwise_upward_noise_does_not_push_idle_reference_before_meal(self) -> None:
+        detector = EatingDetector(
+            EatingDetectorConfig(
+                start_threshold_g=1.0,
+                start_confirm_seconds=0.2,
+                idle_up_spike_ignore_g=5.0,
+                idle_reference_up_update_threshold_g=4.0,
+                idle_reference_up_update_seconds=20.0,
+                stability_epsilon_g=0.5,
+                end_stable_seconds=0.2,
+                finalize_seconds=0.2,
+                max_session_seconds=10.0,
+                min_consumed_g=1.0,
+            )
+        )
+
+        def feed_local(samples: list[float], *, start_at: float = 0.0, step: float = 0.1) -> list[str]:
+            events: list[str] = []
+            now = start_at
+            for sample in samples:
+                events.extend(
+                    detector.step(
+                        avg_grams=sample,
+                        gross_avg_grams=sample,
+                        now=now,
+                    )
+                )
+                now += step
+            return events
+
+        feed_local([184.5, 184.5, 184.5, 184.5], start_at=0.0)
+        feed_local(
+            [184.9, 185.6, 186.2, 187.0, 188.5, 190.0, 192.0, 194.0, 191.0, 188.0, 185.5],
+            start_at=0.4,
+        )
+
+        self.assertLess(detector.idle_reference_gross_grams or 0.0, 185.0)
+
+        events = feed_local(
+            [183.0, 183.0, 183.0, 183.0, 183.0, 183.0, 183.0, 183.0],
+            start_at=1.5,
+        )
+
+        self.assertIn(
+            'event=eat_finished idle_last=184.50 finish=183.00 eaten=1.50',
+            events,
+        )
+
     def test_abort_current_session_emits_bowl_removed_event(self) -> None:
         self.feed([100.0, 100.0, 100.0, 100.0], start_at=0.0)
         self.feed([94.0, 90.0, 90.0, 90.0], start_at=0.4)
