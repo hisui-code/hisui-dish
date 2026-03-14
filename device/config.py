@@ -141,6 +141,8 @@ SESSION_QUEUE_FILE = Path(__file__).resolve().parent / 'session_queue.jsonl'
 BOWL_SNAPSHOTS_QUEUE_FILE = Path(__file__).resolve().parent / 'bowl_snapshots_queue.jsonl'
 # 適用済みDeviceSettings保存先
 APPLIED_SETTINGS_FILE = Path(__file__).resolve().parent / 'device_settings_applied.json'
+# 食事イベント前後debug保存先
+MEAL_DEBUG_DIR = Path(__file__).resolve().parent / 'meal_debug'
 
 # キャリブレーション設定
 KNOWN_WEIGHT_G = 100.0
@@ -217,6 +219,15 @@ RETRY_INTERVAL_SEC = 60
 MAX_RETRY_COUNT = 10
 # ループ中の再送チェック間隔
 QUEUE_FLUSH_INTERVAL_SEC = 1.0
+# 食事debugの保存前後窓
+MEAL_DEBUG_WINDOW_SECONDS = _env_float('HISUIDISH_MEAL_DEBUG_WINDOW_SECONDS', 180.0)
+# 食事debugの保持日数
+MEAL_DEBUG_RETENTION_DAYS = _env_int('HISUIDISH_MEAL_DEBUG_RETENTION_DAYS', 90)
+# 食事debugの掃除間隔
+MEAL_DEBUG_CLEANUP_INTERVAL_SEC = _env_int(
+    'HISUIDISH_MEAL_DEBUG_CLEANUP_INTERVAL_SEC',
+    24 * 60 * 60,
+)
 
 # 異常値フィルタ設定
 # 異常に小さい重量はセンサーグリッチとして無視する

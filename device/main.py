@@ -1,6 +1,7 @@
 import time
 from collections import deque
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 from config import (
     APPLIED_SETTINGS_FILE,
@@ -33,6 +34,10 @@ from config import (
     MAX_VALID_GRAMS_MARGIN,
     MAX_VALID_NET_JUMP_G,
     MAX_RETRY_COUNT,
+    MEAL_DEBUG_CLEANUP_INTERVAL_SEC,
+    MEAL_DEBUG_DIR,
+    MEAL_DEBUG_RETENTION_DAYS,
+    MEAL_DEBUG_WINDOW_SECONDS,
     MIN_CONSUMED_G,
     MIN_VALID_GRAMS,
     MOVING_AVG_WINDOW,
@@ -56,6 +61,7 @@ from device_settings_client import fetch_settings, fetch_version
 from device_settings_store import load_applied_lock_version, load_applied_state, save_applied_state
 from eating_state_machine import EatingDetector, EatingDetectorConfig, EatingState
 from hx711_reader import cleanup_gpio, convert_raw_to_grams, create_sensor, read_raw_once
+from meal_debug_store import MealDebugStore
 from queue_store import enqueue_bowl_snapshot, enqueue_finished_event, flush_queue
 from session_store import append_session_event
 
@@ -352,6 +358,11 @@ def main() -> None:
 
     # 状態機械を設定値で初期化
     detector = EatingDetector(runtime_settings.detector_config)
+    meal_debug_store = MealDebugStore(
+        directory=MEAL_DEBUG_DIR,
+        window_seconds=MEAL_DEBUG_WINDOW_SECONDS,
+        retention_days=MEAL_DEBUG_RETENTION_DAYS,
+    )
 
     LOGGER.info('HisuiDish device start')
     log_fields(
@@ -362,6 +373,8 @@ def main() -> None:
         start_threshold=runtime_settings.detector_config.start_threshold_g,
         start_confirm=runtime_settings.detector_config.start_confirm_seconds,
         idle_up_spike_ignore=IDLE_UP_SPIKE_IGNORE_G,
+        idle_ref_up_update_threshold=IDLE_REFERENCE_UP_UPDATE_THRESHOLD_G,
+        idle_ref_up_update_seconds=IDLE_REFERENCE_UP_UPDATE_SECONDS,
         stability_epsilon=runtime_settings.detector_config.stability_epsilon_g,
         min_consumed=runtime_settings.detector_config.min_consumed_g,
         end_stable=runtime_settings.detector_config.end_stable_seconds,
@@ -374,6 +387,8 @@ def main() -> None:
         runtime_zero=runtime_zero,
         retry_interval=RETRY_INTERVAL_SEC,
         max_retry_count=MAX_RETRY_COUNT,
+        meal_debug_window=MEAL_DEBUG_WINDOW_SECONDS,
+        meal_debug_retention_days=MEAL_DEBUG_RETENTION_DAYS,
     )
 
     # 再送キューは一定間隔で処理する
@@ -382,6 +397,8 @@ def main() -> None:
     next_settings_sync_at = 0.0
     # bowl_snapshotの定期送信タイミング
     next_bowl_snapshot_at = 0.0
+    # meal_debug の古いファイル削除タイミング
+    next_meal_debug_cleanup_at = 0.0
     # 直近送信したfood重量
     last_snapshot_weight_g: float | None = None
     # 直前の有効サンプル（異常値除外後）を保持する
@@ -401,8 +418,36 @@ def main() -> None:
     # 保留中 jump の方向 1 は上方向、-1 は下方向
     pending_jump_direction = 0
 
+    def append_meal_debug_sample(
+        *,
+        sample_state: str,
+        grams: float,
+        avg_grams: float | None,
+        start_baseline: float | str,
+        idle_ref: float | str,
+        now: float,
+    ) -> None:
+        """
+        @description debug capture 用に最小限のサンプル要約を保持する
+        """
+        meal_debug_store.append_sample(
+            now=now,
+            recorded_at=datetime.now(timezone.utc).isoformat(),
+            state=sample_state,
+            grams=grams,
+            avg_grams=avg_grams,
+            start_baseline=start_baseline,
+            idle_ref=idle_ref,
+        )
+
     while True:
         now = time.monotonic()
+
+        if now >= next_meal_debug_cleanup_at:
+            deleted_count = meal_debug_store.cleanup_expired()
+            if deleted_count:
+                log_event(LOGGER, 'meal_debug_cleaned', deleted=deleted_count)
+            next_meal_debug_cleanup_at = now + MEAL_DEBUG_CLEANUP_INTERVAL_SEC
 
         # 設定更新を確認し、変化があればすぐ反映
         # ロジックを止めずに次ループから新設定で動かす
@@ -505,6 +550,17 @@ def main() -> None:
                 start_baseline='NA',
                 idle_ref='NA',
             )
+            append_meal_debug_sample(
+                sample_state='NO_BOWL',
+                grams=grams,
+                avg_grams=None,
+                start_baseline='NA',
+                idle_ref='NA',
+                now=now,
+            )
+            saved_debug_path = meal_debug_store.flush_ready_capture(now=now)
+            if saved_debug_path is not None:
+                log_event(LOGGER, 'meal_debug_saved', path=saved_debug_path.name)
             time.sleep(READ_SLEEP_SEC)
             continue
 
@@ -550,6 +606,17 @@ def main() -> None:
                     start_baseline='NA',
                     idle_ref='NA',
                 )
+                append_meal_debug_sample(
+                    sample_state='NO_BOWL',
+                    grams=grams,
+                    avg_grams=None,
+                    start_baseline='NA',
+                    idle_ref='NA',
+                    now=now,
+                )
+                saved_debug_path = meal_debug_store.flush_ready_capture(now=now)
+                if saved_debug_path is not None:
+                    log_event(LOGGER, 'meal_debug_saved', path=saved_debug_path.name)
                 time.sleep(READ_SLEEP_SEC)
                 continue
         else:
@@ -647,6 +714,9 @@ def main() -> None:
         )
         for event in events:
             LOGGER.info(event)
+            if event.startswith('event=eat_started'):
+                meal_debug_store.begin_capture(now=now)
+
             # 完了イベントはローカルに追記保存する
             saved_record = append_session_event(path=SESSION_EVENTS_FILE, event_line=event)
             if saved_record:
@@ -690,6 +760,20 @@ def main() -> None:
                                 'bowl_snapshot_enqueued',
                                 path=BOWL_SNAPSHOTS_QUEUE_FILE.name,
                             )
+
+            if (
+                event.startswith('event=eat_finished')
+                or event.startswith('event=eat_discarded')
+                or event.startswith('event=eat_aborted')
+            ):
+                recorded_at = None
+                if saved_record and isinstance(saved_record.get('recorded_at'), str):
+                    recorded_at = saved_record['recorded_at']
+                meal_debug_store.finish_capture(
+                    now=now,
+                    event_line=event,
+                    recorded_at=recorded_at,
+                )
 
         # IDLE中のみ5分ごとに現在のfood重量を送信キューへ積む
         # ごはん追加だけが起きた場合も残量を更新できる
@@ -778,6 +862,18 @@ def main() -> None:
             start_baseline=baseline,
             idle_ref=idle_reference,
         )
+        append_meal_debug_sample(
+            sample_state=str(detector.state),
+            grams=grams,
+            avg_grams=avg_grams,
+            start_baseline=baseline,
+            idle_ref=idle_reference if idle_reference is not None else 'NA',
+            now=now,
+        )
+
+        saved_debug_path = meal_debug_store.flush_ready_capture(now=now)
+        if saved_debug_path is not None:
+            log_event(LOGGER, 'meal_debug_saved', path=saved_debug_path.name)
 
         time.sleep(READ_SLEEP_SEC)
 
