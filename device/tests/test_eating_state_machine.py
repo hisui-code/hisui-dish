@@ -146,7 +146,7 @@ class EatingDetectorTest(unittest.TestCase):
             events,
         )
 
-    def test_upward_band_far_from_baseline_does_not_refresh_idle_reference(self) -> None:
+    def test_small_upward_return_does_not_refresh_idle_reference(self) -> None:
         detector = EatingDetector(
             EatingDetectorConfig(
                 start_threshold_g=1.0,
@@ -181,6 +181,50 @@ class EatingDetectorTest(unittest.TestCase):
 
         feed_local(
             [193.4, 193.6, 193.5, 193.7, 193.6, 193.5, 193.6, 193.4],
+            start_at=0.4,
+        )
+
+        self.assertAlmostEqual(
+            detector.idle_reference_gross_grams or 0.0,
+            original_idle_reference or 0.0,
+            places=2,
+        )
+
+    def test_upward_values_above_idle_reference_wait_for_long_stability(self) -> None:
+        detector = EatingDetector(
+            EatingDetectorConfig(
+                start_threshold_g=1.0,
+                start_confirm_seconds=0.2,
+                idle_up_spike_ignore_g=5.0,
+                idle_reference_up_update_threshold_g=4.0,
+                idle_reference_up_update_seconds=20.0,
+                stability_epsilon_g=0.5,
+                end_stable_seconds=0.2,
+                finalize_seconds=0.2,
+                max_session_seconds=10.0,
+                min_consumed_g=1.0,
+            )
+        )
+
+        def feed_local(samples: list[float], *, start_at: float = 0.0, step: float = 0.1) -> list[str]:
+            events: list[str] = []
+            now = start_at
+            for sample in samples:
+                events.extend(
+                    detector.step(
+                        avg_grams=sample,
+                        gross_avg_grams=sample,
+                        now=now,
+                    )
+                )
+                now += step
+            return events
+
+        feed_local([184.5, 184.5, 184.5, 184.5], start_at=0.0)
+        original_idle_reference = detector.idle_reference_gross_grams
+
+        feed_local(
+            [185.2, 185.3, 185.4, 185.5, 185.4, 185.3, 185.4, 185.5],
             start_at=0.4,
         )
 

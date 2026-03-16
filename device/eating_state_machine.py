@@ -194,29 +194,15 @@ class EatingDetector:
             self.suspend_idle_reference_update()
             return
 
-        if self.tracking_baseline_grams is not None:
-            upward_distance_from_baseline = avg_grams - self.tracking_baseline_grams
-            if upward_distance_from_baseline >= self.config.start_threshold_g:
-                # 待機基準より上の帯で安定していても、食前接触ノイズの可能性がある
-                # 補充として受け入れる時は長め安定ルートに任せ、通常更新は止める
-                self.suspend_idle_reference_update()
-                return
-
         if self.idle_reference_gross_grams is None:
             self._idle_stable_gross_samples.append(gross_avg_grams)
             self.idle_reference_gross_grams = float(median(self._idle_stable_gross_samples))
             return
 
-        if self._idle_ref_up_candidate_since != 0.0:
-            self.hold_idle_reference_for_upward_variation(
-                gross_avg_grams=gross_avg_grams,
-                now=now,
-            )
-            return
-
         increase_from_idle_reference = gross_avg_grams - self.idle_reference_gross_grams
-        if increase_from_idle_reference >= self.config.idle_reference_up_update_threshold_g:
-            # 大きな上方向増加は補充候補として保留し、短い接触荷重では採用しない
+        if increase_from_idle_reference > 0:
+            # idle_ref より上にいる間は通常更新しない
+            # 補充として採用したい時だけ長め安定ルートへ回す
             self.hold_idle_reference_for_upward_variation(
                 gross_avg_grams=gross_avg_grams,
                 now=now,
