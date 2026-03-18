@@ -14,6 +14,7 @@ const baseUserSettingsSchema = z.object({
   name: z.string().trim().min(1, '名前は必須です').max(12, '名前は12文字以内です'),
   email: z.email('メールアドレスの形式が不正です'),
   password: z.string().max(255, 'パスワードが長すぎます'),
+  passwordConfirmation: z.string().max(255, '確認用パスワードが長すぎます'),
   role: userRoleSchema,
 })
 
@@ -21,20 +22,44 @@ const baseUserSettingsSchema = z.object({
  * @description ユーザー作成時の入力ルール
  * create時はpasswordを必須にする
  */
-const createUserSettingsSchema = baseUserSettingsSchema.extend({
-  password: z.string().min(8, 'パスワードは8文字以上で入力してください'),
-})
+const createUserSettingsSchema = baseUserSettingsSchema
+  .extend({
+    password: z.string().min(8, 'パスワードは8文字以上で入力してください'),
+    passwordConfirmation: z.string().min(1, '確認用パスワードは必須です'),
+  })
+  .refine((data) => data.password === data.passwordConfirmation, {
+    message: 'パスワードと確認用パスワードが一致しません',
+    path: ['passwordConfirmation'],
+  })
 
 /**
  * @description ユーザー編集時の入力ルール
  * edit時は未変更を許可するため空文字を受け付ける
+ * passwordとpasswordConfirmationのどちらか一方だけ入力された場合はエラーとする
  */
-const editUserSettingsSchema = baseUserSettingsSchema.extend({
-  // 未変更は空文字を許可し、変更時のみ最小文字数を検証する
-  password: z.string().refine((v) => v === '' || v.length >= 8, {
+const editUserSettingsSchema = baseUserSettingsSchema
+  .refine((data) => data.password === '' || data.password.length >= 8, {
     message: 'パスワードは8文字以上で入力してください',
-  }),
-})
+    path: ['password'],
+  })
+  .refine(
+    (data) => {
+      // パスワードと確認用両方とも空
+      if (data.password === '' && data.passwordConfirmation === '') {
+        return true
+      }
+      // パスワード確認用どちらかが入力されている
+      if (data.password === '' || data.passwordConfirmation === '') {
+        return false
+      }
+      // 両方一致
+      return data.password === data.passwordConfirmation
+    },
+    {
+      message: '確認用パスワードが一致しません',
+      path: ['passwordConfirmation'],
+    }
+  )
 
 export type UserSettingsSchemaInput = z.infer<typeof baseUserSettingsSchema>
 

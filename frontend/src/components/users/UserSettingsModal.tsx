@@ -83,6 +83,22 @@ export default function UserSettingsModal({ open, onClose, viewModel }: UserSett
               />
             </div>
 
+            {/* Password Confirmation */}
+            <div>
+              <label className="mb-1 block text-sm text-neutral-700">Password Confirmation</label>
+              <input
+                type="password"
+                value={viewModel.form.passwordConfirmation}
+                onChange={(event) =>
+                  viewModel.onChangeForm({ passwordConfirmation: event.target.value })
+                }
+                placeholder={
+                  viewModel.mode === 'create' ? '確認用パスワード（必須）' : '変更時のみ入力'
+                }
+                className="w-full rounded border px-3 py-2"
+              />
+            </div>
+
             {/* Role */}
             {viewModel.isAdmin && (
               <div>

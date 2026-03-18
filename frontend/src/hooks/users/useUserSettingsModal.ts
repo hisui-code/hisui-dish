@@ -17,6 +17,7 @@ export type UserSettingsForm = {
   name: string
   email: string
   password: string
+  passwordConfirmation: string
   role: UserRole
 }
 
@@ -43,6 +44,7 @@ function createInitialFormFromUser(user: UserListItem): UserSettingsForm {
     name: user.name ?? '',
     email: user.email,
     password: '',
+    passwordConfirmation: '',
     role: user.role,
   }
 }
@@ -57,6 +59,7 @@ function createInitialCreateForm(): UserSettingsForm {
     name: '',
     email: '',
     password: '',
+    passwordConfirmation: '',
     role: 'user',
   }
 }
