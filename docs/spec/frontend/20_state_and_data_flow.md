@@ -49,6 +49,13 @@
 - `lib/resources/logs` が絞り込みと日ごとのグループ化を行う
 - `LogsList` が一覧表示する
 
+### HealthLog
+
+- `HealthLog` はフィルター条件と入力中の状態を持つ
+- health log 用の hook が一覧、選択中レコード、ダイアログ表示をまとめる
+- health log 用の lib が絞り込みや表示向け整形を行う
+- 一覧 component と form component が表示を担当する
+
 ### Settings
 
 - `useDeviceSetting` が DeviceSettings を取得する
