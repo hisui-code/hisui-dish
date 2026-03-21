@@ -15,6 +15,7 @@ import { Forbidden } from '@/components/layout/Forbidden'
 import { FullScreenLoading } from '@/components/layout/FullScreenLoading'
 import { useAppLayoutContext } from '@/hooks/layout/useAppLayoutContext'
 import type { AppLayoutOutletContext } from '@/hooks/layout/useAppLayoutContext'
+import HealthLog from '@/pages/HealthLog'
 
 /**
  * @description 認証状態に応じて保護ルートを制御する。
@@ -136,6 +137,7 @@ export default function App() {
             <Route element={<AppLayout />}>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/health-log" element={<HealthLog />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/logs" element={<Logs />} />
               <Route element={<AdminRoute />}>

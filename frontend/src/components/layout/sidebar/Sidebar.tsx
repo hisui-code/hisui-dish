@@ -1,4 +1,5 @@
 import { FaHome, FaCog, FaBook, FaUsers } from 'react-icons/fa'
+import { BsFillHeartPulseFill } from 'react-icons/bs'
 import LogoutButton from './LogoutButton'
 import SidebarUserSection from './SidebarUserSection'
 import SidebarNavItem from './SidebarNavItem'
@@ -10,10 +11,11 @@ type SidebarProps = {
   onNavigate?: () => void
 }
 
-type NavItemKey = 'dashboard' | 'settings' | 'logs' | 'users'
+type NavItemKey = 'dashboard' | 'settings' | 'logs' | 'users' | 'health-log'
 
 const items: { key: NavItemKey; label: string; icon: React.ReactNode; path: string }[] = [
   { key: 'dashboard', label: 'ダッシュボード', icon: <FaHome />, path: '/dashboard' },
+  { key: 'health-log', label: 'ヘルスログ', icon: <BsFillHeartPulseFill />, path: '/health-log' },
   { key: 'settings', label: '設定', icon: <FaCog />, path: '/settings' },
   { key: 'logs', label: 'ログ', icon: <FaBook />, path: '/logs' },
 ]
