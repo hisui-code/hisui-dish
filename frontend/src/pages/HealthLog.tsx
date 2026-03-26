@@ -1,9 +1,13 @@
+import { useState } from 'react'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { healthLogTypeLabels, mockHealthLogs } from '@/lib/health-log/mock'
 import { BsFillHeartPulseFill } from 'react-icons/bs'
 import { FaPlus } from 'react-icons/fa'
+
+const filterLabels = ['すべて', ...Object.values(healthLogTypeLabels)]
+type HealthLogFilterLabel = 'すべて' | (typeof filterLabels)[number]
 
 /**
  * @description 健康記録ページの静的な骨組みを表示する
@@ -14,7 +18,13 @@ export default function HealthLog() {
   const latestLog = mockHealthLogs[0]
   const latestHospitalVisit = mockHealthLogs.find((log) => log.type === 'hospital_visit')
   const latestWeight = mockHealthLogs.find((log) => log.type === 'weight')
-  const filterLabels = ['すべて', ...Object.values(healthLogTypeLabels)]
+
+  const [selectedType, setSelectedType] = useState<HealthLogFilterLabel>('すべて')
+
+  const filteredLogs =
+    selectedType === 'すべて'
+      ? mockHealthLogs
+      : mockHealthLogs.filter((log) => healthLogTypeLabels[log.type] === selectedType)
 
   return (
     <div className="px-3 py-3 md:px-4 md:py-4">
@@ -92,8 +102,9 @@ export default function HealthLog() {
                     <button
                       key={label}
                       type="button"
+                      onClick={() => setSelectedType(label)}
                       className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-                        label === 'すべて'
+                        label === selectedType
                           ? 'border-emerald-600 bg-emerald-600 text-white'
                           : 'border-border bg-muted/40 text-muted-foreground hover:bg-muted'
                       }`}
@@ -117,60 +128,70 @@ export default function HealthLog() {
         </Card>
 
         {/* タイムライン */}
-        <section className="space-y-4">
-          {mockHealthLogs.map((item, index, items) => (
-            <div key={item.id} className="flex gap-3">
-              <div className="flex w-8 shrink-0 flex-col items-center">
-                <span className="mt-1 h-3 w-3 rounded-full bg-emerald-500" />
-                {index < items.length - 1 ? (
-                  <span className="mt-2 h-full min-h-20 w-px bg-border" />
-                ) : null}
+        {filteredLogs.length === 0 ? (
+          <Card className="gap-0 py-0">
+            <CardContent className="flex flex-col items-center justify-center px-6 py-12 text-center">
+              <p className="text-base font-semibold text-foreground">
+                条件に一致する記録がありません
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <section className="space-y-4">
+            {filteredLogs.map((item, index, items) => (
+              <div key={item.id} className="flex gap-3">
+                <div className="flex w-8 shrink-0 flex-col items-center">
+                  <span className="mt-1 h-3 w-3 rounded-full bg-emerald-500" />
+                  {index < items.length - 1 ? (
+                    <span className="mt-2 h-full min-h-20 w-px bg-border" />
+                  ) : null}
+                </div>
+
+                <Card className="flex-1 gap-0 py-0">
+                  <CardContent className="space-y-3 px-5 py-4">
+                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                      <div className="flex flex-col gap-1 md:flex-row md:items-center md:gap-2">
+                        <p className="font-semibold text-foreground">
+                          {healthLogTypeLabels[item.type]}
+                        </p>
+                        <p className="text-sm text-muted-foreground">{item.occurredAt}</p>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          編集
+                        </button>
+                        <button
+                          type="button"
+                          className="text-sm text-red-500 transition-colors hover:text-red-600"
+                        >
+                          削除
+                        </button>
+                      </div>
+                    </div>
+
+                    {item.note ? (
+                      <p className="text-sm leading-6 text-foreground">{item.note}</p>
+                    ) : null}
+
+                    {item.weightKg ? (
+                      <p className="text-sm font-medium text-foreground">{item.weightKg}kg</p>
+                    ) : null}
+
+                    {item.photos.length > 0 ? (
+                      <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 text-xs text-muted-foreground">
+                        写真
+                      </div>
+                    ) : null}
+                  </CardContent>
+                </Card>
               </div>
-
-              <Card className="flex-1 gap-0 py-0">
-                <CardContent className="space-y-3 px-5 py-4">
-                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                    <div className="flex flex-col gap-1 md:flex-row md:items-center md:gap-2">
-                      <p className="font-semibold text-foreground">
-                        {healthLogTypeLabels[item.type]}
-                      </p>
-                      <p className="text-sm text-muted-foreground">{item.occurredAt}</p>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                      >
-                        編集
-                      </button>
-                      <button
-                        type="button"
-                        className="text-sm text-red-500 transition-colors hover:text-red-600"
-                      >
-                        削除
-                      </button>
-                    </div>
-                  </div>
-
-                  {item.note ? (
-                    <p className="text-sm leading-6 text-foreground">{item.note}</p>
-                  ) : null}
-
-                  {item.weightKg ? (
-                    <p className="text-sm font-medium text-foreground">{item.weightKg}kg</p>
-                  ) : null}
-
-                  {item.photos.length > 0 ? (
-                    <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 text-xs text-muted-foreground">
-                      写真
-                    </div>
-                  ) : null}
-                </CardContent>
-              </Card>
-            </div>
-          ))}
-        </section>
+            ))}
+          </section>
+        )}
       </div>
     </div>
   )
