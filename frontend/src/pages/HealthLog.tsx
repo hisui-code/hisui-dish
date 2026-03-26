@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { healthLogTypeLabels, mockHealthLogs } from '@/lib/health-log/mock'
 import { BsFillHeartPulseFill } from 'react-icons/bs'
 import { FaPlus } from 'react-icons/fa'
+import { CalendarDays, Edit3, Funnel } from 'lucide-react'
 
 const filterLabels = ['すべて', ...Object.values(healthLogTypeLabels)]
 type HealthLogFilterLabel = 'すべて' | (typeof filterLabels)[number]
@@ -90,46 +91,42 @@ export default function HealthLog() {
         </section>
 
         {/* フィルター */}
-        <Card className="gap-0 py-0">
-          <CardContent className="px-4 py-4">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div className="space-y-2">
-                <p className="text-xs font-medium tracking-wide text-muted-foreground">
-                  種別で絞り込む
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {filterLabels.map((label) => (
-                    <button
-                      key={label}
-                      type="button"
-                      onClick={() => setSelectedType(label)}
-                      className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-                        label === selectedType
-                          ? 'border-emerald-600 bg-emerald-600 text-white'
-                          : 'border-border bg-muted/40 text-muted-foreground hover:bg-muted'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="w-full lg:w-[180px]">
-                <p className="mb-2 text-xs font-medium tracking-wide text-muted-foreground">年月</p>
-                <input
-                  type="month"
-                  defaultValue="2026-03"
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-xs outline-none transition focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                />
-              </div>
+        <section className="border-border py-2">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Funnel className="h-4 w-4" />
             </div>
-          </CardContent>
-        </Card>
+
+            <div className="flex flex-1 flex-wrap gap-2">
+              {filterLabels.map((label) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => setSelectedType(label)}
+                  className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                    label === selectedType
+                      ? 'border-emerald-600 bg-emerald-600 text-white'
+                      : 'border-border bg-background text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div className="w-full lg:w-[180px]">
+              <input
+                type="month"
+                defaultValue="2026-03"
+                className="h-9 w-full rounded-xl border border-input bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              />
+            </div>
+          </div>
+        </section>
 
         {/* タイムライン */}
         {filteredLogs.length === 0 ? (
-          <Card className="gap-0 py-0">
+          <Card className="gap-0 py-0 shadow-none">
             <CardContent className="flex flex-col items-center justify-center px-6 py-12 text-center">
               <p className="text-base font-semibold text-foreground">
                 条件に一致する記録がありません
@@ -137,58 +134,45 @@ export default function HealthLog() {
             </CardContent>
           </Card>
         ) : (
-          <section className="space-y-4">
-            {filteredLogs.map((item, index, items) => (
-              <div key={item.id} className="flex gap-3">
-                <div className="flex w-8 shrink-0 flex-col items-center">
-                  <span className="mt-1 h-3 w-3 rounded-full bg-emerald-500" />
-                  {index < items.length - 1 ? (
-                    <span className="mt-2 h-full min-h-20 w-px bg-border" />
-                  ) : null}
-                </div>
-
-                <Card className="flex-1 gap-0 py-0">
-                  <CardContent className="space-y-3 px-5 py-4">
-                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                      <div className="flex flex-col gap-1 md:flex-row md:items-center md:gap-2">
-                        <p className="font-semibold text-foreground">
-                          {healthLogTypeLabels[item.type]}
-                        </p>
-                        <p className="text-sm text-muted-foreground">{item.occurredAt}</p>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <button
-                          type="button"
-                          className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                          編集
-                        </button>
-                        <button
-                          type="button"
-                          className="text-sm text-red-500 transition-colors hover:text-red-600"
-                        >
-                          削除
-                        </button>
-                      </div>
+          <section className="border-t border-border">
+            {filteredLogs.map((item) => (
+              <article key={item.id} className="border-b border-border py-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="text-sm font-semibold text-emerald-600">
+                        {healthLogTypeLabels[item.type]}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+                        <CalendarDays className="h-3.5 w-3.5" />
+                        {item.occurredAt}
+                      </span>
                     </div>
 
                     {item.note ? (
-                      <p className="text-sm leading-6 text-foreground">{item.note}</p>
+                      <p className="mt-2 text-sm leading-6 text-foreground">{item.note}</p>
                     ) : null}
 
                     {item.weightKg ? (
-                      <p className="text-sm font-medium text-foreground">{item.weightKg}kg</p>
+                      <p className="mt-2 text-sm font-medium text-foreground">{item.weightKg}kg</p>
                     ) : null}
 
                     {item.photos.length > 0 ? (
-                      <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 text-xs text-muted-foreground">
+                      <div className="mt-3 flex h-20 w-20 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 text-xs text-muted-foreground">
                         写真
                       </div>
                     ) : null}
-                  </CardContent>
-                </Card>
-              </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="shrink-0 rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    aria-label={`${healthLogTypeLabels[item.type]}を編集`}
+                  >
+                    <Edit3 className="h-4 w-4" />
+                  </button>
+                </div>
+              </article>
             ))}
           </section>
         )}
