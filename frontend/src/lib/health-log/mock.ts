@@ -13,6 +13,20 @@ export type HealthLogType =
   | 'weight'
   | 'other'
 
+export type HealthLogFilterType = 'all' | HealthLogType
+
+export const healthLogFilterOptions: { value: HealthLogFilterType; label: string }[] = [
+  { value: 'all', label: 'すべて' },
+  { value: 'vomit', label: '嘔吐' },
+  { value: 'diarrhea', label: '下痢' },
+  { value: 'bloody_stool', label: '血便' },
+  { value: 'injury', label: 'ケガ' },
+  { value: 'hospital_visit', label: '通院' },
+  { value: 'medication', label: '投薬' },
+  { value: 'weight', label: '体重' },
+  { value: 'other', label: 'その他' },
+]
+
 /**
  * @description 健康記録1件分のモックデータ
  */

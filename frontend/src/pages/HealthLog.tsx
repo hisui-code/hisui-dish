@@ -2,30 +2,33 @@ import { useState } from 'react'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { healthLogTypeLabels, mockHealthLogs } from '@/lib/health-log/mock'
 import { BsFillHeartPulseFill } from 'react-icons/bs'
 import { FaPlus } from 'react-icons/fa'
 import { CalendarDays, Edit3, Funnel } from 'lucide-react'
-
-const filterLabels = ['すべて', ...Object.values(healthLogTypeLabels)]
-type HealthLogFilterLabel = 'すべて' | (typeof filterLabels)[number]
+import {
+  healthLogFilterOptions,
+  healthLogTypeLabels,
+  mockHealthLogs,
+  type HealthLogFilterType,
+} from '@/lib/health-log/mock'
 
 /**
  * @description 健康記録ページの静的な骨組みを表示する
  * サマリー、フィルター、タイムラインの配置を確認するための段階
- * @returns 健康記録ページ
  */
 export default function HealthLog() {
   const latestLog = mockHealthLogs[0]
   const latestHospitalVisit = mockHealthLogs.find((log) => log.type === 'hospital_visit')
   const latestWeight = mockHealthLogs.find((log) => log.type === 'weight')
+  const [selectedType, setSelectedType] = useState<HealthLogFilterType>('all')
+  const [selectedMonth, setSelectedMonth] = useState('2026-03')
 
-  const [selectedType, setSelectedType] = useState<HealthLogFilterLabel>('すべて')
+  const filteredLogs = mockHealthLogs.filter((log) => {
+    const matchesType = selectedType === 'all' || log.type === selectedType
+    const matchesMonth = log.occurredAt.slice(0, 7) === selectedMonth
 
-  const filteredLogs =
-    selectedType === 'すべて'
-      ? mockHealthLogs
-      : mockHealthLogs.filter((log) => healthLogTypeLabels[log.type] === selectedType)
+    return matchesType && matchesMonth
+  })
 
   return (
     <div className="px-3 py-3 md:px-4 md:py-4">
@@ -98,18 +101,18 @@ export default function HealthLog() {
             </div>
 
             <div className="flex flex-1 flex-wrap gap-2">
-              {filterLabels.map((label) => (
+              {healthLogFilterOptions.map((option) => (
                 <button
-                  key={label}
+                  key={option.value}
                   type="button"
-                  onClick={() => setSelectedType(label)}
+                  onClick={() => setSelectedType(option.value)}
                   className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-                    label === selectedType
+                    option.value === selectedType
                       ? 'border-emerald-600 bg-emerald-600 text-white'
                       : 'border-border bg-background text-muted-foreground hover:bg-muted'
                   }`}
                 >
-                  {label}
+                  {option.label}
                 </button>
               ))}
             </div>
@@ -117,7 +120,8 @@ export default function HealthLog() {
             <div className="w-full lg:w-[180px]">
               <input
                 type="month"
-                defaultValue="2026-03"
+                value={selectedMonth}
+                onChange={(event) => setSelectedMonth(event.target.value)}
                 className="h-9 w-full rounded-xl border border-input bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
               />
             </div>
