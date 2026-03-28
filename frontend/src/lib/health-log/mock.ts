@@ -1,62 +1,10 @@
+import type { HealthLogRecord } from '@/types/healthLog'
+
 /**
  * @description 健康記録画面のレイアウト確認に使うモックデータ
  * API 接続前の表示確認用として扱う
  */
-
-export type HealthLogType =
-  | 'vomit'
-  | 'diarrhea'
-  | 'bloody_stool'
-  | 'injury'
-  | 'hospital_visit'
-  | 'medication'
-  | 'weight'
-  | 'other'
-
-export type HealthLogFilterType = 'all' | HealthLogType
-
-export const healthLogFilterOptions: { value: HealthLogFilterType; label: string }[] = [
-  { value: 'all', label: 'すべて' },
-  { value: 'vomit', label: '嘔吐' },
-  { value: 'diarrhea', label: '下痢' },
-  { value: 'bloody_stool', label: '血便' },
-  { value: 'injury', label: 'ケガ' },
-  { value: 'hospital_visit', label: '通院' },
-  { value: 'medication', label: '投薬' },
-  { value: 'weight', label: '体重' },
-  { value: 'other', label: 'その他' },
-]
-
-/**
- * @description 健康記録1件分のモックデータ
- */
-export type HealthLogMock = {
-  id: string
-  type: HealthLogType
-  occurredAt: string
-  note?: string
-  weightKg?: number
-  photos: string[]
-}
-
-/**
- * @description 健康記録種別の表示名
- */
-export const healthLogTypeLabels: Record<HealthLogType, string> = {
-  vomit: '嘔吐',
-  diarrhea: '下痢',
-  bloody_stool: '血便',
-  injury: 'ケガ',
-  hospital_visit: '通院',
-  medication: '投薬',
-  weight: '体重',
-  other: 'その他',
-}
-
-/**
- * @description 健康記録画面の見た目確認に使う仮データ一覧
- */
-export const mockHealthLogs: HealthLogMock[] = [
+export const mockHealthLogs: HealthLogRecord[] = [
   {
     id: 'health-log-001',
     type: 'vomit',
