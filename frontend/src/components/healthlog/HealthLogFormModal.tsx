@@ -5,6 +5,8 @@ import type { HealthLogType } from '@/types/healthLog'
 type HealthLogFormModalProps = {
   /** @description モーダルの表示状態 */
   open: boolean
+  /** @description モーダルのタイトル */
+  title: string
   /** @description 現在選択中の記録種別 */
   selectedRecordType: HealthLogType
   /** @description 発生日の入力値 */
@@ -36,6 +38,7 @@ type HealthLogFormModalProps = {
 
 export default function HealthLogFormModal({
   open,
+  title,
   selectedRecordType,
   occurredDate,
   occurredTime,
@@ -56,7 +59,7 @@ export default function HealthLogFormModal({
       <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div>
-            <h2 className="text-lg font-semibold text-foreground">健康記録を追加</h2>
+            <h2 className="text-lg font-semibold text-foreground">{title}</h2>
           </div>
 
           <button

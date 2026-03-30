@@ -42,7 +42,7 @@ export default function HealthLog() {
             <Button
               type="button"
               className="inline-flex items-center gap-2 bg-emerald-600 text-white hover:bg-emerald-700"
-              onClick={formModal.open}
+              onClick={formModal.openForCreate}
             >
               <FaPlus className="h-3.5 w-3.5" />
               記録を追加
@@ -181,6 +181,7 @@ export default function HealthLog() {
                   <button
                     type="button"
                     className="shrink-0 rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    onClick={() => formModal.openForEdit(item)}
                     aria-label={`${healthLogTypeLabels[item.type]}を編集`}
                   >
                     <Edit3 className="h-4 w-4" />
@@ -194,6 +195,7 @@ export default function HealthLog() {
       {/* モーダル */}
       <HealthLogFormModal
         open={formModal.isOpen}
+        title={formModal.editingLog ? '健康記録を編集' : '健康記録を追加'}
         selectedRecordType={formModal.selectedRecordType}
         occurredDate={formModal.occurredDate}
         occurredTime={formModal.occurredTime}
