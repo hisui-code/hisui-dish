@@ -4,13 +4,14 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { BsFillHeartPulseFill } from 'react-icons/bs'
 import { FaPlus } from 'react-icons/fa'
-import { CalendarDays, Edit3, Funnel } from 'lucide-react'
-import { healthLogFilterOptions, healthLogTypeLabels } from '@/lib/health-log/constants'
+import { Funnel } from 'lucide-react'
+import { healthLogFilterOptions } from '@/lib/health-log/constants'
 import type { HealthLogFilterType } from '@/types/healthLog'
 import { mockHealthLogs } from '@/lib/health-log/mock'
-import { formatHealthLogDate, formatHealthLogDateTime, jst } from '@/lib/date'
+import { formatHealthLogDate, jst } from '@/lib/date'
 import HealthLogFormModal from '@/components/healthlog/HealthLogFormModal'
 import { useHealthLogFormModal } from '@/hooks/healthlog/useHealthLogFormModal'
+import HealthLogTimeline from '@/components/healthlog/HealthLogTimeline'
 
 /**
  * @description 健康記録ページの静的な骨組みを表示する
@@ -138,65 +139,7 @@ export default function HealthLog() {
         </section>
 
         {/* タイムライン */}
-        {filteredLogs.length === 0 ? (
-          <Card className="gap-0 py-0 shadow-none">
-            <CardContent className="flex flex-col items-center justify-center px-6 py-12 text-center">
-              <p className="text-base font-semibold text-foreground">
-                条件に一致する記録がありません
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <section className="border-t border-border">
-            {filteredLogs.map((item) => (
-              <article key={item.id} className="border-b border-border py-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <span className="text-sm font-semibold text-emerald-600">
-                        {healthLogTypeLabels[item.type]}
-                      </span>
-                      <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
-                        <CalendarDays className="h-3.5 w-3.5" />
-                        {formatHealthLogDateTime(item.occurredAt)}
-                      </span>
-                    </div>
-
-                    {item.type === 'weight' && item.weightKg ? (
-                      <>
-                        <p className="mt-2 text-base font-semibold text-foreground">
-                          {item.weightKg}kg
-                        </p>
-                        {item.note ? (
-                          <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                            {item.note}
-                          </p>
-                        ) : null}
-                      </>
-                    ) : item.note ? (
-                      <p className="mt-2 text-sm leading-6 text-foreground">{item.note}</p>
-                    ) : null}
-
-                    {item.photos.length > 0 ? (
-                      <div className="mt-3 flex h-20 w-20 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 text-xs text-muted-foreground">
-                        写真
-                      </div>
-                    ) : null}
-                  </div>
-
-                  <button
-                    type="button"
-                    className="shrink-0 rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    onClick={() => formModal.openForEdit(item)}
-                    aria-label={`${healthLogTypeLabels[item.type]}を編集`}
-                  >
-                    <Edit3 className="h-4 w-4" />
-                  </button>
-                </div>
-              </article>
-            ))}
-          </section>
-        )}
+        <HealthLogTimeline logs={filteredLogs} onEdit={formModal.openForEdit} />
       </div>
       {/* モーダル */}
       <HealthLogFormModal
