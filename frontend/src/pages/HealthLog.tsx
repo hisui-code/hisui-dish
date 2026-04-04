@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { BsFillHeartPulseFill } from 'react-icons/bs'
 import { FaPlus } from 'react-icons/fa'
 import { Funnel } from 'lucide-react'
@@ -11,6 +10,7 @@ import { mockHealthLogs } from '@/lib/health-log/mock'
 import { formatHealthLogDate, jst } from '@/lib/date'
 import HealthLogFormModal from '@/components/healthlog/HealthLogFormModal'
 import { useHealthLogFormModal } from '@/hooks/healthlog/useHealthLogFormModal'
+import HealthLogSummaryCards from '@/components/healthlog/HealthLogSummaryCards'
 import HealthLogTimeline from '@/components/healthlog/HealthLogTimeline'
 
 /**
@@ -23,6 +23,11 @@ export default function HealthLog() {
   const latestWeight = mockHealthLogs.find((log) => log.type === 'weight')
   const [selectedType, setSelectedType] = useState<HealthLogFilterType>('all')
   const [selectedMonth, setSelectedMonth] = useState('2026-03')
+
+  const latestLogDate = formatHealthLogDate(latestLog?.occurredAt)
+  const latestHospitalVisitDate = formatHealthLogDate(latestHospitalVisit?.occurredAt)
+  const latestWeightDate = formatHealthLogDate(latestWeight?.occurredAt)
+  const latestWeightValue = latestWeight?.weightKg ? `${latestWeight.weightKg}kg` : '-'
 
   const formModal = useHealthLogFormModal()
 
@@ -52,55 +57,12 @@ export default function HealthLog() {
         />
 
         {/* サマリーカード */}
-        <section className="grid gap-3 md:grid-cols-3">
-          {/* 最後の記録 */}
-          <Card className="gap-0 py-0">
-            <CardContent className="px-5 py-4">
-              <div className="flex items-center gap-2 text-xs font-medium text-emerald-600">
-                <BsFillHeartPulseFill className="h-3.5 w-3.5" />
-                <span>最後の記録</span>
-              </div>
-              <div className="mt-3 flex items-baseline gap-3">
-                <p className="text-xl font-semibold text-foreground">
-                  {formatHealthLogDate(latestLog?.occurredAt)}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 最終通院日 */}
-          <Card className="gap-0 py-0">
-            <CardContent className="px-5 py-4">
-              <div className="flex items-center gap-2 text-xs font-medium text-emerald-600">
-                <BsFillHeartPulseFill className="h-3.5 w-3.5" />
-                <span>最終通院日</span>
-              </div>
-              <div className="mt-3">
-                <p className="text-xl font-semibold text-foreground">
-                  {formatHealthLogDate(latestHospitalVisit?.occurredAt)}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 最新の体重 */}
-          <Card className="gap-0 py-0">
-            <CardContent className="px-5 py-4">
-              <div className="flex items-center gap-2 text-xs font-medium text-emerald-600">
-                <BsFillHeartPulseFill className="h-3.5 w-3.5" />
-                <span>体重</span>
-                <span className="text-[11px] font-normal text-muted-foreground">
-                  ({formatHealthLogDate(latestWeight?.occurredAt)})
-                </span>
-              </div>
-              <div className="mt-3">
-                <p className="text-xl font-semibold text-foreground">
-                  {latestWeight?.weightKg ? `${latestWeight.weightKg}kg` : '-'}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
+        <HealthLogSummaryCards
+          latestLogDate={latestLogDate}
+          latestHospitalVisitDate={latestHospitalVisitDate}
+          latestWeightValue={latestWeightValue}
+          latestWeightDate={latestWeightDate}
+        />
 
         {/* フィルター */}
         <section className="py-2">
