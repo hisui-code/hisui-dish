@@ -8,7 +8,7 @@ import { CalendarDays, Edit3, Funnel } from 'lucide-react'
 import { healthLogFilterOptions, healthLogTypeLabels } from '@/lib/health-log/constants'
 import type { HealthLogFilterType } from '@/types/healthLog'
 import { mockHealthLogs } from '@/lib/health-log/mock'
-import { jst } from '@/lib/date'
+import { formatHealthLogDate, formatHealthLogDateTime, jst } from '@/lib/date'
 import HealthLogFormModal from '@/components/healthlog/HealthLogFormModal'
 import { useHealthLogFormModal } from '@/hooks/healthlog/useHealthLogFormModal'
 
@@ -61,10 +61,7 @@ export default function HealthLog() {
               </div>
               <div className="mt-3 flex items-baseline gap-3">
                 <p className="text-xl font-semibold text-foreground">
-                  {latestLog ? healthLogTypeLabels[latestLog.type] : '-'}
-                </p>
-                <p className="text-base font-semibold text-foreground">
-                  {latestLog ? latestLog.occurredAt.slice(0, 10) : '-'}
+                  {formatHealthLogDate(latestLog?.occurredAt)}
                 </p>
               </div>
             </CardContent>
@@ -79,7 +76,7 @@ export default function HealthLog() {
               </div>
               <div className="mt-3">
                 <p className="text-xl font-semibold text-foreground">
-                  {latestHospitalVisit ? latestHospitalVisit.occurredAt.slice(0, 10) : '-'}
+                  {formatHealthLogDate(latestHospitalVisit?.occurredAt)}
                 </p>
               </div>
             </CardContent>
@@ -91,7 +88,9 @@ export default function HealthLog() {
               <div className="flex items-center gap-2 text-xs font-medium text-emerald-600">
                 <BsFillHeartPulseFill className="h-3.5 w-3.5" />
                 <span>体重</span>
-                <span className="text-[11px] font-normal text-muted-foreground">(直近計測)</span>
+                <span className="text-[11px] font-normal text-muted-foreground">
+                  ({formatHealthLogDate(latestWeight?.occurredAt)})
+                </span>
               </div>
               <div className="mt-3">
                 <p className="text-xl font-semibold text-foreground">
@@ -159,16 +158,23 @@ export default function HealthLog() {
                       </span>
                       <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
                         <CalendarDays className="h-3.5 w-3.5" />
-                        {item.occurredAt}
+                        {formatHealthLogDateTime(item.occurredAt)}
                       </span>
                     </div>
 
-                    {item.note ? (
+                    {item.type === 'weight' && item.weightKg ? (
+                      <>
+                        <p className="mt-2 text-base font-semibold text-foreground">
+                          {item.weightKg}kg
+                        </p>
+                        {item.note ? (
+                          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                            {item.note}
+                          </p>
+                        ) : null}
+                      </>
+                    ) : item.note ? (
                       <p className="mt-2 text-sm leading-6 text-foreground">{item.note}</p>
-                    ) : null}
-
-                    {item.weightKg ? (
-                      <p className="mt-2 text-sm font-medium text-foreground">{item.weightKg}kg</p>
                     ) : null}
 
                     {item.photos.length > 0 ? (

@@ -42,4 +42,40 @@ export const formatJstDateTime = (input: string | null): string => {
   return value.format('YYYY/MM/DD HH:mm:ss')
 }
 
+/**
+ * @description 健康記録一覧向けに日時をJST表示へ整形する
+ * @param input 変換対象の日時文字列
+ * @returns 例: 2026年3月24日 08:15。未設定や不正値の場合は'-'
+ */
+export const formatHealthLogDateTime = (input: string | null): string => {
+  if (!input) {
+    return '-'
+  }
+
+  const value = jst(input)
+  if (!value.isValid()) {
+    return '-'
+  }
+
+  return value.format('YYYY年M月D日 HH:mm')
+}
+
+/**
+ * @description 健康記録サマリー向けに日付をJST表示へ整形する
+ * @param input 変換対象の日時文字列
+ * @returns 例: 2026年3月24日。未設定や不正値の場合は'-'
+ */
+export const formatHealthLogDate = (input: string | null | undefined): string => {
+  if (!input) {
+    return '-'
+  }
+
+  const value = jst(input)
+  if (!value.isValid()) {
+    return '-'
+  }
+
+  return value.format('YYYY年M月D日')
+}
+
 export default dayjs
