@@ -23,9 +23,14 @@ export default function HealthLogTimeline({ logs, onEdit }: HealthLogTimelinePro
     )
   }
   return (
-    <section className="border-t border-border">
-      {logs.map((item) => (
-        <HealthLogTimelineItem key={item.id} item={item} onEdit={onEdit} />
+    <section>
+      {logs.map((item, index) => (
+        <HealthLogTimelineItem
+          key={item.id}
+          item={item}
+          onEdit={onEdit}
+          isLast={index === logs.length - 1}
+        />
       ))}
     </section>
   )
