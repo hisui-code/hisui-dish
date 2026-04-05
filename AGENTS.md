@@ -68,6 +68,8 @@
 - 重要な関数・API呼び出し・日付処理にはJSDocを書く
 - `@description` は必須
 - 必要に応じて `@param` / `@returns`
+- 型エイリアスや props 型の各プロパティには `@description` などのタグを使わない
+- 型のプロパティコメントはホバー時の可読性を優先してプレーンな JSDoc を使う
 
 例：
 
@@ -79,6 +81,11 @@
 export function buildUtcRange(startJst: Date, endJst: Date) {
   // JSTで受け取った日時をUTCに変換する
   // DBはUTC保存前提
+}
+
+type HealthLogSummaryCardsProps = {
+  /** 最後の記録の日付表示 */
+  latestLogDate: string
 }
 ```
 
@@ -168,6 +175,7 @@ function buildUtcRange(DateTimeImmutable $startJst, DateTimeImmutable $endJst): 
 - コンポーネントは `function` 宣言
 - 内部関数はアロー関数
 - 画面は `Page`、表示は `components`、ロジックは `hooks` / `lib` に分離する
+- 型のプロパティコメントは `/** ... */` を使い、`@description` などのタグは使わない
 
 ---
 
