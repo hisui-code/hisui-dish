@@ -1,4 +1,5 @@
-import { CalendarDays, Edit3 } from 'lucide-react'
+import { MdEdit } from 'react-icons/md'
+import { IoCalendarOutline } from 'react-icons/io5'
 import { formatHealthLogDateTime } from '@/lib/date'
 import { healthLogTypeLabels } from '@/lib/health-log/constants'
 import type { HealthLogRecord } from '@/types/healthLog'
@@ -23,7 +24,7 @@ export default function HealthLogTimelineItem({ item, onEdit }: HealthLogTimelin
               {healthLogTypeLabels[item.type]}
             </span>
             <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
-              <CalendarDays className="h-3.5 w-3.5" />
+              <IoCalendarOutline className="h-3.5 w-3.5" />
               {formatHealthLogDateTime(item.occurredAt)}
             </span>
           </div>
@@ -52,7 +53,7 @@ export default function HealthLogTimelineItem({ item, onEdit }: HealthLogTimelin
           onClick={() => onEdit(item)}
           aria-label={`${healthLogTypeLabels[item.type]}を編集`}
         >
-          <Edit3 className="h-4 w-4" />
+          <MdEdit className="h-4 w-4" />
         </button>
       </div>
     </article>

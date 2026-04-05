@@ -3,8 +3,6 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { BsFillHeartPulseFill } from 'react-icons/bs'
 import { FaPlus } from 'react-icons/fa'
-import { Funnel } from 'lucide-react'
-import { healthLogFilterOptions } from '@/lib/health-log/constants'
 import type { HealthLogFilterType } from '@/types/healthLog'
 import { mockHealthLogs } from '@/lib/health-log/mock'
 import { formatHealthLogDate, jst } from '@/lib/date'
@@ -12,6 +10,7 @@ import HealthLogFormModal from '@/components/healthlog/HealthLogFormModal'
 import { useHealthLogFormModal } from '@/hooks/healthlog/useHealthLogFormModal'
 import HealthLogSummaryCards from '@/components/healthlog/HealthLogSummaryCards'
 import HealthLogTimeline from '@/components/healthlog/HealthLogTimeline'
+import HealthLogFilters from '@/components/healthlog/HealthLogFilters'
 
 /**
  * @description 健康記録ページの静的な骨組みを表示する
@@ -65,40 +64,12 @@ export default function HealthLog() {
         />
 
         {/* フィルター */}
-        <section className="py-2">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Funnel className="h-4 w-4" />
-            </div>
-
-            {/* 種別ボタン */}
-            <div className="flex flex-1 flex-wrap gap-2">
-              {healthLogFilterOptions.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setSelectedType(option.value)}
-                  className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-                    option.value === selectedType
-                      ? 'border-emerald-600 bg-emerald-600 text-white'
-                      : 'border-border bg-background text-muted-foreground hover:bg-muted'
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-            {/* 日付選択 */}
-            <div className="w-full lg:w-[180px]">
-              <input
-                type="month"
-                value={selectedMonth}
-                onChange={(event) => setSelectedMonth(event.target.value)}
-                className="h-9 w-full rounded-xl border border-input bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-              />
-            </div>
-          </div>
-        </section>
+        <HealthLogFilters
+          selectedType={selectedType}
+          selectedMonth={selectedMonth}
+          onChangeType={setSelectedType}
+          onChangeMonth={setSelectedMonth}
+        />
 
         {/* タイムライン */}
         <HealthLogTimeline logs={filteredLogs} onEdit={formModal.openForEdit} />
