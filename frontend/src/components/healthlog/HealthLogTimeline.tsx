@@ -10,7 +10,7 @@ type HealthLogTimelineProps = {
 }
 
 /**
- * @description 健康記録一覧をフラットなタイムライン形式で表示する
+ * @description 健康記録一覧をタイムライン形式で表示する
  */
 export default function HealthLogTimeline({ logs, onEdit }: HealthLogTimelineProps) {
   if (logs.length === 0) {
