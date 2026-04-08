@@ -17,13 +17,11 @@ import HealthLogFilters from '@/components/healthlog/HealthLogFilters'
  * サマリー、フィルター、タイムラインの配置を確認するための段階
  */
 export default function HealthLog() {
-  const latestLog = mockHealthLogs[0]
   const latestHospitalVisit = mockHealthLogs.find((log) => log.type === 'hospital_visit')
   const latestWeight = mockHealthLogs.find((log) => log.type === 'weight')
   const [selectedType, setSelectedType] = useState<HealthLogFilterType>('all')
   const [selectedMonth, setSelectedMonth] = useState('2026-03')
 
-  const latestLogDate = formatHealthLogDate(latestLog?.occurredAt)
   const latestHospitalVisitDate = formatHealthLogDate(latestHospitalVisit?.occurredAt)
   const latestWeightDate = formatHealthLogDate(latestWeight?.occurredAt)
   const latestWeightValue = latestWeight?.weightKg ? `${latestWeight.weightKg}kg` : '-'
@@ -36,6 +34,7 @@ export default function HealthLog() {
 
     return matchesType && matchesMonth
   })
+  const monthlyLogCount = filteredLogs.length
 
   return (
     <div className="px-3 py-3 md:px-4 md:py-4">
@@ -57,7 +56,7 @@ export default function HealthLog() {
 
         {/* サマリーカード */}
         <HealthLogSummaryCards
-          latestLogDate={latestLogDate}
+          monthlyLogCount={monthlyLogCount}
           latestHospitalVisitDate={latestHospitalVisitDate}
           latestWeightValue={latestWeightValue}
           latestWeightDate={latestWeightDate}
