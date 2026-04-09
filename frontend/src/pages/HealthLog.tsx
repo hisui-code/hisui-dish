@@ -1,40 +1,21 @@
-import { useState } from 'react'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { BsFillHeartPulseFill } from 'react-icons/bs'
 import { FaPlus } from 'react-icons/fa'
-import type { HealthLogFilterType } from '@/types/healthLog'
-import { mockHealthLogs } from '@/lib/health-log/mock'
-import { formatHealthLogDate, jst } from '@/lib/date'
 import HealthLogFormModal from '@/components/healthlog/HealthLogFormModal'
 import { useHealthLogFormModal } from '@/hooks/healthlog/useHealthLogFormModal'
 import HealthLogSummaryCards from '@/components/healthlog/HealthLogSummaryCards'
 import HealthLogTimeline from '@/components/healthlog/HealthLogTimeline'
 import HealthLogFilters from '@/components/healthlog/HealthLogFilters'
+import { useHealthLogPage } from '@/hooks/healthlog/useHealthLogPage'
 
 /**
  * @description 健康記録ページの静的な骨組みを表示する
  * サマリー、フィルター、タイムラインの配置を確認するための段階
  */
 export default function HealthLog() {
-  const latestHospitalVisit = mockHealthLogs.find((log) => log.type === 'hospital_visit')
-  const latestWeight = mockHealthLogs.find((log) => log.type === 'weight')
-  const [selectedType, setSelectedType] = useState<HealthLogFilterType>('all')
-  const [selectedMonth, setSelectedMonth] = useState('2026-03')
-
-  const latestHospitalVisitDate = formatHealthLogDate(latestHospitalVisit?.occurredAt)
-  const latestWeightDate = formatHealthLogDate(latestWeight?.occurredAt)
-  const latestWeightValue = latestWeight?.weightKg ? `${latestWeight.weightKg}kg` : '-'
-
+  const healthLogPage = useHealthLogPage()
   const formModal = useHealthLogFormModal()
-
-  const filteredLogs = mockHealthLogs.filter((log) => {
-    const matchesType = selectedType === 'all' || log.type === selectedType
-    const matchesMonth = jst(log.occurredAt).format('YYYY-MM') === selectedMonth
-
-    return matchesType && matchesMonth
-  })
-  const monthlyLogCount = filteredLogs.length
 
   return (
     <div className="px-3 py-3 md:px-4 md:py-4">
@@ -56,22 +37,22 @@ export default function HealthLog() {
 
         {/* サマリーカード */}
         <HealthLogSummaryCards
-          monthlyLogCount={monthlyLogCount}
-          latestHospitalVisitDate={latestHospitalVisitDate}
-          latestWeightValue={latestWeightValue}
-          latestWeightDate={latestWeightDate}
+          monthlyLogCount={healthLogPage.monthlyLogCount}
+          latestHospitalVisitDate={healthLogPage.latestHospitalVisitDate}
+          latestWeightValue={healthLogPage.latestWeightValue}
+          latestWeightDate={healthLogPage.latestWeightDate}
         />
 
         {/* フィルター */}
         <HealthLogFilters
-          selectedType={selectedType}
-          selectedMonth={selectedMonth}
-          onChangeType={setSelectedType}
-          onChangeMonth={setSelectedMonth}
+          selectedType={healthLogPage.selectedType}
+          selectedMonth={healthLogPage.selectedMonth}
+          onChangeType={healthLogPage.setSelectedType}
+          onChangeMonth={healthLogPage.setSelectedMonth}
         />
 
         {/* タイムライン */}
-        <HealthLogTimeline logs={filteredLogs} onEdit={formModal.openForEdit} />
+        <HealthLogTimeline logs={healthLogPage.filteredLogs} onEdit={formModal.openForEdit} />
       </div>
       {/* モーダル */}
       <HealthLogFormModal
