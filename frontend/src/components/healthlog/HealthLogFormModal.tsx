@@ -1,33 +1,39 @@
 import { Button } from '@/components/ui/button'
 import { healthLogTypeLabels, healthLogTypes } from '@/lib/health-log/constants'
+import { FiTrash2 } from 'react-icons/fi'
+
 import type { HealthLogType } from '@/types/healthLog'
 
 type HealthLogFormModalProps = {
-  /** @description モーダルの表示状態 */
+  /** モーダルの表示状態 */
   open: boolean
-  /** @description モーダルのタイトル */
+  /** モーダル見出し */
   title: string
-  /** @description 現在選択中の記録種別 */
+  /** 現在選択中の記録種別 */
   selectedRecordType: HealthLogType
-  /** @description 発生日の入力値 */
+  /** 発生日の入力値 */
   occurredDate: string
-  /** @description 発生時刻の入力値 */
+  /** 発生時刻の入力値 */
   occurredTime: string
-  /** @description メモ入力欄の値 */
+  /** メモ入力欄の値 */
   note: string
-  /** @description 体重入力欄の値 */
+  /** 体重入力欄の値 */
   weightKg: string
-  /** @description モーダルを閉じる処理 */
+  /** 編集モード時に削除ボタンを表示するか */
+  showDelete?: boolean
+  /** 削除ボタン押下時の処理 */
+  onDelete?: () => void
+  /** モーダルを閉じる処理 */
   onClose: () => void
-  /** @description 記録種別を変更する処理 */
+  /** 記録種別を変更する処理 */
   onChangeRecordType: (type: HealthLogType) => void
-  /** @description 発生日を更新する処理 */
+  /** 発生日を更新する処理 */
   onChangeOccurredDate: (value: string) => void
-  /** @description 発生時刻を更新する処理 */
+  /** 発生時刻を更新する処理 */
   onChangeOccurredTime: (value: string) => void
-  /** @description メモ入力値を更新する処理 */
+  /** メモ入力値を更新する処理 */
   onChangeNote: (value: string) => void
-  /** @description 体重入力値を更新する処理 */
+  /** 体重入力値を更新する処理 */
   onChangeWeightKg: (value: string) => void
 }
 
@@ -44,6 +50,8 @@ export default function HealthLogFormModal({
   occurredTime,
   note,
   weightKg,
+  showDelete = false,
+  onDelete,
   onClose,
   onChangeRecordType,
   onChangeOccurredDate,
@@ -149,6 +157,7 @@ export default function HealthLogFormModal({
             />
           </div>
 
+          {/* 写真 */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">写真</label>
             <div className="flex min-h-28 items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 text-sm text-muted-foreground">
@@ -157,11 +166,22 @@ export default function HealthLogFormModal({
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 border-t border-border px-6 py-4">
-          <Button type="button" variant="outline" onClick={onClose}>
-            キャンセル
-          </Button>
-          <Button type="button">保存</Button>
+        {/* 削除 */}
+        <div className="flex items-center justify-between border-t border-border px-6 py-4">
+          <div>
+            {showDelete ? (
+              <Button type="button" variant="outline" onClick={onDelete}>
+                <FiTrash2 className="h-5 w-5 text-red-500" aria-hidden="true" />
+              </Button>
+            ) : null}
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="outline" onClick={onClose}>
+              キャンセル
+            </Button>
+            <Button type="button">保存</Button>
+          </div>
         </div>
       </div>
     </div>

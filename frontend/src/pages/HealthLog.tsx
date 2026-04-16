@@ -8,6 +8,8 @@ import HealthLogSummaryCards from '@/components/healthlog/HealthLogSummaryCards'
 import HealthLogTimeline from '@/components/healthlog/HealthLogTimeline'
 import HealthLogFilters from '@/components/healthlog/HealthLogFilters'
 import { useHealthLogPage } from '@/hooks/healthlog/useHealthLogPage'
+import HealthLogDeleteDialog from '@/components/healthlog/HealthLogDeleteDialog'
+import useHealthLogDeleteDialog from '@/hooks/healthlog/useHealthLogDeleteDialog'
 
 /**
  * @description 健康記録ページの静的な骨組みを表示する
@@ -16,6 +18,20 @@ import { useHealthLogPage } from '@/hooks/healthlog/useHealthLogPage'
 export default function HealthLog() {
   const healthLogPage = useHealthLogPage()
   const formModal = useHealthLogFormModal()
+  const deleteDialog = useHealthLogDeleteDialog()
+
+  // 削除確認ダイアログを表示
+  const handleRequestDeleteFromForm = () => {
+    if (!formModal.editingLog) return
+
+    deleteDialog.openDeleteDialog(formModal.editingLog)
+  }
+
+  // 削除押下後、モーダルも同時に閉じる
+  const handleConfirmDelete = () => {
+    deleteDialog.confirmDelete()
+    formModal.close()
+  }
 
   return (
     <div className="px-3 py-3 md:px-4 md:py-4">
@@ -63,12 +79,21 @@ export default function HealthLog() {
         occurredTime={formModal.occurredTime}
         note={formModal.note}
         weightKg={formModal.weightKg}
+        showDelete={formModal.editingLog !== null}
+        onDelete={handleRequestDeleteFromForm}
         onClose={formModal.close}
         onChangeRecordType={formModal.setSelectedRecordType}
         onChangeOccurredDate={formModal.setOccurredDate}
         onChangeOccurredTime={formModal.setOccurredTime}
         onChangeNote={formModal.setNote}
         onChangeWeightKg={formModal.setWeightKg}
+      />
+      {/* 削除確認モーダル */}
+      <HealthLogDeleteDialog
+        open={deleteDialog.deleteTarget !== null}
+        target={deleteDialog.deleteTarget}
+        onCancel={deleteDialog.closeDeleteDialog}
+        onConfirm={handleConfirmDelete}
       />
     </div>
   )
