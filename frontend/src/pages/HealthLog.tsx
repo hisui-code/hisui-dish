@@ -10,6 +10,8 @@ import HealthLogFilters from '@/components/healthlog/HealthLogFilters'
 import { useHealthLogPage } from '@/hooks/healthlog/useHealthLogPage'
 import HealthLogDeleteDialog from '@/components/healthlog/HealthLogDeleteDialog'
 import useHealthLogDeleteDialog from '@/hooks/healthlog/useHealthLogDeleteDialog'
+import HealthLogPhotoModal from '@/components/healthlog/HealthLogPhotoModal'
+import useHealthLogPhotoModal from '@/hooks/healthlog/useHealthLogPhotoModal'
 
 /**
  * @description 健康記録ページの静的な骨組みを表示する
@@ -19,6 +21,7 @@ export default function HealthLog() {
   const healthLogPage = useHealthLogPage()
   const formModal = useHealthLogFormModal()
   const deleteDialog = useHealthLogDeleteDialog()
+  const photoModal = useHealthLogPhotoModal()
 
   // 削除確認ダイアログを表示
   const handleRequestDeleteFromForm = () => {
@@ -68,7 +71,11 @@ export default function HealthLog() {
         />
 
         {/* タイムライン */}
-        <HealthLogTimeline logs={healthLogPage.filteredLogs} onEdit={formModal.openForEdit} />
+        <HealthLogTimeline
+          logs={healthLogPage.filteredLogs}
+          onEdit={formModal.openForEdit}
+          onOpenPhoto={photoModal.openPhotoModal}
+        />
       </div>
       {/* モーダル */}
       <HealthLogFormModal
@@ -94,6 +101,12 @@ export default function HealthLog() {
         target={deleteDialog.deleteTarget}
         onCancel={deleteDialog.closeDeleteDialog}
         onConfirm={handleConfirmDelete}
+      />
+      {/* 写真モーダル */}
+      <HealthLogPhotoModal
+        open={photoModal.selectedPhoto !== null}
+        photo={photoModal.selectedPhoto}
+        onClose={photoModal.closePhotoModal}
       />
     </div>
   )

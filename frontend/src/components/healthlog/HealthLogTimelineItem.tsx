@@ -14,6 +14,8 @@ type HealthLogTimelineItemProps = {
   item: HealthLogRecord
   /** @description 編集ボタン押下時の処理 */
   onEdit: (item: HealthLogRecord) => void
+  /** 写真押下時の処理 */
+  onOpenPhoto: (photo: string) => void
   /** 最後の要素かどうか */
   isLast: boolean
 }
@@ -36,6 +38,7 @@ const healthLogTimelineIcons = {
 export default function HealthLogTimelineItem({
   item,
   onEdit,
+  onOpenPhoto,
   isLast,
 }: HealthLogTimelineItemProps) {
   return (
@@ -94,9 +97,14 @@ export default function HealthLogTimelineItem({
           {/* 写真 */}
           {item.photos.length > 0 ? (
             <div className="shrink-0 self-start">
-              <div className="flex h-12 w-14 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 text-xs text-muted-foreground md:h-12 md:w-14">
+              <button
+                type="button"
+                className="flex h-12 w-14 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 text-xs text-muted-foreground md:h-12 md:w-14"
+                onClick={() => onOpenPhoto(item.photos[0])}
+                aria-label="写真を拡大"
+              >
                 写真
-              </div>
+              </button>
             </div>
           ) : null}
         </div>

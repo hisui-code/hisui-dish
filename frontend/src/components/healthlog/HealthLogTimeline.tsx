@@ -7,12 +7,14 @@ type HealthLogTimelineProps = {
   logs: HealthLogRecord[]
   /** @description 編集ボタン押下時の処理 */
   onEdit: (item: HealthLogRecord) => void
+  /** 写真押下時の処理 */
+  onOpenPhoto: (photo: string) => void
 }
 
 /**
  * @description 健康記録一覧をタイムライン形式で表示する
  */
-export default function HealthLogTimeline({ logs, onEdit }: HealthLogTimelineProps) {
+export default function HealthLogTimeline({ logs, onEdit, onOpenPhoto }: HealthLogTimelineProps) {
   if (logs.length === 0) {
     return (
       <Card className="gap-0 py-0 shadow-none">
@@ -22,6 +24,7 @@ export default function HealthLogTimeline({ logs, onEdit }: HealthLogTimelinePro
       </Card>
     )
   }
+
   return (
     <section>
       {logs.map((item, index) => (
@@ -29,6 +32,7 @@ export default function HealthLogTimeline({ logs, onEdit }: HealthLogTimelinePro
           key={item.id}
           item={item}
           onEdit={onEdit}
+          onOpenPhoto={onOpenPhoto}
           isLast={index === logs.length - 1}
         />
       ))}
