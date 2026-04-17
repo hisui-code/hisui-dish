@@ -21,6 +21,8 @@ type HealthLogFormModalProps = {
   weightKg: string
   /** 編集モード時に削除ボタンを表示するか */
   showDelete?: boolean
+  /** 保存ボタン押下時の処理 */
+  onSave: () => void
   /** 削除ボタン押下時の処理 */
   onDelete?: () => void
   /** モーダルを閉じる処理 */
@@ -51,6 +53,7 @@ export default function HealthLogFormModal({
   note,
   weightKg,
   showDelete = false,
+  onSave,
   onDelete,
   onClose,
   onChangeRecordType,
@@ -180,7 +183,9 @@ export default function HealthLogFormModal({
             <Button type="button" variant="outline" onClick={onClose}>
               キャンセル
             </Button>
-            <Button type="button">保存</Button>
+            <Button type="button" onClick={onSave}>
+              保存
+            </Button>
           </div>
         </div>
       </div>

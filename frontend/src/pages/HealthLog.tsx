@@ -30,8 +30,12 @@ export default function HealthLog() {
     deleteDialog.openDeleteDialog(formModal.editingLog)
   }
 
-  // 削除押下後、モーダルも同時に閉じる
-  const handleConfirmDelete = () => {
+  const handleSaveHealthLog = () => {
+    // API 追加・更新
+  }
+
+  const handleConfirmDeleteHealthLog = () => {
+    // API 削除
     deleteDialog.confirmDelete()
     formModal.close()
   }
@@ -87,6 +91,7 @@ export default function HealthLog() {
         note={formModal.note}
         weightKg={formModal.weightKg}
         showDelete={formModal.editingLog !== null}
+        onSave={handleSaveHealthLog}
         onDelete={handleRequestDeleteFromForm}
         onClose={formModal.close}
         onChangeRecordType={formModal.setSelectedRecordType}
@@ -100,7 +105,7 @@ export default function HealthLog() {
         open={deleteDialog.deleteTarget !== null}
         target={deleteDialog.deleteTarget}
         onCancel={deleteDialog.closeDeleteDialog}
-        onConfirm={handleConfirmDelete}
+        onConfirm={handleConfirmDeleteHealthLog}
       />
       {/* 写真モーダル */}
       <HealthLogPhotoModal
