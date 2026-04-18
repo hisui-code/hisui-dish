@@ -27,3 +27,14 @@ export type HealthLogRecord = {
   weightKg?: number
   photos: string[]
 }
+
+/**
+ * @description 健康記録の保存時に扱う入力データ
+ */
+export type HealthLogSavePayload = {
+  type: HealthLogType
+  occurredAt: string
+  note?: string
+  weightKg?: number
+  photos: string[]
+}

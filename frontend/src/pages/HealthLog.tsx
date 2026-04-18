@@ -12,6 +12,9 @@ import HealthLogDeleteDialog from '@/components/healthlog/HealthLogDeleteDialog'
 import useHealthLogDeleteDialog from '@/hooks/healthlog/useHealthLogDeleteDialog'
 import HealthLogPhotoModal from '@/components/healthlog/HealthLogPhotoModal'
 import useHealthLogPhotoModal from '@/hooks/healthlog/useHealthLogPhotoModal'
+import { jst } from '@/lib/date'
+import type { HealthLogSavePayload } from '@/types/healthLog'
+import { createHealthLog, deleteHealthLog, updateHealthLog } from '@/lib/api/healthLogsApi'
 
 /**
  * @description 健康記録ページの静的な骨組みを表示する
@@ -30,14 +33,58 @@ export default function HealthLog() {
     deleteDialog.openDeleteDialog(formModal.editingLog)
   }
 
-  const handleSaveHealthLog = () => {
-    // API 追加・更新
+  // 追加・更新
+  const handleSaveHealthLog = async () => {
+    if (!formModal.occurredDate) return
+    if (!formModal.occurredTime) return
+
+    if (formModal.selectedRecordType === 'weight') {
+      const parsedWeightKg = Number(formModal.weightKg)
+
+      if (!formModal.weightKg) return
+      if (Number.isNaN(parsedWeightKg)) return
+      if (parsedWeightKg <= 0) return
+    }
+
+    const payload = buildHealthLogPayload()
+
+    if (formModal.editingLog) {
+      await updateHealthLog(formModal.editingLog.id, payload)
+      formModal.close()
+      return
+    }
+
+    await createHealthLog(payload)
+    formModal.close()
   }
 
-  const handleConfirmDeleteHealthLog = () => {
-    // API 削除
+  // 削除
+  const handleConfirmDeleteHealthLog = async () => {
+    if (!deleteDialog.deleteTarget) return
+
+    await deleteHealthLog(deleteDialog.deleteTarget.id)
     deleteDialog.confirmDelete()
     formModal.close()
+  }
+
+  // payload
+  const buildHealthLogPayload = (): HealthLogSavePayload => {
+    const occurredAt = jst(`${formModal.occurredDate} ${formModal.occurredTime}`).format(
+      'YYYY-MM-DDTHH:mm:ss'
+    )
+    const trimmedNote = formModal.note.trim()
+    const parsedWeightKg =
+      formModal.selectedRecordType === 'weight' && formModal.weightKg
+        ? Number(formModal.weightKg)
+        : undefined
+
+    return {
+      type: formModal.selectedRecordType,
+      occurredAt,
+      note: trimmedNote || undefined,
+      weightKg: parsedWeightKg,
+      photos: [],
+    }
   }
 
   return (
