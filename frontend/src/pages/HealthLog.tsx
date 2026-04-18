@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { BsFillHeartPulseFill } from 'react-icons/bs'
@@ -13,8 +14,9 @@ import useHealthLogDeleteDialog from '@/hooks/healthlog/useHealthLogDeleteDialog
 import HealthLogPhotoModal from '@/components/healthlog/HealthLogPhotoModal'
 import useHealthLogPhotoModal from '@/hooks/healthlog/useHealthLogPhotoModal'
 import { jst } from '@/lib/date'
-import type { HealthLogSavePayload } from '@/types/healthLog'
 import { createHealthLog, deleteHealthLog, updateHealthLog } from '@/lib/api/healthLogsApi'
+import { validateHealthLogForm } from '@/schemas/healthLog'
+import type { HealthLogFormInput, HealthLogSavePayload } from '@/types/healthLog'
 
 /**
  * @description 健康記録ページの静的な骨組みを表示する
@@ -26,25 +28,33 @@ export default function HealthLog() {
   const deleteDialog = useHealthLogDeleteDialog()
   const photoModal = useHealthLogPhotoModal()
 
+  const [formErrorMessage, setFormErrorMessage] = useState<string | null>(null)
+
   // 削除確認ダイアログを表示
   const handleRequestDeleteFromForm = () => {
     if (!formModal.editingLog) return
 
+    setFormErrorMessage(null)
     deleteDialog.openDeleteDialog(formModal.editingLog)
   }
 
   // 追加・更新
   const handleSaveHealthLog = async () => {
-    if (!formModal.occurredDate) return
-    if (!formModal.occurredTime) return
-
-    if (formModal.selectedRecordType === 'weight') {
-      const parsedWeightKg = Number(formModal.weightKg)
-
-      if (!formModal.weightKg) return
-      if (Number.isNaN(parsedWeightKg)) return
-      if (parsedWeightKg <= 0) return
+    const form: HealthLogFormInput = {
+      type: formModal.selectedRecordType,
+      occurredDate: formModal.occurredDate,
+      occurredTime: formModal.occurredTime,
+      note: formModal.note,
+      weightKg: formModal.weightKg,
     }
+
+    const result = validateHealthLogForm(form)
+    if (!result.success) {
+      setFormErrorMessage(result.message)
+      return
+    }
+
+    setFormErrorMessage(null)
 
     const payload = buildHealthLogPayload()
 
@@ -55,6 +65,11 @@ export default function HealthLog() {
     }
 
     await createHealthLog(payload)
+    formModal.close()
+  }
+
+  const handleCloseHealthLogForm = () => {
+    setFormErrorMessage(null)
     formModal.close()
   }
 
@@ -137,10 +152,11 @@ export default function HealthLog() {
         occurredTime={formModal.occurredTime}
         note={formModal.note}
         weightKg={formModal.weightKg}
+        errorMessage={formErrorMessage}
         showDelete={formModal.editingLog !== null}
         onSave={handleSaveHealthLog}
         onDelete={handleRequestDeleteFromForm}
-        onClose={formModal.close}
+        onClose={handleCloseHealthLogForm}
         onChangeRecordType={formModal.setSelectedRecordType}
         onChangeOccurredDate={formModal.setOccurredDate}
         onChangeOccurredTime={formModal.setOccurredTime}

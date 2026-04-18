@@ -19,6 +19,8 @@ type HealthLogFormModalProps = {
   note: string
   /** 体重入力欄の値 */
   weightKg: string
+  /** エラー表示用メッセージ */
+  errorMessage?: string | null
   /** 編集モード時に削除ボタンを表示するか */
   showDelete?: boolean
   /** 保存ボタン押下時の処理 */
@@ -52,6 +54,7 @@ export default function HealthLogFormModal({
   occurredTime,
   note,
   weightKg,
+  errorMessage,
   showDelete = false,
   onSave,
   onDelete,
@@ -142,9 +145,15 @@ export default function HealthLogFormModal({
                 min="0"
                 value={weightKg}
                 onChange={(event) => onChangeWeightKg(event.target.value)}
-                placeholder="3.80"
                 className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
               />
+            </div>
+          ) : null}
+
+          {/* エラーメッセージ */}
+          {errorMessage ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {errorMessage}
             </div>
           ) : null}
 
