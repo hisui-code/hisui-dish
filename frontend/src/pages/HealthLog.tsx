@@ -13,10 +13,10 @@ import HealthLogDeleteDialog from '@/components/healthlog/HealthLogDeleteDialog'
 import useHealthLogDeleteDialog from '@/hooks/healthlog/useHealthLogDeleteDialog'
 import HealthLogPhotoModal from '@/components/healthlog/HealthLogPhotoModal'
 import useHealthLogPhotoModal from '@/hooks/healthlog/useHealthLogPhotoModal'
-import { jst } from '@/lib/date'
 import { createHealthLog, deleteHealthLog, updateHealthLog } from '@/lib/api/healthLogsApi'
 import { validateHealthLogForm } from '@/schemas/healthLog'
-import type { HealthLogFormInput, HealthLogSavePayload } from '@/types/healthLog'
+import type { HealthLogFormInput } from '@/types/healthLog'
+import { buildHealthLogSavePayload } from '@/lib/health-log/payload'
 
 /**
  * @description 健康記録ページの静的な骨組みを表示する
@@ -56,7 +56,7 @@ export default function HealthLog() {
 
     setFormErrorMessage(null)
 
-    const payload = buildHealthLogPayload()
+    const payload = buildHealthLogSavePayload(result.data)
 
     if (formModal.editingLog) {
       await updateHealthLog(formModal.editingLog.id, payload)
@@ -80,26 +80,6 @@ export default function HealthLog() {
     await deleteHealthLog(deleteDialog.deleteTarget.id)
     deleteDialog.confirmDelete()
     formModal.close()
-  }
-
-  // payload
-  const buildHealthLogPayload = (): HealthLogSavePayload => {
-    const occurredAt = jst(`${formModal.occurredDate} ${formModal.occurredTime}`).format(
-      'YYYY-MM-DDTHH:mm:ss'
-    )
-    const trimmedNote = formModal.note.trim()
-    const parsedWeightKg =
-      formModal.selectedRecordType === 'weight' && formModal.weightKg
-        ? Number(formModal.weightKg)
-        : undefined
-
-    return {
-      type: formModal.selectedRecordType,
-      occurredAt,
-      note: trimmedNote || undefined,
-      weightKg: parsedWeightKg,
-      photos: [],
-    }
   }
 
   return (
