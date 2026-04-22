@@ -17,6 +17,8 @@ type UseHealthLogFormModalResult = {
   note: string
   /** @description 体重入力欄の値 */
   weightKg: string
+  /** @description 写真識別子一覧 */
+  photos: string[]
   /** @description 追加モードでモーダルを開く */
   openForCreate: () => void
   /** @description 編集モードでモーダルを開く */
@@ -33,6 +35,8 @@ type UseHealthLogFormModalResult = {
   setNote: (value: string) => void
   /** @description 体重入力値を更新する処理 */
   setWeightKg: (value: string) => void
+  /** @description 写真識別子一覧を更新する処理 */
+  setPhotos: (value: string[]) => void
 }
 
 /**
@@ -56,6 +60,8 @@ export function useHealthLogFormModal(): UseHealthLogFormModalResult {
   const [note, setNote] = useState('')
   // 体重
   const [weightKg, setWeightKg] = useState('')
+  // 写真
+  const [photos, setPhotos] = useState<string[]>([])
 
   /**  新規追加 モーダルを開く */
   const openForCreate = () => {
@@ -70,6 +76,7 @@ export function useHealthLogFormModal(): UseHealthLogFormModalResult {
     setOccurredTime(jst(log.occurredAt).format('HH:mm'))
     setNote(log.note ?? '')
     setWeightKg(log.weightKg ? String(log.weightKg) : '')
+    setPhotos(log.photos)
     setIsOpen(true)
   }
 
@@ -81,6 +88,7 @@ export function useHealthLogFormModal(): UseHealthLogFormModalResult {
     setOccurredTime(initialOccurredTime)
     setNote('')
     setWeightKg('')
+    setPhotos([])
   }
 
   /**  モーダルを閉じ、フォームの入力値を初期化する */
@@ -97,6 +105,7 @@ export function useHealthLogFormModal(): UseHealthLogFormModalResult {
     occurredTime,
     note,
     weightKg,
+    photos,
     openForCreate,
     openForEdit,
     close,
@@ -105,5 +114,6 @@ export function useHealthLogFormModal(): UseHealthLogFormModalResult {
     setOccurredTime,
     setNote,
     setWeightKg,
+    setPhotos,
   }
 }

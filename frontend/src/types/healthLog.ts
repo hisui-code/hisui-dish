@@ -64,4 +64,6 @@ export type HealthLogFormInput = {
   note: string
   /** フォーム上の体重入力文字列 */
   weightKg: string
+  /** フォーム上の写真識別子一覧 */
+  photos: string[]
 }

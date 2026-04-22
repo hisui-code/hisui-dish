@@ -17,6 +17,8 @@ type HealthLogFormModalState = {
   note: string
   /** フォームに入力された体重文字列 */
   weightKg: string
+  /** フォームに入力された写真識別子一覧 */
+  photos: string[]
   /** フォームモーダルを閉じる処理 */
   close: () => void
 }
@@ -83,6 +85,7 @@ export function useHealthLogActions({
       occurredTime: formModal.occurredTime,
       note: formModal.note,
       weightKg: formModal.weightKg,
+      photos: formModal.photos,
     }
 
     // 入力不備がある場合は API へ渡さず、フォームにエラーを表示する

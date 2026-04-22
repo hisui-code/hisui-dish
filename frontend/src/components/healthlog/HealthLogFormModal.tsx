@@ -23,6 +23,8 @@ type HealthLogFormModalProps = {
   errorMessage?: string | null
   /** 編集モード時に削除ボタンを表示するか */
   showDelete?: boolean
+  /** 写真識別子一覧 */
+  photos: string[]
   /** 保存ボタン押下時の処理 */
   onSave: () => void
   /** 削除ボタン押下時の処理 */
@@ -39,6 +41,8 @@ type HealthLogFormModalProps = {
   onChangeNote: (value: string) => void
   /** 体重入力値を更新する処理 */
   onChangeWeightKg: (value: string) => void
+  /** 写真識別子一覧を更新する処理 */
+  onChangePhotos: (value: string[]) => void
 }
 
 /**
@@ -56,6 +60,7 @@ export default function HealthLogFormModal({
   weightKg,
   errorMessage,
   showDelete = false,
+  photos,
   onSave,
   onDelete,
   onClose,
@@ -64,6 +69,7 @@ export default function HealthLogFormModal({
   onChangeOccurredTime,
   onChangeNote,
   onChangeWeightKg,
+  onChangePhotos,
 }: HealthLogFormModalProps) {
   if (!open) {
     return null
@@ -173,7 +179,17 @@ export default function HealthLogFormModal({
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">写真</label>
             <div className="flex min-h-28 items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 text-sm text-muted-foreground">
-              写真アップロード領域
+              <input
+                type="text"
+                value={photos[0] ?? ''}
+                onChange={(event) => {
+                  const value = event.target.value.trim()
+                  onChangePhotos(value ? [value] : [])
+                }}
+                placeholder="sample-photo-1"
+                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              />
+              <p className="text-xs text-muted-foreground">実アップロード前の仮入力です</p>
             </div>
           </div>
         </div>

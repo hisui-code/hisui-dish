@@ -80,6 +80,7 @@ export default function HealthLog() {
         weightKg={formModal.weightKg}
         errorMessage={healthLogActions.formErrorMessage}
         showDelete={formModal.editingLog !== null}
+        photos={formModal.photos}
         onSave={healthLogActions.saveHealthLog}
         onDelete={healthLogActions.requestDeleteFromForm}
         onClose={healthLogActions.closeForm}
@@ -88,6 +89,7 @@ export default function HealthLog() {
         onChangeOccurredTime={formModal.setOccurredTime}
         onChangeNote={formModal.setNote}
         onChangeWeightKg={formModal.setWeightKg}
+        onChangePhotos={formModal.setPhotos}
       />
       {/* 削除確認モーダル */}
       <HealthLogDeleteDialog
