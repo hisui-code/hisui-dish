@@ -26,6 +26,8 @@ type HealthLogFormModalProps = {
   showDelete?: boolean
   /** 写真識別子一覧 */
   photos: string[]
+  /** 保存処理中かどうか */
+  isSaving?: boolean
   /** 保存ボタン押下時の処理 */
   onSave: () => void
   /** 削除ボタン押下時の処理 */
@@ -62,6 +64,7 @@ export default function HealthLogFormModal({
   errorMessage,
   showDelete = false,
   photos,
+  isSaving = false,
   onSave,
   onDelete,
   onClose,
@@ -194,8 +197,8 @@ export default function HealthLogFormModal({
             <Button type="button" variant="outline" onClick={onClose}>
               キャンセル
             </Button>
-            <Button type="button" onClick={onSave}>
-              保存
+            <Button type="button" onClick={onSave} disabled={isSaving}>
+              {isSaving ? '保存中...' : '保存'}
             </Button>
           </div>
         </div>

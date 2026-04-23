@@ -9,6 +9,8 @@ type HealthLogDeleteDialogProps = {
   open: boolean
   /** 削除対象の健康記録 */
   target: HealthLogRecord | null
+  /** 削除処理中かどうか */
+  isDeleting?: boolean
   /** キャンセル時の処理 */
   onCancel: () => void
   /** 削除確定時の処理 */
@@ -21,6 +23,7 @@ type HealthLogDeleteDialogProps = {
 export default function HealthLogDeleteDialog({
   open,
   target,
+  isDeleting = false,
   onCancel,
   onConfirm,
 }: HealthLogDeleteDialogProps) {
@@ -60,8 +63,8 @@ export default function HealthLogDeleteDialog({
           <Button type="button" variant="outline" onClick={onCancel}>
             キャンセル
           </Button>
-          <Button type="button" variant="destructive" onClick={onConfirm}>
-            削除する
+          <Button type="button" variant="destructive" onClick={onConfirm} disabled={isDeleting}>
+            {isDeleting ? '削除中...' : '削除する'}
           </Button>
         </div>
       </div>

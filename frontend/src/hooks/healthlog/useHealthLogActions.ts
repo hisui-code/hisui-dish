@@ -50,6 +50,10 @@ type UseHealthLogActionsResult = {
   saveHealthLog: () => Promise<void>
   /** 健康記録の削除を確定する */
   confirmDeleteHealthLog: () => Promise<void>
+  /** 保存処理中かどうか */
+  isSaving: boolean
+  /** 削除処理中かどうか */
+  isDeleting: boolean
 }
 
 /**
@@ -61,6 +65,8 @@ export function useHealthLogActions({
   deleteDialog,
 }: UseHealthLogActionsParams): UseHealthLogActionsResult {
   const [formErrorMessage, setFormErrorMessage] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   /** フォームを閉じて入力エラーをリセットする */
   const closeForm = () => {
@@ -78,6 +84,9 @@ export function useHealthLogActions({
 
   /** フォーム入力を検証し、追加または更新の API 入口へ渡す */
   const saveHealthLog = async () => {
+    // ２重送信を防止するため保存中はreturnする
+    if (isSaving) return
+
     // モーダルの入力状態を検証用フォーム値にまとめる
     const form: HealthLogFormInput = {
       type: formModal.selectedRecordType,
@@ -96,28 +105,41 @@ export function useHealthLogActions({
     }
 
     setFormErrorMessage(null)
+    setIsSaving(true)
 
-    const payload = buildHealthLogSavePayload(result.data)
+    try {
+      const payload = buildHealthLogSavePayload(result.data)
 
-    if (formModal.editingLog) {
-      // 編集中の記録がある場合は更新として扱う
-      await updateHealthLog(formModal.editingLog.id, payload)
+      if (formModal.editingLog) {
+        // 編集中の記録がある場合は更新として扱う
+        await updateHealthLog(formModal.editingLog.id, payload)
+        formModal.close()
+        return
+      }
+      // 編集対象がない場合は新規作成として扱う
+      await createHealthLog(payload)
       formModal.close()
-      return
+    } finally {
+      setIsSaving(false)
     }
-
-    // 編集対象がない場合は新規作成として扱う
-    await createHealthLog(payload)
-    formModal.close()
   }
 
   /** 削除対象の記録を削除し、関連モーダルを閉じる */
   const confirmDeleteHealthLog = async () => {
+    // ２重送信を防止するため削除中はreturnする
+    if (isDeleting) return
+    // 削除対象が存在しなければreturnする
     if (!deleteDialog.deleteTarget) return
 
-    await deleteHealthLog(deleteDialog.deleteTarget.id)
-    deleteDialog.confirmDelete()
-    formModal.close()
+    setIsDeleting(true)
+
+    try {
+      await deleteHealthLog(deleteDialog.deleteTarget.id)
+      deleteDialog.confirmDelete()
+      formModal.close()
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   return {
@@ -126,5 +148,7 @@ export function useHealthLogActions({
     requestDeleteFromForm,
     saveHealthLog,
     confirmDeleteHealthLog,
+    isSaving,
+    isDeleting,
   }
 }

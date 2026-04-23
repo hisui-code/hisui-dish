@@ -81,6 +81,7 @@ export default function HealthLog() {
         errorMessage={healthLogActions.formErrorMessage}
         showDelete={formModal.editingLog !== null}
         photos={formModal.photos}
+        isSaving={healthLogActions.isSaving}
         onSave={healthLogActions.saveHealthLog}
         onDelete={healthLogActions.requestDeleteFromForm}
         onClose={healthLogActions.closeForm}
@@ -95,6 +96,7 @@ export default function HealthLog() {
       <HealthLogDeleteDialog
         open={deleteDialog.deleteTarget !== null}
         target={deleteDialog.deleteTarget}
+        isDeleting={healthLogActions.isDeleting}
         onCancel={deleteDialog.closeDeleteDialog}
         onConfirm={healthLogActions.confirmDeleteHealthLog}
       />
