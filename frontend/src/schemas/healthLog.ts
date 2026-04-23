@@ -27,6 +27,7 @@ const healthLogFormSchema = z
     occurredTime: z.string().min(1, '時間は必須です'),
     note: z.string(),
     weightKg: z.string(),
+    photos: z.array(z.string()),
   })
   .superRefine((data, ctx) => {
     // 体重以外の記録では入力欄を持っていても評価しない
