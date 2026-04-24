@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\DeviceBowlSnapshotsController;
 use App\Http\Controllers\Api\V1\DeviceSessionEventsController;
 use App\Http\Controllers\Api\V1\DeviceSettingsController;
 use App\Http\Controllers\Api\V1\HealthController;
+use App\Http\Controllers\Api\V1\HealthLogsController;
 use App\Http\Controllers\Api\V1\LogsController;
 use App\Http\Controllers\Api\V1\SessionsController;
 use App\Http\Controllers\Api\V1\UsersController;
@@ -49,6 +50,11 @@ Route::prefix('v1')->group(function () {
         Route::get('dashboard', [DashboardController::class, 'show']);
         Route::get('daily_totals', [DailyTotalsController::class, 'show']);
         Route::get('year_monthly_totals', [YearMonthlyTotalsController::class, 'show']);
+        // HealthLog
+        Route::get('health_logs', [HealthLogsController::class, 'index']);
+        Route::post('health_logs', [HealthLogsController::class, 'store']);
+        Route::patch('health_logs/{health_log_id}', [HealthLogsController::class, 'update']);
+        Route::delete('health_logs/{health_log_id}', [HealthLogsController::class, 'destroy']);
         // DeviceSettings（管理画面取得、更新用）
         Route::get('device_settings/{device_id}', [DeviceSettingsController::class, 'show']);
         Route::put('device_settings/{device_id}', [DeviceSettingsController::class, 'update']);
@@ -69,5 +75,6 @@ Route::prefix('v1')->group(function () {
             Route::post('users', [UsersController::class, 'store']);
             Route::delete('users/{user_id}', [UsersController::class, 'destroy']);
         });
+
     });
 });
