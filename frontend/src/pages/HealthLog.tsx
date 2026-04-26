@@ -63,11 +63,23 @@ export default function HealthLog() {
         />
 
         {/* タイムライン */}
-        <HealthLogTimeline
-          logs={healthLogPage.filteredLogs}
-          onEdit={formModal.openForEdit}
-          onOpenPhoto={photoModal.openPhotoModal}
-        />
+        {healthLogPage.errorMessage ? (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {healthLogPage.errorMessage}
+          </div>
+        ) : null}
+
+        {healthLogPage.isLoading ? (
+          <div className="rounded-lg border border-border bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
+            健康記録を読み込んでいます
+          </div>
+        ) : (
+          <HealthLogTimeline
+            logs={healthLogPage.filteredLogs}
+            onEdit={formModal.openForEdit}
+            onOpenPhoto={photoModal.openPhotoModal}
+          />
+        )}
       </div>
       {/* モーダル */}
       <HealthLogFormModal

@@ -65,3 +65,19 @@ export async function deleteHealthLog(id: string): Promise<void> {
     method: 'DELETE',
   })
 }
+
+/**
+ * @description 健康記録一覧を月別に取得する
+ */
+export async function fetchHealthLogs(month: string): Promise<HealthLogRecord[]> {
+  const searchParams = new URLSearchParams({
+    month,
+    device_id: resolveDeviceId(),
+  })
+
+  const res = await req<{ healthLogs: HealthLogRecord[] }>(
+    `/api/v1/health_logs?${searchParams.toString()}`
+  )
+
+  return res.healthLogs
+}
