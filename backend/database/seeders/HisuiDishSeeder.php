@@ -24,6 +24,10 @@ use Illuminate\Support\Str;
  *   - 過去2ヶ月 / 今月 / 先1ヶ月（合計4ヶ月）を対象に生成
  *   - 1日あたり 1〜3件
  *   - 食事確定イベント（eat_finished）を中心に生成
+ * - health_logs:
+ *   - 2026年4月〜6月を対象に生成
+ *   - 各月・各種別ごとに5件ずつ生成
+ *   - JSTの日時で生成し、DB保存はUTCへ変換して occurred_at に保存
  */
 class HisuiDishSeeder extends Seeder
 {
@@ -35,7 +39,7 @@ class HisuiDishSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->log('🧪 Seeding users / devices / bowl_snapshots / device_session_events ...');
+        $this->log('🧪 Seeding users / devices / bowl_snapshots / device_session_events / health_logs ...');
 
         DB::transaction(function () {
             $this->seedUsers();
@@ -43,6 +47,7 @@ class HisuiDishSeeder extends Seeder
             $this->ensureDeviceSetting($deviceId);
             $this->seedBowlSnapshots($deviceId);
             $this->seedDeviceSessionEvents($deviceId);
+            $this->seedHealthLogs($deviceId);
         });
 
         $this->log('✅ Done.');
@@ -419,5 +424,96 @@ class HisuiDishSeeder extends Seeder
 
         $count = DB::table('device_session_events')->count();
         $this->log("✅ device_session_events seeded. count={$count}");
+    }
+
+    /**
+     * @description
+     * health_logs を「2026年4月〜6月」で生成する
+     *
+     * - 各月・各種別ごとに5件ずつ作る
+     * - 生成日時は JST で作る
+     * - DB保存は occurred_at を UTC へ変換して入れる
+     *
+     * @param string $deviceId - devices.id
+     * @return void
+     */
+    private function seedHealthLogs(string $deviceId): void
+    {
+        if (!Schema::hasTable('health_logs')) {
+            $this->log('⚠️ health_logs table not found. skip.');
+            return;
+        }
+
+        DB::table('health_logs')->where('device_id', $deviceId)->delete();
+
+        $jst = 'Asia/Tokyo';
+        $months = ['2026-04', '2026-05', '2026-06'];
+        $types = [
+            'vomit',
+            'diarrhea',
+            'bloody_stool',
+            'injury',
+            'hospital_visit',
+            'medication',
+            'weight',
+            'other',
+        ];
+
+        $notes = [
+            'vomit' => '食後に少量の嘔吐あり',
+            'diarrhea' => '便がやわらかい状態',
+            'bloody_stool' => '便に少量の血が混じる',
+            'injury' => '足を気にしている様子',
+            'hospital_visit' => '定期通院',
+            'medication' => '処方薬を服用',
+            'weight' => '体重測定',
+            'other' => 'いつもと少し様子が違う',
+        ];
+
+        $days = [2, 7, 12, 18, 24];
+        $hours = [8, 10, 13, 17, 21];
+        $weightValues = [3.72, 3.76, 3.80, 3.84, 3.88];
+
+        $rows = [];
+
+        foreach ($months as $month) {
+            foreach ($types as $type) {
+                foreach ($days as $index => $day) {
+                    // 月ごと・種別ごとに日付をずらして、タイムライン上で偏らないようにする
+                    $dtJst = CarbonImmutable::createFromFormat(
+                        'Y-m-d H:i:s',
+                        sprintf('%s-%02d %02d:%02d:00', $month, $day, $hours[$index], $index * 10),
+                        $jst
+                    );
+
+                    if (!$dtJst) {
+                        continue;
+                    }
+
+                    // DB保存はUTCへ変換
+                    $dtUtc = $dtJst->setTimezone('UTC');
+                    $hasPhoto = in_array($type, ['vomit', 'injury', 'bloody_stool'], true) && $index % 2 === 0;
+
+                    $rows[] = [
+                        'id' => (string) Str::uuid(),
+                        'device_id' => $deviceId,
+                        'type' => $type,
+                        'occurred_at' => $dtUtc->format('Y-m-d H:i:s.uP'),
+                        'note' => $notes[$type],
+                        'weight_kg' => $type === 'weight' ? $weightValues[$index] : null,
+                        'photos' => json_encode($hasPhoto ? ["sample-{$type}-{$month}-{$index}"] : []),
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
+            }
+        }
+
+        foreach (array_chunk($rows, 1000) as $chunk) {
+            DB::table('health_logs')->insert($chunk);
+        }
+
+        $count = DB::table('health_logs')->where('device_id', $deviceId)->count();
+        $this->log("✅ health_logs seeded. count={$count}");
     }
 }
