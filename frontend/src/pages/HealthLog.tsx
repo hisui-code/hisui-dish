@@ -24,10 +24,13 @@ export default function HealthLog() {
   const deleteDialog = useHealthLogDeleteDialog()
   const photoModal = useHealthLogPhotoModal()
 
+  // 保存・削除後に表示中月の一覧キャッシュを更新できるよう、現在の年月を操作hookへ渡す
   const healthLogActions = useHealthLogActions({
     formModal,
     deleteDialog,
+    selectedMonth: healthLogPage.selectedMonth,
   })
+
   return (
     <div className="px-3 py-3 md:px-4 md:py-4">
       <div className="mx-auto w-full max-w-5xl space-y-4 md:space-y-6">

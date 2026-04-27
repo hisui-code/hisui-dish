@@ -3,6 +3,8 @@ import { createHealthLog, deleteHealthLog, updateHealthLog } from '@/lib/api/hea
 import { buildHealthLogSavePayload } from '@/lib/health-log/payload'
 import { validateHealthLogForm } from '@/schemas/healthLog'
 import type { HealthLogFormInput, HealthLogRecord, HealthLogType } from '@/types/healthLog'
+import { useQueryClient } from '@tanstack/react-query'
+import { healthLogsQueryKey } from '@/lib/resources/healthLogsQuery'
 
 type HealthLogFormModalState = {
   /** 編集中の健康記録 */
@@ -37,6 +39,8 @@ type UseHealthLogActionsParams = {
   formModal: HealthLogFormModalState
   /** 削除確認ダイアログの状態と操作 */
   deleteDialog: HealthLogDeleteDialogState
+  /** 現在表示中の年月 */
+  selectedMonth: string
 }
 
 type UseHealthLogActionsResult = {
@@ -63,10 +67,23 @@ type UseHealthLogActionsResult = {
 export function useHealthLogActions({
   formModal,
   deleteDialog,
+  selectedMonth,
 }: UseHealthLogActionsParams): UseHealthLogActionsResult {
   const [formErrorMessage, setFormErrorMessage] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  const queryClient = useQueryClient()
+
+  /**
+   * 表示中の健康記録一覧キャッシュを再取得対象にする
+   * 保存・削除後の一覧表示をAPI最新状態へ同期する
+   */
+  const invalidateHealthLogs = async () => {
+    await queryClient.invalidateQueries({
+      queryKey: healthLogsQueryKey(selectedMonth),
+    })
+  }
 
   /** フォームを閉じて入力エラーをリセットする */
   const closeForm = () => {
@@ -110,14 +127,16 @@ export function useHealthLogActions({
     try {
       const payload = buildHealthLogSavePayload(result.data)
 
+      // 更新後は表示中月の一覧を再取得対象にして、タイムラインを最新状態へ同期する
       if (formModal.editingLog) {
-        // 編集中の記録がある場合は更新として扱う
         await updateHealthLog(formModal.editingLog.id, payload)
+        await invalidateHealthLogs()
         formModal.close()
         return
       }
-      // 編集対象がない場合は新規作成として扱う
+      // 作成後は表示中月の一覧を再取得対象にして、タイムラインへ反映する
       await createHealthLog(payload)
+      await invalidateHealthLogs()
       formModal.close()
     } finally {
       setIsSaving(false)
@@ -134,7 +153,9 @@ export function useHealthLogActions({
     setIsDeleting(true)
 
     try {
+      // 削除後は表示中月の一覧を再取得対象にして、削除済み記録を画面から反映する
       await deleteHealthLog(deleteDialog.deleteTarget.id)
+      await invalidateHealthLogs()
       deleteDialog.confirmDelete()
       formModal.close()
     } finally {
