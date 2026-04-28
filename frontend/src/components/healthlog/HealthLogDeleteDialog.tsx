@@ -1,8 +1,8 @@
-import { healthLogTypeLabels } from '@/lib/health-log/constants'
+import { Button } from '@/components/ui/button'
 import { formatHealthLogDateTime } from '@/lib/date'
+import { healthLogTypeLabels } from '@/lib/health-log/constants'
 import type { HealthLogRecord } from '@/types/healthLog'
 import type { MouseEvent } from 'react'
-import { Button } from '@/components/ui/button'
 
 type HealthLogDeleteDialogProps = {
   /** 削除確認ダイアログの表示状態 */
@@ -11,6 +11,8 @@ type HealthLogDeleteDialogProps = {
   target: HealthLogRecord | null
   /** 削除処理中かどうか */
   isDeleting?: boolean
+  /** 削除失敗時に表示するエラーメッセージ */
+  errorMessage?: string | null
   /** キャンセル時の処理 */
   onCancel: () => void
   /** 削除確定時の処理 */
@@ -24,6 +26,7 @@ export default function HealthLogDeleteDialog({
   open,
   target,
   isDeleting = false,
+  errorMessage,
   onCancel,
   onConfirm,
 }: HealthLogDeleteDialogProps) {
@@ -57,6 +60,13 @@ export default function HealthLogDeleteDialog({
               {formatHealthLogDateTime(target.occurredAt)}
             </p>
           </div>
+
+          {/* エラーメッセージ */}
+          {errorMessage ? (
+            <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {errorMessage}
+            </div>
+          ) : null}
         </div>
 
         <div className="flex justify-end gap-3 border-t border-border px-6 py-4">

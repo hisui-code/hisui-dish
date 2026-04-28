@@ -1,18 +1,18 @@
-import { PageHeader } from '@/components/layout/PageHeader'
-import { Button } from '@/components/ui/button'
-import { BsFillHeartPulseFill } from 'react-icons/bs'
-import { FaPlus } from 'react-icons/fa'
+import HealthLogDeleteDialog from '@/components/healthlog/HealthLogDeleteDialog'
+import HealthLogFilters from '@/components/healthlog/HealthLogFilters'
 import HealthLogFormModal from '@/components/healthlog/HealthLogFormModal'
-import { useHealthLogFormModal } from '@/hooks/healthlog/useHealthLogFormModal'
+import HealthLogPhotoModal from '@/components/healthlog/HealthLogPhotoModal'
 import HealthLogSummaryCards from '@/components/healthlog/HealthLogSummaryCards'
 import HealthLogTimeline from '@/components/healthlog/HealthLogTimeline'
-import HealthLogFilters from '@/components/healthlog/HealthLogFilters'
-import { useHealthLogPage } from '@/hooks/healthlog/useHealthLogPage'
-import HealthLogDeleteDialog from '@/components/healthlog/HealthLogDeleteDialog'
-import useHealthLogDeleteDialog from '@/hooks/healthlog/useHealthLogDeleteDialog'
-import HealthLogPhotoModal from '@/components/healthlog/HealthLogPhotoModal'
-import useHealthLogPhotoModal from '@/hooks/healthlog/useHealthLogPhotoModal'
+import { PageHeader } from '@/components/layout/PageHeader'
+import { Button } from '@/components/ui/button'
 import { useHealthLogActions } from '@/hooks/healthlog/useHealthLogActions'
+import useHealthLogDeleteDialog from '@/hooks/healthlog/useHealthLogDeleteDialog'
+import { useHealthLogFormModal } from '@/hooks/healthlog/useHealthLogFormModal'
+import { useHealthLogPage } from '@/hooks/healthlog/useHealthLogPage'
+import useHealthLogPhotoModal from '@/hooks/healthlog/useHealthLogPhotoModal'
+import { BsFillHeartPulseFill } from 'react-icons/bs'
+import { FaPlus } from 'react-icons/fa'
 
 /**
  * @description 健康記録ページの静的な骨組みを表示する
@@ -112,6 +112,7 @@ export default function HealthLog() {
         open={deleteDialog.deleteTarget !== null}
         target={deleteDialog.deleteTarget}
         isDeleting={healthLogActions.isDeleting}
+        errorMessage={healthLogActions.deleteErrorMessage}
         onCancel={deleteDialog.closeDeleteDialog}
         onConfirm={healthLogActions.confirmDeleteHealthLog}
       />

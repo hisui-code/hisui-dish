@@ -1,10 +1,10 @@
-import { useState } from 'react'
 import { createHealthLog, deleteHealthLog, updateHealthLog } from '@/lib/api/healthLogsApi'
 import { buildHealthLogSavePayload } from '@/lib/health-log/payload'
+import { healthLogsQueryKey } from '@/lib/resources/healthLogsQuery'
 import { validateHealthLogForm } from '@/schemas/healthLog'
 import type { HealthLogFormInput, HealthLogRecord, HealthLogType } from '@/types/healthLog'
 import { useQueryClient } from '@tanstack/react-query'
-import { healthLogsQueryKey } from '@/lib/resources/healthLogsQuery'
+import { useState } from 'react'
 
 type HealthLogFormModalState = {
   /** 編集中の健康記録 */
@@ -58,6 +58,8 @@ type UseHealthLogActionsResult = {
   isSaving: boolean
   /** 削除処理中かどうか */
   isDeleting: boolean
+  /** 削除確認に表示するエラーメッセージ */
+  deleteErrorMessage: string | null
 }
 
 /**
@@ -72,6 +74,7 @@ export function useHealthLogActions({
   const [formErrorMessage, setFormErrorMessage] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(null)
 
   const queryClient = useQueryClient()
 
@@ -96,7 +99,13 @@ export function useHealthLogActions({
     if (!formModal.editingLog) return
 
     setFormErrorMessage(null)
+    setDeleteErrorMessage(null)
     deleteDialog.openDeleteDialog(formModal.editingLog)
+  }
+
+  /** API処理の失敗理由を表示用メッセージへ変換する */
+  const getActionErrorMessage = (error: unknown, fallbackMessage: string) => {
+    return error instanceof Error ? error.message : fallbackMessage
   }
 
   /** フォーム入力を検証し、追加または更新の API 入口へ渡す */
@@ -134,10 +143,13 @@ export function useHealthLogActions({
         formModal.close()
         return
       }
+
       // 作成後は表示中月の一覧を再取得対象にして、タイムラインへ反映する
       await createHealthLog(payload)
       await invalidateHealthLogs()
       formModal.close()
+    } catch (error) {
+      setFormErrorMessage(getActionErrorMessage(error, '健康記録の保存に失敗しました'))
     } finally {
       setIsSaving(false)
     }
@@ -158,6 +170,8 @@ export function useHealthLogActions({
       await invalidateHealthLogs()
       deleteDialog.confirmDelete()
       formModal.close()
+    } catch (error) {
+      setDeleteErrorMessage(getActionErrorMessage(error, '健康記録の削除に失敗しました'))
     } finally {
       setIsDeleting(false)
     }
@@ -171,5 +185,6 @@ export function useHealthLogActions({
     confirmDeleteHealthLog,
     isSaving,
     isDeleting,
+    deleteErrorMessage,
   }
 }
