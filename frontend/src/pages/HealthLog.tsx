@@ -113,7 +113,7 @@ export default function HealthLog() {
         target={deleteDialog.deleteTarget}
         isDeleting={healthLogActions.isDeleting}
         errorMessage={healthLogActions.deleteErrorMessage}
-        onCancel={deleteDialog.closeDeleteDialog}
+        onCancel={healthLogActions.cancelDeleteHealthLog}
         onConfirm={healthLogActions.confirmDeleteHealthLog}
       />
       {/* 写真モーダル */}

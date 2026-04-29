@@ -30,6 +30,8 @@ type HealthLogDeleteDialogState = {
   deleteTarget: HealthLogRecord | null
   /** 削除確認ダイアログを開く処理 */
   openDeleteDialog: (item: HealthLogRecord) => void
+  /** 削除確認ダイアログを閉じる処理 */
+  closeDeleteDialog: () => void
   /** 削除確定後に削除確認状態を閉じる処理 */
   confirmDelete: () => void
 }
@@ -50,6 +52,8 @@ type UseHealthLogActionsResult = {
   closeForm: () => void
   /** フォームから削除確認を開く */
   requestDeleteFromForm: () => void
+  /** 削除確認をキャンセルする */
+  cancelDeleteHealthLog: () => void
   /** 健康記録を保存する */
   saveHealthLog: () => Promise<void>
   /** 健康記録の削除を確定する */
@@ -155,6 +159,12 @@ export function useHealthLogActions({
     }
   }
 
+  /** 削除確認を閉じて削除エラーをリセットする */
+  const cancelDeleteHealthLog = () => {
+    setDeleteErrorMessage(null)
+    deleteDialog.closeDeleteDialog()
+  }
+
   /** 削除対象の記録を削除し、関連モーダルを閉じる */
   const confirmDeleteHealthLog = async () => {
     // ２重送信を防止するため削除中はreturnする
@@ -181,6 +191,7 @@ export function useHealthLogActions({
     formErrorMessage,
     closeForm,
     requestDeleteFromForm,
+    cancelDeleteHealthLog,
     saveHealthLog,
     confirmDeleteHealthLog,
     isSaving,
