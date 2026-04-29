@@ -52,6 +52,7 @@
 | `postgres` image | 16 | DB コンテナ |
 | `php` image | 8.5-rc-cli | Laravel コンテナ |
 | `python` image | 3.12-slim | Device 開発用コンテナ |
+| Cloudflare R2 | 利用予定 | 本番環境の画像 object storage |
 
 ## Device の補足
 

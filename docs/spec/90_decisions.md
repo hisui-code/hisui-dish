@@ -1,5 +1,24 @@
 # 90 Decisions
 
+## 2026-04-29: 画像本体は DB に保存せず object storage に保存する
+
+理由:
+
+- DB に画像バイナリを保存すると、検索、認可、集計を担う DB の責務が広がる
+- 画像配信のたびに DB と Backend の両方を通す構成は、コストと負荷の見通しが悪い
+- Laravel の Filesystem disk 経由にしておくと、開発環境、自動テスト、本番環境で保存先を切り替えやすい
+- Cloudflare R2 は S3 互換で、Laravel の S3 disk から扱いやすい
+- Cloudflare R2 は標準 storage の無料枠があり、egress が無料なので小規模な画像保存を始めやすい
+
+影響:
+
+- 開発環境は local disk に保存する
+- 自動テストは `Storage::fake()` を使う
+- 本番環境は Cloudflare R2 に保存する
+- DB には `photos` テーブルで画像メタデータだけを保存する
+- Backend は画像本体を原則中継せず、認可、presign、complete、表示 URL 発行を担う
+- 未完了アップロードを残さないため、`tmp/` prefix か cleanup 方針を用意する
+
 ## 2026-03-07: docs/spec を現状実装に合わせて再構成する
 
 理由:
