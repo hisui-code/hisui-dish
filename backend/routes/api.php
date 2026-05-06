@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\HealthLogsController;
 use App\Http\Controllers\Api\V1\LogsController;
 use App\Http\Controllers\Api\V1\SessionsController;
+use App\Http\Controllers\Api\V1\UploadsController;
 use App\Http\Controllers\Api\V1\UsersController;
 use App\Http\Controllers\Api\V1\YearMonthlyTotalsController;
 use Illuminate\Http\Request;
@@ -55,6 +56,8 @@ Route::prefix('v1')->group(function () {
         Route::post('health_logs', [HealthLogsController::class, 'store']);
         Route::patch('health_logs/{health_log_id}', [HealthLogsController::class, 'update']);
         Route::delete('health_logs/{health_log_id}', [HealthLogsController::class, 'destroy']);
+        // Upload
+        Route::post('uploads/presign', [UploadsController::class, 'presign']);
         // DeviceSettings（管理画面取得、更新用）
         Route::get('device_settings/{device_id}', [DeviceSettingsController::class, 'show']);
         Route::put('device_settings/{device_id}', [DeviceSettingsController::class, 'update']);
