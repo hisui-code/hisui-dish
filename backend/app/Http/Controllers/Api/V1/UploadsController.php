@@ -18,7 +18,9 @@ class UploadsController extends Controller
      */
     public function presign(PresignUploadRequest $request): JsonResponse
     {
+        // 未検証の入力を混ぜないため、バリデーション済みの値だけを使う
         $payload = $request->validated();
+        // 現在ログインしているユーザーを取得
         $user = $request->user() ?? Auth::user();
 
         if (! $user) {
@@ -35,14 +37,16 @@ class UploadsController extends Controller
             (string) $payload['mime_type'],
         );
 
-        // 本番想定のS3互換storageでは、Frontendが直接PUTできる署名付きURLを返す
+        // 本番環境の保存用処理
+        // S3互換storageへ直接PUTできる署名付きURLを返す
         if ($disk === 's3') {
             return response()->json([
                 'upload' => $this->buildS3UploadResponse($disk, $objectKey, (string) $payload['mime_type']),
             ]);
         }
 
-        // local disk は署名付きPUTに対応しないため、Backend経由アップロード用の情報を返す
+        // 開発環境の保存用処理
+        // Backend経由アップロード用の情報を返す
         return response()->json([
             'upload' => $this->buildLocalUploadResponse($disk, $objectKey),
         ]);
