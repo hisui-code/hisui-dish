@@ -58,6 +58,7 @@ Route::prefix('v1')->group(function () {
         Route::delete('health_logs/{health_log_id}', [HealthLogsController::class, 'destroy']);
         // Upload
         Route::post('uploads/presign', [UploadsController::class, 'presign']);
+        Route::post('uploads/local', [UploadsController::class, 'uploadLocal']);
         // DeviceSettings（管理画面取得、更新用）
         Route::get('device_settings/{device_id}', [DeviceSettingsController::class, 'show']);
         Route::put('device_settings/{device_id}', [DeviceSettingsController::class, 'update']);
