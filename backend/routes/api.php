@@ -59,6 +59,7 @@ Route::prefix('v1')->group(function () {
         // Upload
         Route::post('uploads/presign', [UploadsController::class, 'presign']);
         Route::post('uploads/local', [UploadsController::class, 'uploadLocal']);
+        Route::post('uploads/complete', [UploadsController::class, 'complete']);
         // DeviceSettings（管理画面取得、更新用）
         Route::get('device_settings/{device_id}', [DeviceSettingsController::class, 'show']);
         Route::put('device_settings/{device_id}', [DeviceSettingsController::class, 'update']);
