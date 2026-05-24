@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\DeviceSettingsController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\HealthLogsController;
 use App\Http\Controllers\Api\V1\LogsController;
+use App\Http\Controllers\Api\V1\PhotosController;
 use App\Http\Controllers\Api\V1\SessionsController;
 use App\Http\Controllers\Api\V1\UploadsController;
 use App\Http\Controllers\Api\V1\UsersController;
@@ -56,6 +57,8 @@ Route::prefix('v1')->group(function () {
         Route::post('health_logs', [HealthLogsController::class, 'store']);
         Route::patch('health_logs/{health_log_id}', [HealthLogsController::class, 'update']);
         Route::delete('health_logs/{health_log_id}', [HealthLogsController::class, 'destroy']);
+        // Photo
+        Route::get('photos/{photo}/download-url', [PhotosController::class, 'downloadUrl']);
         // Upload
         Route::post('uploads/presign', [UploadsController::class, 'presign']);
         Route::post('uploads/local', [UploadsController::class, 'uploadLocal']);
@@ -82,4 +85,8 @@ Route::prefix('v1')->group(function () {
         });
 
     });
+    // Photo signed content
+    Route::get('photos/{photo}/content', [PhotosController::class, 'content'])
+        ->middleware('signed')
+        ->name('api.v1.photos.content');
 });
