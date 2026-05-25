@@ -32,7 +32,7 @@ class UpsertHealthLogRequest extends FormRequest
             'note' => ['nullable', 'string'],
             'weight_kg' => ['nullable', 'numeric', 'gt:0'],
             'photos' => ['array'],
-            'photos.*' => ['string', 'max:255'],
+            'photos.*' => ['uuid', 'exists:photos,id'],
         ];
     }
 

@@ -55,10 +55,15 @@ class HealthLogsController extends Controller
             // get() は複数行をコレクションとして取得する
             ->get();
 
+        // 写真情報は中間テーブルからまとめて取得し、health_log_id ごとに引ける形へ整える
+        $photosByHealthLogId = $this->loadPhotosByHealthLogIds(
+            $rows->pluck('id')->map(fn ($id) => (string) $id)->all(),
+        );
+
         return response()->json([
             // APIレスポンスはフロント前提のキー名とJST日時へ整形して返す
             // map は各行に同じ整形処理を適用し、all() で配列へ変換する
-            'healthLogs' => $rows->map(fn ($row) => $this->serializeHealthLog($row))->all(),
+            'healthLogs' => $rows->map(fn ($row) => $this->serializeHealthLog($row, $photosByHealthLogId[(string) $row->id] ?? []))->all(),
         ]);
     }
 
@@ -72,24 +77,40 @@ class HealthLogsController extends Controller
         $nowUtc = CarbonImmutable::now('UTC')->format('Y-m-d H:i:s.u');
         $id = (string) Str::uuid();
 
-        // 保存時は日時をUTCへ統一し、配列項目はJSON化してDBへ格納する
-        DB::table('health_logs')->insert([
-            'id' => $id,
-            'device_id' => $payload['device_id'],
-            'type' => $payload['type'],
-            'occurred_at' => $this->parseOccurredAtToUtc($payload['occurred_at']),
-            'note' => $payload['note'] ?? null,
-            'weight_kg' => $payload['weight_kg'] ?? null,
-            'photos' => json_encode($payload['photos'] ?? []),
-            'created_at' => $nowUtc,
-            'updated_at' => $nowUtc,
-        ]);
+        $photoIds = $payload['photos'] ?? [];
 
-        // first() は条件に一致した1件を取得する
+        // health_log_photos に壊れた紐付けを作らないよう、存在する完了済み写真だけを許可する
+        if (! $this->canAttachPhotos($photoIds)) {
+            return response()->json(['error' => 'invalid photos'], 422);
+        }
+
+        // 健康記録本体と写真の紐付けが片方だけ作成されないよう、同じトランザクションで処理する
+        DB::transaction(function () use ($id, $payload, $nowUtc, $photoIds) {
+            // 保存時は日時をUTCへ統一し、写真は中間テーブルへ分けて保存する
+            DB::table('health_logs')->insert([
+                'id' => $id,
+                'device_id' => $payload['device_id'],
+                'type' => $payload['type'],
+                'occurred_at' => $this->parseOccurredAtToUtc($payload['occurred_at']),
+                'note' => $payload['note'] ?? null,
+                'weight_kg' => $payload['weight_kg'] ?? null,
+                'photos' => json_encode([]),
+                'created_at' => $nowUtc,
+                'updated_at' => $nowUtc,
+            ]);
+
+            // 作成した健康記録に、入力された写真IDを表示順つきで紐付ける
+            $this->syncHealthLogPhotos($id, $photoIds, $nowUtc);
+        });
+
+        // レスポンス用に作成後の健康記録を取得する
         $created = DB::table('health_logs')->where('id', $id)->first();
 
+        // 作成直後のレスポンスに写真メタデータを含めるため、紐付いた写真を取得する
+        $photos = $this->loadPhotosByHealthLogIds([$id]);
+
         return response()->json([
-            'healthLog' => $this->serializeHealthLog($created),
+            'healthLog' => $this->serializeHealthLog($created, $photos[$id] ?? []),
         ], 201);
     }
 
@@ -101,29 +122,48 @@ class HealthLogsController extends Controller
         // 事前に定義したルールを通過した入力値だけを使う
         $payload = $request->validated();
 
-        // 別端末のデータを更新できないよう、IDとdevice_idの両方で対象を特定する
-        $updated = DB::table('health_logs')
+        // 別端末の健康記録を更新しないよう、IDとdevice_idの両方で更新対象を確認する
+        $existing = DB::table('health_logs')
             ->where('id', $healthLogId)
             ->where('device_id', $payload['device_id'])
-            ->update([
-                'type' => $payload['type'],
-                'occurred_at' => $this->parseOccurredAtToUtc($payload['occurred_at']),
-                'note' => $payload['note'] ?? null,
-                'weight_kg' => $payload['weight_kg'] ?? null,
-                'photos' => json_encode($payload['photos'] ?? []),
-                'updated_at' => CarbonImmutable::now('UTC')->format('Y-m-d H:i:s.u'),
-            ]);
+            ->first();
 
-        // update() は更新件数を返すので、0件なら対象なしとして扱う
-        if ($updated === 0) {
+        // IDとdevice_idに一致する健康記録がない場合は、更新対象なしとして扱う
+        if (! $existing) {
             return response()->json(['error' => 'health log not found'], 404);
         }
 
-        // 更新後の最新状態を取り直して、そのままレスポンスへ返す
+        // health_log_photos に壊れた紐付けを作らないよう、存在する完了済み写真だけを許可する
+        $photoIds = $payload['photos'] ?? [];
+        if (! $this->canAttachPhotos($photoIds)) {
+            return response()->json(['error' => 'invalid photos'], 422);
+        }
+
+        $nowUtc = CarbonImmutable::now('UTC')->format('Y-m-d H:i:s.u');
+
+        // 健康記録本体と写真の紐付けが片方だけ更新されないよう、同じトランザクションで処理する
+        DB::transaction(function () use ($healthLogId, $payload, $photoIds, $nowUtc) {
+            DB::table('health_logs')
+                ->where('id', $healthLogId)
+                ->where('device_id', $payload['device_id'])
+                ->update([
+                    'type' => $payload['type'],
+                    'occurred_at' => $this->parseOccurredAtToUtc($payload['occurred_at']),
+                    'note' => $payload['note'] ?? null,
+                    'weight_kg' => $payload['weight_kg'] ?? null,
+                    'photos' => json_encode([]),
+                    'updated_at' => $nowUtc,
+                ]);
+
+            $this->syncHealthLogPhotos($healthLogId, $photoIds, $nowUtc);
+        });
+
+        // 更新後の健康記録と写真情報を取り直し、レスポンスを最新状態に揃える
         $healthLog = DB::table('health_logs')->where('id', $healthLogId)->first();
+        $photos = $this->loadPhotosByHealthLogIds([$healthLogId]);
 
         return response()->json([
-            'healthLog' => $this->serializeHealthLog($healthLog),
+            'healthLog' => $this->serializeHealthLog($healthLog, $photos[$healthLogId] ?? []),
         ]);
     }
 
@@ -156,7 +196,7 @@ class HealthLogsController extends Controller
     /**
      * DB行を健康記録APIレスポンスへ整形する
      */
-    private function serializeHealthLog(object $row): array
+    private function serializeHealthLog(object $row, array $photos): array
     {
         // DBはUTC保存なので、画面表示用にJSTへ戻して返す
         $occurredAt = CarbonImmutable::parse($row->occurred_at, 'UTC')->setTimezone('Asia/Tokyo');
@@ -165,11 +205,9 @@ class HealthLogsController extends Controller
             'id' => (string) $row->id,
             'type' => (string) $row->type,
             'occurredAt' => $occurredAt->format('Y-m-d\\TH:i:s'),
-            // null のまま返す項目と、型を合わせて返す項目をここで整える
             'note' => $row->note !== null ? (string) $row->note : null,
             'weightKg' => $row->weight_kg !== null ? (float) $row->weight_kg : null,
-            // photos はDBではJSON文字列なので、配列へ戻して返す
-            'photos' => json_decode($row->photos ?? '[]', true) ?: [],
+            'photos' => $photos,
         ];
     }
 
@@ -198,5 +236,106 @@ class HealthLogsController extends Controller
         return CarbonImmutable::parse($occurredAt, 'Asia/Tokyo')
             ->setTimezone('UTC')
             ->format('Y-m-d H:i:s');
+    }
+
+    /**
+     * 健康記録IDごとに紐付いた写真メタデータを取得する
+     */
+    private function loadPhotosByHealthLogIds(array $healthLogIds): array
+    {
+        if ($healthLogIds === []) {
+            return [];
+        }
+
+        // 中間テーブルを経由して、健康記録に紐付いた写真メタデータを並び順つきで取得する
+        $rows = DB::table('health_log_photos')
+            ->join('photos', 'photos.id', '=', 'health_log_photos.photo_id')
+            ->whereIn('health_log_photos.health_log_id', $healthLogIds)
+            ->orderBy('health_log_photos.sort_order')
+            ->get([
+                'health_log_photos.health_log_id',
+                'photos.id',
+                'photos.disk',
+                'photos.object_key',
+                'photos.original_name',
+                'photos.mime_type',
+                'photos.bytes',
+                'photos.visibility',
+                'photos.status',
+            ]);
+
+        // health_log_id ごとに写真配列をまとめる
+        $result = [];
+
+        foreach ($rows as $row) {
+            $healthLogId = (string) $row->health_log_id;
+
+            $result[$healthLogId][] = [
+                'id' => (string) $row->id,
+                'disk' => (string) $row->disk,
+                'objectKey' => (string) $row->object_key,
+                'originalName' => (string) $row->original_name,
+                'mimeType' => (string) $row->mime_type,
+                'bytes' => (int) $row->bytes,
+                'visibility' => (string) $row->visibility,
+                'status' => (string) $row->status,
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * 健康記録に紐付けできる写真か確認する
+     */
+    private function canAttachPhotos(array $photoIds): bool
+    {
+        if ($photoIds === []) {
+            return true;
+        }
+
+        $uniquePhotoIds = array_values(array_unique($photoIds));
+
+        // アップロード完了済みの写真だけを健康記録へ紐付ける
+        $count = DB::table('photos')
+            ->whereIn('id', $uniquePhotoIds)
+            ->where('status', 'completed')
+            ->count();
+
+        return $count === count($uniquePhotoIds);
+    }
+
+    /**
+     * 健康記録と写真の紐付けを保存し直す
+     */
+    private function syncHealthLogPhotos(string $healthLogId, array $photoIds, string $nowUtc): void
+    {
+        // 更新時は並び順も含めて現在の入力に合わせるため、一度既存の紐付けを削除する
+        DB::table('health_log_photos')
+            ->where('health_log_id', $healthLogId)
+            ->delete();
+
+        // 同じ写真が重複して送られても、1つの健康記録には1回だけ紐付ける
+        $uniquePhotoIds = array_values(array_unique($photoIds));
+
+        if ($uniquePhotoIds === []) {
+            return;
+        }
+
+        // 入力順を sort_order として保持し、表示時も同じ順序で返せるようにする
+        $rows = array_map(
+            fn (string $photoId, int $index) => [
+                'health_log_id' => $healthLogId,
+                'photo_id' => $photoId,
+                'sort_order' => $index,
+                'created_at' => $nowUtc,
+                'updated_at' => $nowUtc,
+            ],
+            $uniquePhotoIds,
+            array_keys($uniquePhotoIds),
+        );
+
+        DB::table('health_log_photos')->insert($rows);
+
     }
 }
