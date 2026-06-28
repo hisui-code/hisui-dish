@@ -1,42 +1,42 @@
-import { useState } from 'react'
 import { jst } from '@/lib/date'
-import type { HealthLogRecord, HealthLogType } from '@/types/healthLog'
+import type { HealthLogPhoto, HealthLogRecord, HealthLogType } from '@/types/healthLog'
+import { useState } from 'react'
 
 type UseHealthLogFormModalResult = {
-  /** @description 追加・編集モーダルが開いているかどうか */
+  /** 追加・編集モーダルが開いているかどうか */
   isOpen: boolean
-  /** @description 編集中の対象レコード。追加時は null */
+  /** 編集中の対象レコード。追加時は null */
   editingLog: HealthLogRecord | null
-  /** @description 現在選択中の記録種別 */
+  /** 現在選択中の記録種別 */
   selectedRecordType: HealthLogType
-  /** @description 発生日の入力値 */
+  /** 発生日の入力値 */
   occurredDate: string
-  /** @description 発生時刻の入力値 */
+  /** 発生時刻の入力値 */
   occurredTime: string
-  /** @description メモ入力欄の値 */
+  /** メモ入力欄の値 */
   note: string
-  /** @description 体重入力欄の値 */
+  /** 体重入力欄の値 */
   weightKg: string
-  /** @description 写真識別子一覧 */
-  photos: string[]
-  /** @description 追加モードでモーダルを開く */
+  /** 写真メタデータ一覧 */
+  photos: HealthLogPhoto[]
+  /** 追加モードでモーダルを開く */
   openForCreate: () => void
-  /** @description 編集モードでモーダルを開く */
+  /** 編集モードでモーダルを開く */
   openForEdit: (log: HealthLogRecord) => void
-  /** @description モーダルを閉じて入力値を初期化する */
+  /** モーダルを閉じて入力値を初期化する */
   close: () => void
-  /** @description 記録種別を更新する処理 */
+  /** 記録種別を更新する処理 */
   setSelectedRecordType: (value: HealthLogType) => void
-  /** @description 発生日を更新する処理 */
+  /** 発生日を更新する処理 */
   setOccurredDate: (value: string) => void
-  /** @description 発生時刻を更新する処理 */
+  /** 発生時刻を更新する処理 */
   setOccurredTime: (value: string) => void
-  /** @description メモ入力値を更新する処理 */
+  /** メモ入力値を更新する処理 */
   setNote: (value: string) => void
-  /** @description 体重入力値を更新する処理 */
+  /** 体重入力値を更新する処理 */
   setWeightKg: (value: string) => void
-  /** @description 写真識別子一覧を更新する処理 */
-  setPhotos: (value: string[]) => void
+  /** 写真識別子一覧を更新する処理 */
+  setPhotos: (value: HealthLogPhoto[]) => void
 }
 
 /**
@@ -61,14 +61,14 @@ export function useHealthLogFormModal(): UseHealthLogFormModalResult {
   // 体重
   const [weightKg, setWeightKg] = useState('')
   // 写真
-  const [photos, setPhotos] = useState<string[]>([])
+  const [photos, setPhotos] = useState<HealthLogPhoto[]>([])
 
-  /**  新規追加 モーダルを開く */
+  /** 新規追加 モーダルを開く */
   const openForCreate = () => {
     setIsOpen(true)
   }
 
-  /**  編集 モーダルを開く */
+  /** 編集 モーダルを開く */
   const openForEdit = (log: HealthLogRecord) => {
     setEditingLog(log)
     setSelectedRecordType(log.type)
@@ -80,7 +80,7 @@ export function useHealthLogFormModal(): UseHealthLogFormModalResult {
     setIsOpen(true)
   }
 
-  /**  フォームのリセット */
+  /** フォームのリセット */
   const reset = () => {
     setEditingLog(null)
     setSelectedRecordType('vomit')
@@ -91,7 +91,7 @@ export function useHealthLogFormModal(): UseHealthLogFormModalResult {
     setPhotos([])
   }
 
-  /**  モーダルを閉じ、フォームの入力値を初期化する */
+  /** モーダルを閉じ、フォームの入力値を初期化する */
   const close = () => {
     setIsOpen(false)
     reset()

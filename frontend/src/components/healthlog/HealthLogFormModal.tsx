@@ -1,9 +1,10 @@
 import HealthLogPhotoInput from '@/components/healthlog/HealthLogPhotoInput'
 import { Button } from '@/components/ui/button'
+
 import { healthLogTypeLabels, healthLogTypes } from '@/lib/health-log/constants'
 import { FiTrash2 } from 'react-icons/fi'
 
-import type { HealthLogType } from '@/types/healthLog'
+import type { HealthLogPhoto, HealthLogType } from '@/types/healthLog'
 
 type HealthLogFormModalProps = {
   /** モーダルの表示状態 */
@@ -24,12 +25,20 @@ type HealthLogFormModalProps = {
   errorMessage?: string | null
   /** 編集モード時に削除ボタンを表示するか */
   showDelete?: boolean
-  /** 写真識別子一覧 */
-  photos: string[]
+  /** 写真メタデータ一覧 */
+  photos: HealthLogPhoto[]
+  /** 写真アップロード中かどうか */
+  isUploadingPhoto?: boolean
+  /** 写真アップロードエラー */
+  photoUploadErrorMessage?: string | null
   /** 保存処理中かどうか */
   isSaving?: boolean
   /** 保存ボタン押下時の処理 */
   onSave: () => void
+  /** 写真ファイル選択時の処理 */
+  onUploadPhoto: (file: File) => void
+  /** 写真を削除する処理 */
+  onRemovePhoto: (photoId: string) => void
   /** 削除ボタン押下時の処理 */
   onDelete?: () => void
   /** モーダルを閉じる処理 */
@@ -44,8 +53,6 @@ type HealthLogFormModalProps = {
   onChangeNote: (value: string) => void
   /** 体重入力値を更新する処理 */
   onChangeWeightKg: (value: string) => void
-  /** 写真識別子一覧を更新する処理 */
-  onChangePhotos: (value: string[]) => void
 }
 
 /**
@@ -64,8 +71,12 @@ export default function HealthLogFormModal({
   errorMessage,
   showDelete = false,
   photos,
+  isUploadingPhoto = false,
+  photoUploadErrorMessage,
   isSaving = false,
   onSave,
+  onUploadPhoto,
+  onRemovePhoto,
   onDelete,
   onClose,
   onChangeRecordType,
@@ -73,7 +84,6 @@ export default function HealthLogFormModal({
   onChangeOccurredTime,
   onChangeNote,
   onChangeWeightKg,
-  onChangePhotos,
 }: HealthLogFormModalProps) {
   if (!open) {
     return null
@@ -180,7 +190,13 @@ export default function HealthLogFormModal({
           </div>
 
           {/* 写真 */}
-          <HealthLogPhotoInput photos={photos} onChangePhotos={onChangePhotos} />
+          <HealthLogPhotoInput
+            photos={photos}
+            isUploadingPhoto={isUploadingPhoto}
+            errorMessage={photoUploadErrorMessage}
+            onUploadPhoto={onUploadPhoto}
+            onRemovePhoto={onRemovePhoto}
+          />
         </div>
 
         {/* 削除 */}
@@ -197,8 +213,8 @@ export default function HealthLogFormModal({
             <Button type="button" variant="outline" onClick={onClose}>
               キャンセル
             </Button>
-            <Button type="button" onClick={onSave} disabled={isSaving}>
-              {isSaving ? '保存中...' : '保存'}
+            <Button type="button" onClick={onSave} disabled={isSaving || isUploadingPhoto}>
+              {isSaving ? '保存中...' : isUploadingPhoto ? '写真アップロード中...' : '保存'}
             </Button>
           </div>
         </div>

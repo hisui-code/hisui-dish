@@ -2,7 +2,12 @@ import { createHealthLog, deleteHealthLog, updateHealthLog } from '@/lib/api/hea
 import { buildHealthLogSavePayload } from '@/lib/health-log/payload'
 import { healthLogsQueryKey } from '@/lib/resources/healthLogsQuery'
 import { validateHealthLogForm } from '@/schemas/healthLog'
-import type { HealthLogFormInput, HealthLogRecord, HealthLogType } from '@/types/healthLog'
+import type {
+  HealthLogFormInput,
+  HealthLogPhoto,
+  HealthLogRecord,
+  HealthLogType,
+} from '@/types/healthLog'
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
@@ -19,8 +24,8 @@ type HealthLogFormModalState = {
   note: string
   /** フォームに入力された体重文字列 */
   weightKg: string
-  /** フォームに入力された写真識別子一覧 */
-  photos: string[]
+  /** フォームに入力された写真メタデータ一覧 */
+  photos: HealthLogPhoto[]
   /** フォームモーダルを閉じる処理 */
   close: () => void
 }

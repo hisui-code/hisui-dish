@@ -1,11 +1,12 @@
 import { Button } from '@/components/ui/button'
+import type { HealthLogPhoto } from '@/types/healthLog'
 import type { MouseEvent } from 'react'
 
 type HealthLogPhotoModalProps = {
   /** 写真モーダルの表示状態 */
   open: boolean
-  /** 表示中の写真識別子 */
-  photo: string | null
+  /** 表示中の写真 */
+  photo: HealthLogPhoto | null
   /** モーダルを閉じる処理 */
   onClose: () => void
 }
@@ -40,8 +41,9 @@ export default function HealthLogPhotoModal({ open, photo, onClose }: HealthLogP
         </div>
 
         <div className="px-6 py-6">
-          <div className="flex min-h-[320px] items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 text-sm text-muted-foreground">
-            {photo}
+          <div className="flex min-h-[320px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/20 text-sm text-muted-foreground">
+            <p className="font-medium text-foreground">{photo.originalName}</p>
+            <p>{photo.mimeType}</p>
           </div>
         </div>
       </div>

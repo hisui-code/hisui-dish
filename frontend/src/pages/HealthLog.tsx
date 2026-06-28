@@ -11,6 +11,7 @@ import useHealthLogDeleteDialog from '@/hooks/healthlog/useHealthLogDeleteDialog
 import { useHealthLogFormModal } from '@/hooks/healthlog/useHealthLogFormModal'
 import { useHealthLogPage } from '@/hooks/healthlog/useHealthLogPage'
 import useHealthLogPhotoModal from '@/hooks/healthlog/useHealthLogPhotoModal'
+import { useHealthLogPhotoUpload } from '@/hooks/healthlog/useHealthLogPhotoUpload'
 import { BsFillHeartPulseFill } from 'react-icons/bs'
 import { FaPlus } from 'react-icons/fa'
 
@@ -23,6 +24,11 @@ export default function HealthLog() {
   const formModal = useHealthLogFormModal()
   const deleteDialog = useHealthLogDeleteDialog()
   const photoModal = useHealthLogPhotoModal()
+
+  const photoUpload = useHealthLogPhotoUpload({
+    photos: formModal.photos,
+    onChangePhotos: formModal.setPhotos,
+  })
 
   // 保存・削除後に表示中月の一覧キャッシュを更新できるよう、現在の年月を操作hookへ渡す
   const healthLogActions = useHealthLogActions({
@@ -97,7 +103,11 @@ export default function HealthLog() {
         showDelete={formModal.editingLog !== null}
         photos={formModal.photos}
         isSaving={healthLogActions.isSaving}
+        isUploadingPhoto={photoUpload.isUploadingPhoto}
+        photoUploadErrorMessage={photoUpload.photoUploadErrorMessage}
         onSave={healthLogActions.saveHealthLog}
+        onUploadPhoto={photoUpload.uploadPhoto}
+        onRemovePhoto={photoUpload.removePhoto}
         onDelete={healthLogActions.requestDeleteFromForm}
         onClose={healthLogActions.closeForm}
         onChangeRecordType={formModal.setSelectedRecordType}
@@ -105,7 +115,6 @@ export default function HealthLog() {
         onChangeOccurredTime={formModal.setOccurredTime}
         onChangeNote={formModal.setNote}
         onChangeWeightKg={formModal.setWeightKg}
-        onChangePhotos={formModal.setPhotos}
       />
       {/* 削除確認モーダル */}
       <HealthLogDeleteDialog

@@ -16,6 +16,25 @@ export type HealthLogType =
  */
 export type HealthLogFilterType = 'all' | HealthLogType
 
+export type HealthLogPhoto = {
+  /** 写真ID */
+  id: string
+  /** 保存先disk */
+  disk: string
+  /** storage内の保存キー */
+  objectKey: string
+  /** 元ファイル名 */
+  originalName: string
+  /** MIME type */
+  mimeType: string
+  /** byte数 */
+  bytes: number
+  /** 公開状態 */
+  visibility: string
+  /** アップロード状態 */
+  status: string
+}
+
 /**
  * 一覧や詳細表示で扱う健康記録1件分のデータ
  */
@@ -30,8 +49,8 @@ export type HealthLogRecord = {
   note?: string
   /** 体重記録の値 */
   weightKg?: number
-  /** 添付写真のURL一覧 */
-  photos: string[]
+  /** 添付写真のメタデータ一覧 */
+  photos: HealthLogPhoto[]
 }
 
 /**
@@ -46,7 +65,7 @@ export type HealthLogSavePayload = {
   note?: string
   /** 保存する体重の値 */
   weightKg?: number
-  /** 保存する写真のURL一覧 */
+  /** 保存時に紐付ける写真ID一覧 */
   photos: string[]
 }
 
@@ -64,6 +83,6 @@ export type HealthLogFormInput = {
   note: string
   /** フォーム上の体重入力文字列 */
   weightKg: string
-  /** フォーム上の写真識別子一覧 */
-  photos: string[]
+  /** フォーム上の写真メタデータ一覧 */
+  photos: HealthLogPhoto[]
 }

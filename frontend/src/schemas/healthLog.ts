@@ -1,5 +1,5 @@
-import { z } from 'zod'
 import type { HealthLogFormInput, HealthLogType } from '@/types/healthLog'
+import { z } from 'zod'
 
 /**
  * 健康記録フォームで選択可能な種別一覧
@@ -27,7 +27,18 @@ const healthLogFormSchema = z
     occurredTime: z.string().min(1, '時間は必須です'),
     note: z.string(),
     weightKg: z.string(),
-    photos: z.array(z.string()),
+    photos: z.array(
+      z.object({
+        id: z.string(),
+        disk: z.string(),
+        objectKey: z.string(),
+        originalName: z.string(),
+        mimeType: z.string(),
+        bytes: z.number(),
+        visibility: z.string(),
+        status: z.string(),
+      })
+    ),
   })
   .superRefine((data, ctx) => {
     // 体重以外の記録では入力欄を持っていても評価しない

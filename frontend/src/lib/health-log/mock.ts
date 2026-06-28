@@ -10,7 +10,18 @@ export const mockHealthLogs: HealthLogRecord[] = [
     type: 'vomit',
     occurredAt: '2026-03-24T08:15:00',
     note: '朝食後に毛玉を少量嘔吐。食欲と元気は普段通り',
-    photos: ['sample-photo-1'],
+    photos: [
+      {
+        id: 'sample-photo-1',
+        disk: 'local',
+        objectKey: 'sample-photo-1',
+        originalName: 'sample-photo-1.jpg',
+        mimeType: 'image/jpeg',
+        bytes: 1024,
+        visibility: 'private',
+        status: 'completed',
+      },
+    ],
   },
   {
     id: 'health-log-002',
@@ -53,6 +64,17 @@ export const mockHealthLogs: HealthLogRecord[] = [
     type: 'bloody_stool',
     occurredAt: '2026-02-26T07:40:00',
     note: '少量の血が混じっていたため、通院を判断',
-    photos: ['sample-photo-2'],
+    photos: [
+      {
+        id: 'sample-photo-2',
+        disk: 'local',
+        objectKey: 'sample-photo-2',
+        originalName: 'sample-photo-2.jpg',
+        mimeType: 'image/jpeg',
+        bytes: 1024,
+        visibility: 'private',
+        status: 'completed',
+      },
+    ],
   },
 ]

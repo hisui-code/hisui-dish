@@ -1,23 +1,23 @@
-import { MdEdit } from 'react-icons/md'
 import { formatHealthLogDateTime } from '@/lib/date'
 import { healthLogTypeLabels } from '@/lib/health-log/constants'
-import type { HealthLogRecord } from '@/types/healthLog'
+import type { HealthLogPhoto, HealthLogRecord } from '@/types/healthLog'
 import type { ReactNode } from 'react'
+import { MdEdit } from 'react-icons/md'
 
+import { FaPills, FaPoo, FaStethoscope } from 'react-icons/fa'
+import { FaBandage, FaNotesMedical, FaWeightScale } from 'react-icons/fa6'
 import { IoCalendarOutline } from 'react-icons/io5'
-import { FaPoo, FaStethoscope, FaPills } from 'react-icons/fa'
 import { MdSick } from 'react-icons/md'
-import { FaWeightScale, FaBandage, FaNotesMedical } from 'react-icons/fa6'
 
 type HealthLogTimelineItemProps = {
-  /** @description 表示対象の健康記録 */
+  /** 表示する健康記録 */
   item: HealthLogRecord
-  /** @description 編集ボタン押下時の処理 */
-  onEdit: (item: HealthLogRecord) => void
-  /** 写真押下時の処理 */
-  onOpenPhoto: (photo: string) => void
   /** 最後の要素かどうか */
   isLast: boolean
+  /** 編集ボタン押下時の処理 */
+  onEdit: (item: HealthLogRecord) => void
+  /** 写真押下時の処理 */
+  onOpenPhoto: (photo: HealthLogPhoto) => void
 }
 
 // 種別のアイコン

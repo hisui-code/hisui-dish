@@ -1,14 +1,14 @@
 import { Card, CardContent } from '@/components/ui/card'
-import type { HealthLogRecord } from '@/types/healthLog'
+import type { HealthLogPhoto, HealthLogRecord } from '@/types/healthLog'
 import HealthLogTimelineItem from './HealthLogTimelineItem'
 
 type HealthLogTimelineProps = {
-  /** @description 表示対象の健康記録一覧 */
+  /** 表示する健康記録一覧 */
   logs: HealthLogRecord[]
-  /** @description 編集ボタン押下時の処理 */
+  /** 編集ボタン押下時の処理 */
   onEdit: (item: HealthLogRecord) => void
   /** 写真押下時の処理 */
-  onOpenPhoto: (photo: string) => void
+  onOpenPhoto: (photo: HealthLogPhoto) => void
 }
 
 /**
@@ -26,16 +26,16 @@ export default function HealthLogTimeline({ logs, onEdit, onOpenPhoto }: HealthL
   }
 
   return (
-    <section>
+    <div className="space-y-0">
       {logs.map((item, index) => (
         <HealthLogTimelineItem
           key={item.id}
           item={item}
+          isLast={index === logs.length - 1}
           onEdit={onEdit}
           onOpenPhoto={onOpenPhoto}
-          isLast={index === logs.length - 1}
         />
       ))}
-    </section>
+    </div>
   )
 }

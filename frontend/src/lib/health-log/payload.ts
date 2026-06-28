@@ -15,6 +15,6 @@ export function buildHealthLogSavePayload(form: HealthLogFormInput): HealthLogSa
     occurredAt,
     note: trimmedNote || undefined,
     weightKg: parsedWeightKg,
-    photos: form.photos,
+    photos: form.photos.map((photo) => photo.id),
   }
 }
