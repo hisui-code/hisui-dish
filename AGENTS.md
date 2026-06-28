@@ -30,10 +30,20 @@
 - **明示的な指示がない限り、コード・設定・依存関係の更新を禁止する**
 - Codex の標準動作は「変更案・差分案・貼り付け用コードの提示のみ」とする
 - 自動編集ツールの使用は、ユーザーが明示的に許可した場合のみ可
+- 「編集して」「反映して」「ファイルを直接更新して」などの明示がある場合のみ、Codex はファイルを編集してよい
+- 「案を出して」「レビューして」「どう直す？」は、編集許可ではなく提案依頼として扱う
 
 ---
 
-## 3. 依存関係の扱い（更新・導入）
+## 3. コマンド実行のルール
+
+- 調査・確認のための read-only コマンドは実行してよい
+- ファイル生成・自動修正・依存更新を伴うコマンドは、明示的な許可がある場合のみ実行する
+- テスト実行で生成物が出る場合は、影響範囲を確認してから行う
+
+---
+
+## 4. 依存関係の扱い（更新・導入）
 
 - npm / composer のパッケージ更新を自動では行わない
 - Laravel / React のメジャーアップデートは行わない
@@ -50,7 +60,7 @@
 
 ---
 
-## 4. ドキュメントコメントは“概要必須”
+## 5. ドキュメントコメントは“概要必須”
 
 ### 方針
 
@@ -151,8 +161,8 @@ function buildUtcRange(DateTimeImmutable $startJst, DateTimeImmutable $endJst): 
 
 ## 仕様変更時の流れ
 
-1.  docs/spec を先に修正
-2.  90_decisions に理由を書く
+1.  `docs/spec/` を先に修正
+2.  `docs/spec/90_decisions.md` に理由を書く
 3.  その後に実装する
 
 ---
@@ -167,11 +177,49 @@ function buildUtcRange(DateTimeImmutable $startJst, DateTimeImmutable $endJst): 
 
 ---
 
+# 🧭 Skill routing / Skills の使い分け
+
+Codex は、相談内容に該当する skill だけを確認する。
+全 skill を毎回読む必要はない。
+
+## React / TypeScript
+
+- React / TypeScript の性能改善、bundle、再レンダー、データ取得の相談は `.agents/skills/vercel-react-best-practices/SKILL.md` を確認する
+- コンポーネント設計、props 設計、責務分離、composition の相談は `.agents/skills/vercel-composition-patterns/SKILL.md` を確認する
+
+## UI / UX
+
+- UI / UX / accessibility のレビューは `.agents/skills/web-design-guidelines/SKILL.md` を確認する
+
+## Docs / Writing
+
+- docs や文章のレビューは `.agents/skills/writing-guidelines/SKILL.md` を確認する
+
+## Vercel
+
+- Vercel の本番環境のコスト・性能調査は `.agents/skills/vercel-optimize/SKILL.md` を確認する
+
+## 読む範囲の原則
+
+- 該当する skill だけを読む
+- 複数領域にまたがる場合だけ、必要な skill を組み合わせて読む
+- 判断に迷う場合は、最も影響が大きい領域の skill を優先する
+- skill の確認は設計・提案・レビューの精度を上げるために行い、不要なファイル探索は増やさない
+
+---
+
+# 🗣 回答言語
+
+- 原則として日本語で回答する
+- コード、コマンド、エラー文、技術用語は必要に応じて英語のまま扱う
+
+---
+
 # 💻 コーディング規約
 
 ## フロント（React / TypeScript）
 
-- コードを提案する前に.agents/skillsを確認し適していることを確認する
+- React / TypeScript の提案時は、上記の Skill routing に従って必要な skill だけを確認する
 - コンポーネントは `function` 宣言
 - 内部関数はアロー関数
 - 画面は `Page`、表示は `components`、ロジックは `hooks` / `lib` に分離する
