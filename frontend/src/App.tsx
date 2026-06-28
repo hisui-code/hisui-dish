@@ -1,11 +1,7 @@
+import { lazy, Suspense, type ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useNavigate } from 'react-router-dom'
 import Sidebar from '@/components/layout/sidebar/Sidebar'
 import Header from './components/layout/Header'
-import Settings from './pages/Settings'
-import Dashboard from './pages/Dashboard'
-import Logs from './pages/Logs'
-import Login from './pages/Login'
-import Users from './pages/Users'
 import MobileSidebarDrawer from './components/layout/sidebar/MobileSidebarDrawer'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import UserSettingsModal from '@/components/users/UserSettingsModal'
@@ -15,7 +11,45 @@ import { Forbidden } from '@/components/layout/Forbidden'
 import { FullScreenLoading } from '@/components/layout/FullScreenLoading'
 import { useAppLayoutContext } from '@/hooks/layout/useAppLayoutContext'
 import type { AppLayoutOutletContext } from '@/hooks/layout/useAppLayoutContext'
-import HealthLog from '@/pages/HealthLog'
+
+// 各ページを遅延読み込みにし、初期chunkへ全画面の依存を含めない
+const Dashboard = lazy(() => import('@/pages/Dashboard'))
+const HealthLog = lazy(() => import('@/pages/HealthLog'))
+const Logs = lazy(() => import('@/pages/Logs'))
+const Login = lazy(() => import('@/pages/Login'))
+const Settings = lazy(() => import('@/pages/Settings'))
+const Users = lazy(() => import('@/pages/Users'))
+
+type PageSuspenseProps = {
+  /** 遅延読み込みするページ */
+  children: ReactNode
+}
+
+/**
+ * @description ページ読み込み中の表示を行う
+ * 画面内の遅延読み込みでは全画面ローディングにせず、メイン領域だけを待機表示にする
+ * @returns ページ読み込み中のインジケーター
+ */
+function PageLoading() {
+  return (
+    <div className="grid min-h-[320px] place-items-center">
+      <div className="flex items-center gap-2" aria-label="loading">
+        <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-bounce [animation-delay:-0.2s]" />
+        <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-bounce [animation-delay:-0.1s]" />
+        <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-bounce" />
+      </div>
+    </div>
+  )
+}
+
+/**
+ * @description ページ単位の遅延読み込み境界をまとめる
+ * 画面ごとの依存を初期chunkから外すために使う
+ * @returns Suspenseで包んだページ要素
+ */
+function PageSuspense({ children }: PageSuspenseProps) {
+  return <Suspense fallback={<PageLoading />}>{children}</Suspense>
+}
 
 /**
  * @description 認証状態に応じて保護ルートを制御する。
@@ -132,16 +166,58 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<LoginRoute />} />
+          <Route
+            path="/login"
+            element={
+              <PageSuspense>
+                <LoginRoute />
+              </PageSuspense>
+            }
+          />
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/health-log" element={<HealthLog />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/logs" element={<Logs />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <PageSuspense>
+                    <Dashboard />
+                  </PageSuspense>
+                }
+              />
+              <Route
+                path="/health-log"
+                element={
+                  <PageSuspense>
+                    <HealthLog />
+                  </PageSuspense>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <PageSuspense>
+                    <Settings />
+                  </PageSuspense>
+                }
+              />
+              <Route
+                path="/logs"
+                element={
+                  <PageSuspense>
+                    <Logs />
+                  </PageSuspense>
+                }
+              />
               <Route element={<AdminRoute />}>
-                <Route path="/users" element={<Users />} />
+                <Route
+                  path="/users"
+                  element={
+                    <PageSuspense>
+                      <Users />
+                    </PageSuspense>
+                  }
+                />
               </Route>
             </Route>
           </Route>

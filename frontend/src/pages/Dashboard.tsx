@@ -1,13 +1,15 @@
-import { Suspense } from 'react'
+import { lazy, Suspense } from 'react'
 import Kpis from '@/components/dashboard/cards/Kpis'
 import TodayList from '@/components/dashboard/cards/TodayList'
 import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton'
 import ChartCardSkeleton from '@/components/skeletons/ChartCardSkeleton'
-import MonthlyChartSection from '@/components/dashboard/charts/MonthlyChartSection'
-import WeeklyTotalSection from '@/components/dashboard/charts/WeeklyTotalsSection'
-import YearMonthlySection from '@/components/dashboard/charts/YearMonthlySection'
 import { useDashboardState } from '@/hooks/dashboard/useDashboardState'
 import { useDashboardKpisToday } from '@/hooks/dashboard/useDashboardKpisToday'
+
+// チャート依存は大きいため、Dashboard表示後に必要な領域だけ読み込む
+const MonthlyChartSection = lazy(() => import('@/components/dashboard/charts/MonthlyChartSection'))
+const WeeklyTotalSection = lazy(() => import('@/components/dashboard/charts/WeeklyTotalsSection'))
+const YearMonthlySection = lazy(() => import('@/components/dashboard/charts/YearMonthlySection'))
 
 /**
  * @description ダッシュボードの主要セクションを表示する
