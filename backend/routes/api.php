@@ -59,6 +59,7 @@ Route::prefix('v1')->group(function () {
         Route::delete('health_logs/{health_log_id}', [HealthLogsController::class, 'destroy']);
         // Photo
         Route::get('photos/{photo}/download-url', [PhotosController::class, 'downloadUrl']);
+        Route::delete('photos/{photo}', [PhotosController::class, 'destroy']);
         // Upload
         Route::post('uploads/presign', [UploadsController::class, 'presign']);
         Route::post('uploads/local', [UploadsController::class, 'uploadLocal']);

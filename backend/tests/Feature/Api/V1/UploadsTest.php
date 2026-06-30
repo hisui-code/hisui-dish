@@ -20,6 +20,9 @@ class UploadsTest extends TestCase
         $this->ensureUsersTable();
         $this->ensurePersonalAccessTokensTable();
         $this->ensurePhotosTable();
+        $this->ensureDevicesTable();
+        $this->ensureHealthLogsTable();
+        $this->ensureHealthLogPhotosTable();
 
         // テストではS3ではなくlocal diskの分岐を検証する
         config(['filesystems.photos_disk' => 'local']);
@@ -430,6 +433,129 @@ class UploadsTest extends TestCase
         $response->assertStatus(403);
     }
 
+    public function test_photo_owner_can_delete_photo(): void
+    {
+        // テスト内容:
+        // アップロードした本人は画像を削除できる
+        //
+        // 確認観点:
+        // photos レコード、health_log_photos の紐付け、storage object が削除される
+        Storage::fake('local');
+
+        $owner = $this->seedUser('photos-delete-owner@example.com');
+        $objectKey = 'users/'.$owner['id'].'/tmp/'.Str::uuid().'.jpg';
+        $photoId = $this->seedPhoto($owner['id'], [
+            'object_key' => $objectKey,
+        ]);
+        $healthLogId = $this->seedHealthLogWithPhoto($photoId);
+
+        Storage::disk('local')->put($objectKey, 'jpeg-bytes');
+
+        $response = $this->delete('/api/v1/photos/'.$photoId, [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ]);
+
+        $response->assertStatus(204);
+
+        $this->assertDatabaseMissing('photos', [
+            'id' => $photoId,
+        ]);
+        $this->assertDatabaseMissing('health_log_photos', [
+            'health_log_id' => $healthLogId,
+            'photo_id' => $photoId,
+        ]);
+        $this->assertFalse(Storage::disk('local')->exists($objectKey));
+    }
+
+    public function test_admin_can_delete_other_user_photo(): void
+    {
+        // テスト内容:
+        // adminは他ユーザーがアップロードした画像を削除できる
+        //
+        // 確認観点:
+        // 削除権限は所有者本人またはadminに限定する
+        Storage::fake('local');
+
+        $owner = $this->seedUser('photos-delete-owner-by-admin@example.com');
+        $admin = $this->seedUser('photos-delete-admin@example.com', 'admin');
+        $objectKey = 'users/'.$owner['id'].'/tmp/'.Str::uuid().'.jpg';
+        $photoId = $this->seedPhoto($owner['id'], [
+            'object_key' => $objectKey,
+        ]);
+
+        Storage::disk('local')->put($objectKey, 'jpeg-bytes');
+
+        $response = $this->delete('/api/v1/photos/'.$photoId, [], [
+            'Authorization' => 'Bearer '.$admin['token'],
+        ]);
+
+        $response->assertStatus(204);
+
+        $this->assertDatabaseMissing('photos', [
+            'id' => $photoId,
+        ]);
+        $this->assertFalse(Storage::disk('local')->exists($objectKey));
+    }
+
+    public function test_non_owner_cannot_delete_other_user_photo(): void
+    {
+        // テスト内容:
+        // 一般ユーザーは他ユーザーの画像を削除できない
+        //
+        // 確認観点:
+        // 権限不足時はDBとstorageのどちらも変更しない
+        Storage::fake('local');
+
+        $owner = $this->seedUser('photos-delete-owner-forbidden@example.com');
+        $viewer = $this->seedUser('photos-delete-viewer-forbidden@example.com');
+        $objectKey = 'users/'.$owner['id'].'/tmp/'.Str::uuid().'.jpg';
+        $photoId = $this->seedPhoto($owner['id'], [
+            'object_key' => $objectKey,
+        ]);
+
+        Storage::disk('local')->put($objectKey, 'jpeg-bytes');
+
+        $response = $this->delete('/api/v1/photos/'.$photoId, [], [
+            'Authorization' => 'Bearer '.$viewer['token'],
+        ]);
+
+        $response->assertStatus(403);
+        $response->assertJson([
+            'error' => 'forbidden',
+        ]);
+
+        $this->assertDatabaseHas('photos', [
+            'id' => $photoId,
+        ]);
+        $this->assertTrue(Storage::disk('local')->exists($objectKey));
+    }
+
+    public function test_photo_delete_removes_metadata_even_when_storage_object_is_missing(): void
+    {
+        // テスト内容:
+        // storage object が既に存在しない画像でも削除APIは成功する
+        //
+        // 確認観点:
+        // object欠落時も壊れたphotosメタデータを削除できる
+        Storage::fake('local');
+
+        $owner = $this->seedUser('photos-delete-missing-object@example.com');
+        $objectKey = 'users/'.$owner['id'].'/tmp/'.Str::uuid().'.jpg';
+        $photoId = $this->seedPhoto($owner['id'], [
+            'object_key' => $objectKey,
+        ]);
+
+        $response = $this->delete('/api/v1/photos/'.$photoId, [], [
+            'Authorization' => 'Bearer '.$owner['token'],
+        ]);
+
+        $response->assertStatus(204);
+
+        $this->assertDatabaseMissing('photos', [
+            'id' => $photoId,
+        ]);
+    }
+
     /**
      * usersテーブルの存在を保証する
      */
@@ -517,11 +643,89 @@ class UploadsTest extends TestCase
     }
 
     /**
+     * devicesテーブルの存在を保証する
+     */
+    private function ensureDevicesTable(): void
+    {
+        // health_logs の device_id 外部キーを満たすため、devices を最小構成で補完する
+        $row = DB::selectOne("SELECT to_regclass('public.devices') as name");
+        $exists = $row && $row->name !== null;
+
+        if ($exists) {
+            return;
+        }
+
+        DB::statement(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS devices (
+                id UUID PRIMARY KEY,
+                code VARCHAR(255) NOT NULL,
+                name VARCHAR(255),
+                last_seen_at TIMESTAMPTZ,
+                created_at TIMESTAMPTZ,
+                updated_at TIMESTAMPTZ
+            )
+        SQL);
+    }
+
+    /**
+     * health_logsテーブルの存在を保証する
+     */
+    private function ensureHealthLogsTable(): void
+    {
+        // テスト環境でhealth_logsテーブルが無い場合のみ作成する
+        $row = DB::selectOne("SELECT to_regclass('public.health_logs') as name");
+        $exists = $row && $row->name !== null;
+
+        if ($exists) {
+            return;
+        }
+
+        DB::statement(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS health_logs (
+                id UUID PRIMARY KEY,
+                device_id UUID,
+                type VARCHAR(255) NOT NULL,
+                occurred_at TIMESTAMPTZ NOT NULL,
+                note TEXT,
+                weight_kg NUMERIC(5, 2),
+                photos JSON,
+                created_at TIMESTAMPTZ,
+                updated_at TIMESTAMPTZ
+            )
+        SQL);
+    }
+
+    /**
+     * health_log_photosテーブルの存在を保証する
+     */
+    private function ensureHealthLogPhotosTable(): void
+    {
+        // テスト環境でhealth_log_photosテーブルが無い場合のみ作成する
+        $row = DB::selectOne("SELECT to_regclass('public.health_log_photos') as name");
+        $exists = $row && $row->name !== null;
+
+        if ($exists) {
+            return;
+        }
+
+        DB::statement(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS health_log_photos (
+                health_log_id UUID NOT NULL,
+                photo_id UUID NOT NULL,
+                sort_order SMALLINT NOT NULL DEFAULT 0,
+                created_at TIMESTAMPTZ,
+                updated_at TIMESTAMPTZ,
+                PRIMARY KEY (health_log_id, photo_id)
+            )
+        SQL);
+    }
+
+    /**
      * 認証付きAPIテスト用ユーザーを作成する
      *
      * @return array{id:int,token:string,email:string}
      */
-    private function seedUser(string $email): array
+    private function seedUser(string $email, string $role = 'user'): array
     {
         // 再実行時に同じメールアドレスが残っていても作り直せるよう削除する
         DB::table('users')->where('email', $email)->delete();
@@ -532,7 +736,7 @@ class UploadsTest extends TestCase
             'name' => 'upload test user',
             'email' => $email,
             'password' => password_hash('password', PASSWORD_BCRYPT),
-            'role' => 'user',
+            'role' => $role,
             'created_at' => now('UTC'),
             'updated_at' => now('UTC'),
         ]);
@@ -579,6 +783,56 @@ class UploadsTest extends TestCase
         DB::table('photos')->insert($values);
 
         return $photoId;
+    }
+
+    /**
+     * テスト用デバイスを作成する
+     */
+    private function seedDevice(): string
+    {
+        $deviceId = (string) Str::uuid();
+
+        DB::table('devices')->insert([
+            'id' => $deviceId,
+            'code' => 'uploads-test-'.Str::uuid(),
+            'name' => 'uploads test device',
+            'last_seen_at' => null,
+            'created_at' => now('UTC'),
+            'updated_at' => now('UTC'),
+        ]);
+
+        return $deviceId;
+    }
+
+    /**
+     * 健康記録と画像の紐付けを作成する
+     */
+    private function seedHealthLogWithPhoto(string $photoId): string
+    {
+        $healthLogId = (string) Str::uuid();
+        $now = now('UTC');
+
+        DB::table('health_logs')->insert([
+            'id' => $healthLogId,
+            'device_id' => $this->seedDevice(),
+            'type' => 'other',
+            'occurred_at' => $now,
+            'note' => 'photo delete test',
+            'weight_kg' => null,
+            'photos' => json_encode([]),
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        DB::table('health_log_photos')->insert([
+            'health_log_id' => $healthLogId,
+            'photo_id' => $photoId,
+            'sort_order' => 0,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        return $healthLogId;
     }
 
     /**
