@@ -76,7 +76,7 @@ export function useHealthLogFormModal(): UseHealthLogFormModalResult {
     setOccurredTime(jst(log.occurredAt).format('HH:mm'))
     setNote(log.note ?? '')
     setWeightKg(log.weightKg ? String(log.weightKg) : '')
-    setPhotos(log.photos)
+    setPhotos(log.photos.slice(0, 1))
     setIsOpen(true)
   }
 

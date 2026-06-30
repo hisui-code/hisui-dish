@@ -17,18 +17,19 @@ export function useHealthLogPhotoUpload({ photos, onChangePhotos }: UseHealthLog
   const [photoUploadErrorMessage, setPhotoUploadErrorMessage] = useState<string | null>(null)
 
   const uploadPhoto = async (file: File) => {
-    // 連続選択や連打で同じアップロード処理が重ならないようにする
-    if (isUploadingPhoto) return
+    // 記録1枚運用のため、既に写真がある場合は追加しない
+    if (isUploadingPhoto || photos.length > 0) return
 
     setIsUploadingPhoto(true)
+
     // 前回のエラー表示が残らないよう、アップロード開始時にリセットする
     setPhotoUploadErrorMessage(null)
 
     try {
       // presign、画像本体アップロード、complete までをまとめて実行する
       const photo = await uploadHealthLogPhoto(file)
-      // complete 済みの写真メタデータをフォーム状態へ追加し、保存時に photo.id を使えるようにする
-      onChangePhotos([...photos, photo])
+      // 1枚だけをフォーム状態に保持する
+      onChangePhotos([photo])
     } catch (error) {
       // APIや通信の失敗理由をフォームで読めるメッセージへ変換する
       setPhotoUploadErrorMessage(

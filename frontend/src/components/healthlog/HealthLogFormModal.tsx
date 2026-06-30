@@ -89,9 +89,9 @@ export default function HealthLogFormModal({
     return null
   }
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-4">
+      <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col rounded-2xl bg-white shadow-xl">
+        <div className="flex shrink-0 items-center justify-between border-b border-border px-6 py-4">
           <div>
             <h2 className="text-lg font-semibold text-foreground">{title}</h2>
           </div>
@@ -106,7 +106,7 @@ export default function HealthLogFormModal({
         </div>
 
         {/* 日付 */}
-        <div className="space-y-5 px-6 py-6">
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-6">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">日付</label>
@@ -200,7 +200,7 @@ export default function HealthLogFormModal({
         </div>
 
         {/* 削除 */}
-        <div className="flex items-center justify-between border-t border-border px-6 py-4">
+        <div className="flex shrink-0 items-center justify-between border-t border-border px-6 py-4">
           <div>
             {showDelete ? (
               <Button type="button" variant="outline" onClick={onDelete}>
