@@ -25,7 +25,7 @@ use Illuminate\Support\Str;
  *   - 1日あたり 1〜3件
  *   - 食事確定イベント（eat_finished）を中心に生成
  * - health_logs:
- *   - 2026年4月〜6月を対象に生成
+ *   - 過去2ヶ月 / 今月（合計3ヶ月）を対象に生成
  *   - 各月・各種別ごとに5件ずつ生成
  *   - JSTの日時で生成し、DB保存はUTCへ変換して occurred_at に保存
  */
@@ -428,7 +428,7 @@ class HisuiDishSeeder extends Seeder
 
     /**
      * @description
-     * health_logs を「2026年4月〜6月」で生成する
+     * health_logs を「過去2ヶ月〜今月」で生成する
      *
      * - 各月・各種別ごとに5件ずつ作る
      * - 生成日時は JST で作る
@@ -447,7 +447,12 @@ class HisuiDishSeeder extends Seeder
         DB::table('health_logs')->where('device_id', $deviceId)->delete();
 
         $jst = 'Asia/Tokyo';
-        $months = ['2026-04', '2026-05', '2026-06'];
+        $todayJst = CarbonImmutable::now($jst)->startOfDay();
+
+        // seed実行月に合わせて、過去2ヶ月の月初 〜 今月の月初を対象にする
+        $startMonth = $todayJst->subMonths(2)->startOfMonth();
+        $endMonth = $todayJst->startOfMonth();
+
         $types = [
             'vomit',
             'diarrhea',
@@ -476,19 +481,15 @@ class HisuiDishSeeder extends Seeder
 
         $rows = [];
 
-        foreach ($months as $month) {
+        for ($m = $startMonth; $m->lessThanOrEqualTo($endMonth); $m = $m->addMonth()->startOfMonth()) {
+            $month = $m->format('Y-m');
+
             foreach ($types as $type) {
                 foreach ($days as $index => $day) {
                     // 月ごと・種別ごとに日付をずらして、タイムライン上で偏らないようにする
-                    $dtJst = CarbonImmutable::createFromFormat(
-                        'Y-m-d H:i:s',
-                        sprintf('%s-%02d %02d:%02d:00', $month, $day, $hours[$index], $index * 10),
-                        $jst
-                    );
-
-                    if (!$dtJst) {
-                        continue;
-                    }
+                    $dtJst = $m
+                        ->setDate((int) $m->format('Y'), (int) $m->format('m'), $day)
+                        ->setTime($hours[$index], $index * 10, 0, 0);
 
                     // DB保存はUTCへ変換
                     $dtUtc = $dtJst->setTimezone('UTC');
