@@ -6,6 +6,89 @@
 - components は表示責務を持つ
 - hooks / lib は取得と状態管理を持つ
 
+## 責務分離のルール
+
+### pages
+
+- route に対応する画面の入口を担当する
+- ページ全体の余白、ヘッダー、主要セクションの配置を持つ
+- API 呼び出し、保存処理、削除処理、複雑な表示整形は直接持たない
+- 複数の hook を接続するだけなら許容する
+- 接続処理が増えて読みづらい場合は page hook へ寄せる
+
+### page hooks
+
+- 画面全体で使う状態と操作をまとめる
+- page が直接扱う view model を返す
+- 複数の state hook、query hook、action hook を組み合わせてよい
+- ただし、すべての処理を 1 hook に集約しない
+- 入力状態、一覧取得、保存削除など、責務が違うものは小さな hook に分ける
+
+### query hooks
+
+- React Query を使った取得状態を担当する
+- `lib/api` の関数を呼び出す
+- query key と取得条件を明示する
+- 表示用の重い整形は持たない
+- 軽い fallback や error message 変換は許容する
+
+### action hooks
+
+- 保存、削除、アップロードなど副作用を持つ操作を担当する
+- 複数の状態をまたぐ操作をまとめる
+- validation、payload 組み立て、API 呼び出し、query invalidate の流れを扱う
+- 表示 JSX は持たない
+
+### state hooks
+
+- モーダル、ダイアログ、フォーム入力など UI 状態を担当する
+- API 呼び出しは原則持たない
+- 初期値作成や reset のような UI 状態に閉じた処理は持ってよい
+
+### section / container components
+
+- 局所的な Suspense 境界や取得境界として使う
+- `Dashboard` の chart section のように、重い表示領域を分けたい場合に使う
+- hook を呼び、取得結果を表示 component に渡してよい
+- ファイル名は `*Section` または `*Container` とし、通常の表示 component と区別する
+- 汎用 UI として使い回す component にはしない
+
+### components
+
+- props を受け取って表示することを担当する
+- API 呼び出しや React Query の詳細を直接持たない
+- ボタン押下や input change は親から受け取った handler を呼ぶ
+- その component 内だけで完結する軽い UI 状態は持ってよい
+- URL 取得や保存のような副作用が必要になったら hook または section / container に逃がす
+
+### lib/api
+
+- HTTP 通信を担当する
+- request path、method、API payload、API response の変換を扱う
+- UI 状態や React hooks は持たない
+
+### lib/feature
+
+- feature 固有の純粋関数を置く
+- 絞り込み、グループ化、表示用サマリー、payload 組み立てを扱う
+- React hooks や API 呼び出しは持たない
+
+### schemas
+
+- 入力値の validation を担当する
+- 画面に表示するエラーメッセージをここで決めてよい
+- API 呼び出しや UI 状態は持たない
+
+## 判断基準
+
+- JSX が中心なら `components`
+- `useState` や `useQuery` が中心なら `hooks`
+- HTTP が中心なら `lib/api`
+- React に依存しない変換なら `lib/feature`
+- validation なら `schemas`
+- 複数の hook を束ねて page に渡すなら `page hook`
+- 表示領域単位の取得境界なら `section / container component`
+
 ## データ取得
 
 - API 呼び出しは `lib/api` に寄せる
