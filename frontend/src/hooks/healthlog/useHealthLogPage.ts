@@ -1,7 +1,9 @@
-import { useState } from 'react'
-import { formatHealthLogDate, jst } from '@/lib/date'
-import type { HealthLogFilterType, HealthLogRecord } from '@/types/healthLog'
 import { useHealthLogsQuery } from '@/hooks/healthlog/useHealthLogsQuery'
+import { jst } from '@/lib/date'
+import { filterHealthLogsByType } from '@/lib/health-log/filters'
+import { buildHealthLogSummary } from '@/lib/health-log/summary'
+import type { HealthLogFilterType, HealthLogRecord } from '@/types/healthLog'
+import { useState } from 'react'
 
 type UseHealthLogPageResult = {
   /** 現在選択中の種別 */
@@ -37,15 +39,9 @@ export function useHealthLogPage(): UseHealthLogPageResult {
 
   const healthLogsQuery = useHealthLogsQuery(selectedMonth)
   const logs = healthLogsQuery.data ?? []
+  const summary = buildHealthLogSummary(logs)
 
-  // サマリーカードで使う直近の通院・体重記録を取得する
-  const latestHospitalVisit = logs.find((log) => log.type === 'hospital_visit')
-  const latestWeight = logs.find((log) => log.type === 'weight')
-
-  // 種別フィルターはAPI再取得せず、取得済み一覧を画面側で絞り込む
-  const filteredLogs = logs.filter((log) => {
-    return selectedType === 'all' || log.type === selectedType
-  })
+  const filteredLogs = filterHealthLogsByType(logs, selectedType)
 
   return {
     selectedType,
@@ -53,10 +49,10 @@ export function useHealthLogPage(): UseHealthLogPageResult {
     selectedMonth,
     setSelectedMonth,
     filteredLogs,
-    monthlyLogCount: logs.length,
-    latestHospitalVisitDate: formatHealthLogDate(latestHospitalVisit?.occurredAt),
-    latestWeightDate: formatHealthLogDate(latestWeight?.occurredAt),
-    latestWeightValue: latestWeight?.weightKg ? `${latestWeight.weightKg}kg` : '-',
+    monthlyLogCount: summary.monthlyLogCount,
+    latestHospitalVisitDate: summary.latestHospitalVisitDate,
+    latestWeightDate: summary.latestWeightDate,
+    latestWeightValue: summary.latestWeightValue,
     isLoading: healthLogsQuery.isPending,
     errorMessage: healthLogsQuery.error ? '健康記録の取得に失敗しました' : null,
   }
