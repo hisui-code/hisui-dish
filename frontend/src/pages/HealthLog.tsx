@@ -6,36 +6,16 @@ import HealthLogSummaryCards from '@/components/healthlog/HealthLogSummaryCards'
 import HealthLogTimeline from '@/components/healthlog/HealthLogTimeline'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
-import { useHealthLogActions } from '@/hooks/healthlog/useHealthLogActions'
-import useHealthLogDeleteDialog from '@/hooks/healthlog/useHealthLogDeleteDialog'
-import { useHealthLogFormModal } from '@/hooks/healthlog/useHealthLogFormModal'
-import { useHealthLogPage } from '@/hooks/healthlog/useHealthLogPage'
-import useHealthLogPhotoModal from '@/hooks/healthlog/useHealthLogPhotoModal'
-import { useHealthLogPhotoUpload } from '@/hooks/healthlog/useHealthLogPhotoUpload'
+import { useHealthLogPageViewModel } from '@/hooks/healthlog/useHealthLogPageViewModel'
 import { BsFillHeartPulseFill } from 'react-icons/bs'
 import { FaPlus } from 'react-icons/fa'
 
 /**
- * @description 健康記録ページの静的な骨組みを表示する
- * サマリー、フィルター、タイムラインの配置を確認するための段階
+ * @description 健康記録ページの表示
+ * サマリー、フィルター、タイムライン、モーダルを配置
  */
 export default function HealthLog() {
-  const healthLogPage = useHealthLogPage()
-  const formModal = useHealthLogFormModal()
-  const deleteDialog = useHealthLogDeleteDialog()
-  const photoModal = useHealthLogPhotoModal()
-
-  const photoUpload = useHealthLogPhotoUpload({
-    photos: formModal.photos,
-    onChangePhotos: formModal.setPhotos,
-  })
-
-  // 保存・削除後に表示中月の一覧キャッシュを更新できるよう、現在の年月を操作hookへ渡す
-  const healthLogActions = useHealthLogActions({
-    formModal,
-    deleteDialog,
-    selectedMonth: healthLogPage.selectedMonth,
-  })
+  const viewModel = useHealthLogPageViewModel()
 
   return (
     <div className="px-3 py-3 md:px-4 md:py-4">
@@ -47,7 +27,7 @@ export default function HealthLog() {
             <Button
               type="button"
               className="inline-flex items-center gap-2 bg-emerald-600 text-white hover:bg-emerald-700"
-              onClick={formModal.openForCreate}
+              onClick={viewModel.onOpenCreate}
             >
               <FaPlus className="h-3.5 w-3.5" />
               記録を追加
@@ -56,81 +36,32 @@ export default function HealthLog() {
         />
 
         {/* サマリーカード */}
-        <HealthLogSummaryCards
-          monthlyLogCount={healthLogPage.monthlyLogCount}
-          latestHospitalVisitDate={healthLogPage.latestHospitalVisitDate}
-          latestWeightValue={healthLogPage.latestWeightValue}
-          latestWeightDate={healthLogPage.latestWeightDate}
-        />
+        <HealthLogSummaryCards {...viewModel.summaryCards} />
 
         {/* フィルター */}
-        <HealthLogFilters
-          selectedType={healthLogPage.selectedType}
-          selectedMonth={healthLogPage.selectedMonth}
-          onChangeType={healthLogPage.setSelectedType}
-          onChangeMonth={healthLogPage.setSelectedMonth}
-        />
+        <HealthLogFilters {...viewModel.filters} />
 
         {/* タイムライン */}
-        {healthLogPage.errorMessage ? (
+        {viewModel.errorMessage ? (
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {healthLogPage.errorMessage}
+            {viewModel.errorMessage}
           </div>
         ) : null}
 
-        {healthLogPage.isLoading ? (
+        {viewModel.isLoading ? (
           <div className="rounded-lg border border-border bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
             健康記録を読み込んでいます
           </div>
         ) : (
-          <HealthLogTimeline
-            logs={healthLogPage.filteredLogs}
-            onEdit={formModal.openForEdit}
-            onOpenPhoto={photoModal.openPhotoModal}
-          />
+          <HealthLogTimeline {...viewModel.timeline} />
         )}
       </div>
       {/* モーダル */}
-      <HealthLogFormModal
-        open={formModal.isOpen}
-        title={formModal.editingLog ? '健康記録を編集' : '健康記録を追加'}
-        selectedRecordType={formModal.selectedRecordType}
-        occurredDate={formModal.occurredDate}
-        occurredTime={formModal.occurredTime}
-        note={formModal.note}
-        weightKg={formModal.weightKg}
-        errorMessage={healthLogActions.formErrorMessage}
-        showDelete={formModal.editingLog !== null}
-        photos={formModal.photos}
-        isSaving={healthLogActions.isSaving}
-        isUploadingPhoto={photoUpload.isUploadingPhoto}
-        photoUploadErrorMessage={photoUpload.photoUploadErrorMessage}
-        onSave={healthLogActions.saveHealthLog}
-        onUploadPhoto={photoUpload.uploadPhoto}
-        onRemovePhoto={photoUpload.removePhoto}
-        onDelete={healthLogActions.requestDeleteFromForm}
-        onClose={healthLogActions.closeForm}
-        onChangeRecordType={formModal.setSelectedRecordType}
-        onChangeOccurredDate={formModal.setOccurredDate}
-        onChangeOccurredTime={formModal.setOccurredTime}
-        onChangeNote={formModal.setNote}
-        onChangeWeightKg={formModal.setWeightKg}
-      />
+      <HealthLogFormModal {...viewModel.formModal} />
       {/* 削除確認モーダル */}
-      <HealthLogDeleteDialog
-        open={deleteDialog.deleteTarget !== null}
-        target={deleteDialog.deleteTarget}
-        isDeleting={healthLogActions.isDeleting}
-        errorMessage={healthLogActions.deleteErrorMessage}
-        onCancel={healthLogActions.cancelDeleteHealthLog}
-        onConfirm={healthLogActions.confirmDeleteHealthLog}
-      />
+      <HealthLogDeleteDialog {...viewModel.deleteDialog} />
       {/* 写真モーダル */}
-      <HealthLogPhotoModal
-        open={photoModal.selectedPhoto !== null}
-        photo={photoModal.selectedPhoto}
-        onClose={photoModal.closePhotoModal}
-      />
+      <HealthLogPhotoModal {...viewModel.photoModal} />
     </div>
   )
 }
