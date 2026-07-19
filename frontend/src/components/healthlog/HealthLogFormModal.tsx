@@ -29,8 +29,10 @@ type HealthLogFormModalProps = {
   photos: HealthLogPhoto[]
   /** 写真アップロード中かどうか */
   isUploadingPhoto?: boolean
-  /** 写真アップロードエラー */
-  photoUploadErrorMessage?: string | null
+  /** 写真削除中かどうか */
+  isDeletingPhoto?: boolean
+  /** 写真操作エラー */
+  photoErrorMessage?: string | null
   /** 保存処理中かどうか */
   isSaving?: boolean
   /** 保存ボタン押下時の処理 */
@@ -38,7 +40,7 @@ type HealthLogFormModalProps = {
   /** 写真ファイル選択時の処理 */
   onUploadPhoto: (file: File) => void
   /** 写真を削除する処理 */
-  onRemovePhoto: (photoId: string) => void
+  onRemovePhoto: (photoId: string) => Promise<void>
   /** 削除ボタン押下時の処理 */
   onDelete?: () => void
   /** モーダルを閉じる処理 */
@@ -72,7 +74,8 @@ export default function HealthLogFormModal({
   showDelete = false,
   photos,
   isUploadingPhoto = false,
-  photoUploadErrorMessage,
+  isDeletingPhoto = false,
+  photoErrorMessage,
   isSaving = false,
   onSave,
   onUploadPhoto,
@@ -88,6 +91,8 @@ export default function HealthLogFormModal({
   if (!open) {
     return null
   }
+  const isFormBusy = isSaving || isUploadingPhoto || isDeletingPhoto
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-4">
       <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col rounded-2xl bg-white shadow-xl">
@@ -99,6 +104,7 @@ export default function HealthLogFormModal({
           <button
             type="button"
             onClick={onClose}
+            disabled={isFormBusy}
             className="rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             閉じる
@@ -193,7 +199,9 @@ export default function HealthLogFormModal({
           <HealthLogPhotoInput
             photos={photos}
             isUploadingPhoto={isUploadingPhoto}
-            errorMessage={photoUploadErrorMessage}
+            isDeletingPhoto={isDeletingPhoto}
+            disabled={isSaving}
+            errorMessage={photoErrorMessage}
             onUploadPhoto={onUploadPhoto}
             onRemovePhoto={onRemovePhoto}
           />
@@ -203,18 +211,24 @@ export default function HealthLogFormModal({
         <div className="flex shrink-0 items-center justify-between border-t border-border px-6 py-4">
           <div>
             {showDelete ? (
-              <Button type="button" variant="outline" onClick={onDelete}>
+              <Button type="button" variant="outline" onClick={onDelete} disabled={isFormBusy}>
                 <FiTrash2 className="h-5 w-5 text-red-500" aria-hidden="true" />
               </Button>
             ) : null}
           </div>
 
           <div className="flex justify-end gap-3">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isFormBusy}>
               キャンセル
             </Button>
-            <Button type="button" onClick={onSave} disabled={isSaving || isUploadingPhoto}>
-              {isSaving ? '保存中...' : isUploadingPhoto ? '写真アップロード中...' : '保存'}
+            <Button type="button" onClick={onSave} disabled={isFormBusy}>
+              {isSaving
+                ? '保存中...'
+                : isUploadingPhoto
+                  ? '写真アップロード中...'
+                  : isDeletingPhoto
+                    ? '写真削除中...'
+                    : '保存'}
             </Button>
           </div>
         </div>

@@ -9,12 +9,16 @@ type HealthLogPhotoInputProps = {
   photos: HealthLogPhoto[]
   /** 写真アップロード中かどうか */
   isUploadingPhoto: boolean
-  /** 写真アップロードエラー */
+  /** 写真削除中かどうか */
+  isDeletingPhoto: boolean
+  /** 親フォームの処理中で写真操作を無効にするか */
+  disabled?: boolean
+  /** 写真操作エラー */
   errorMessage?: string | null
   /** 写真ファイル選択時の処理 */
   onUploadPhoto: (file: File) => void
   /** 写真を削除する処理 */
-  onRemovePhoto: (photoId: string) => void
+  onRemovePhoto: (photoId: string) => Promise<void>
 }
 
 /**
@@ -23,6 +27,8 @@ type HealthLogPhotoInputProps = {
 export default function HealthLogPhotoInput({
   photos,
   isUploadingPhoto,
+  isDeletingPhoto,
+  disabled = false,
   errorMessage,
   onUploadPhoto,
   onRemovePhoto,
@@ -30,7 +36,7 @@ export default function HealthLogPhotoInput({
   const fileInputId = useId()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const selectedPhoto = photos[0] ?? null
-  const canUploadPhoto = !selectedPhoto && !isUploadingPhoto
+  const canUploadPhoto = !selectedPhoto && !isUploadingPhoto && !isDeletingPhoto && !disabled
 
   const handleClickSelectPhoto = () => {
     if (!canUploadPhoto) return
@@ -66,7 +72,12 @@ export default function HealthLogPhotoInput({
         />
 
         {selectedPhoto ? (
-          <HealthLogPhotoPreview photo={selectedPhoto} onRemovePhoto={onRemovePhoto} />
+          <HealthLogPhotoPreview
+            photo={selectedPhoto}
+            isDeletingPhoto={isDeletingPhoto}
+            disabled={disabled}
+            onRemovePhoto={onRemovePhoto}
+          />
         ) : (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-background px-4 py-8 text-center">
             <div className="grid h-11 w-11 place-items-center rounded-full bg-emerald-50 text-emerald-600">

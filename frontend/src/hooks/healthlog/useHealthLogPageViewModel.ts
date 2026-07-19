@@ -67,14 +67,16 @@ type HealthLogFormModalViewModel = {
   isSaving: boolean
   /** 写真アップロード中かどうか */
   isUploadingPhoto: boolean
-  /** 写真アップロードエラー */
-  photoUploadErrorMessage: string | null
+  /** 写真削除中かどうか */
+  isDeletingPhoto: boolean
+  /** 写真操作エラー */
+  photoErrorMessage: string | null
   /** 保存ボタン押下時の処理 */
   onSave: () => Promise<void>
   /** 写真ファイル選択時の処理 */
   onUploadPhoto: (file: File) => Promise<void>
   /** 写真を削除する処理 */
-  onRemovePhoto: (photoId: string) => void
+  onRemovePhoto: (photoId: string) => Promise<void>
   /** 削除ボタン押下時の処理 */
   onDelete: () => void
   /** モーダルを閉じる処理 */
@@ -153,6 +155,10 @@ export function useHealthLogPageViewModel(): UseHealthLogPageViewModelResult {
   const healthLogActions = useHealthLogActions({
     formModal,
     deleteDialog,
+    photoChanges: {
+      deletePendingPhoto: photoUpload.deletePendingPhoto,
+      resetPhotoChanges: photoUpload.resetPhotoChanges,
+    },
     selectedMonth: healthLogPage.selectedMonth,
   })
 
@@ -201,7 +207,8 @@ export function useHealthLogPageViewModel(): UseHealthLogPageViewModelResult {
       photos: formModal.photos,
       isSaving: healthLogActions.isSaving,
       isUploadingPhoto: photoUpload.isUploadingPhoto,
-      photoUploadErrorMessage: photoUpload.photoUploadErrorMessage,
+      isDeletingPhoto: photoUpload.isDeletingPhoto,
+      photoErrorMessage: photoUpload.photoErrorMessage,
       onSave: healthLogActions.saveHealthLog,
       onUploadPhoto: photoUpload.uploadPhoto,
       onRemovePhoto: photoUpload.removePhoto,

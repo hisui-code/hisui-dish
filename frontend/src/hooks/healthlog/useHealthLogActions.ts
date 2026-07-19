@@ -46,6 +46,8 @@ type UseHealthLogActionsParams = {
   formModal: HealthLogFormModalState
   /** 削除確認ダイアログの状態と操作 */
   deleteDialog: HealthLogDeleteDialogState
+  /** フォーム内の写真変更操作 */
+  photoChanges: HealthLogPhotoChangeActions
   /** 現在表示中の年月 */
   selectedMonth: string
 }
@@ -71,6 +73,13 @@ type UseHealthLogActionsResult = {
   deleteErrorMessage: string | null
 }
 
+type HealthLogPhotoChangeActions = {
+  /** 健康記録の更新後に既存写真を削除する */
+  deletePendingPhoto: () => Promise<void>
+  /** フォーム単位の写真操作状態を初期化する */
+  resetPhotoChanges: () => void
+}
+
 /**
  * @description 健康記録画面の保存・削除操作を管理する
  * フォームモーダルと削除確認ダイアログをまたぐ処理をここに集約する
@@ -78,6 +87,7 @@ type UseHealthLogActionsResult = {
 export function useHealthLogActions({
   formModal,
   deleteDialog,
+  photoChanges,
   selectedMonth,
 }: UseHealthLogActionsParams): UseHealthLogActionsResult {
   const [formErrorMessage, setFormErrorMessage] = useState<string | null>(null)
@@ -100,6 +110,7 @@ export function useHealthLogActions({
   /** フォームを閉じて入力エラーをリセットする */
   const closeForm = () => {
     setFormErrorMessage(null)
+    photoChanges.resetPhotoChanges()
     formModal.close()
   }
 
@@ -119,7 +130,7 @@ export function useHealthLogActions({
 
   /** フォーム入力を検証し、追加または更新の API 入口へ渡す */
   const saveHealthLog = async () => {
-    // ２重送信を防止するため保存中はreturnする
+    // 二重送信を防止するため保存中はreturnする
     if (isSaving) return
 
     // モーダルの入力状態を検証用フォーム値にまとめる
@@ -131,7 +142,6 @@ export function useHealthLogActions({
       weightKg: formModal.weightKg,
       photos: formModal.photos,
     }
-
     // 入力不備がある場合は API へ渡さず、フォームにエラーを表示する
     const result = validateHealthLogForm(form)
     if (!result.success) {
@@ -145,17 +155,30 @@ export function useHealthLogActions({
     try {
       const payload = buildHealthLogSavePayload(result.data)
 
-      // 更新後は表示中月の一覧を再取得対象にして、タイムラインを最新状態へ同期する
+      // 健康記録を先に更新し、フォームから外した写真との紐付けを解除する
       if (formModal.editingLog) {
         await updateHealthLog(formModal.editingLog.id, payload)
         await invalidateHealthLogs()
+
+        try {
+          // 健康記録の更新後に、削除予定の既存写真を削除する
+          await photoChanges.deletePendingPhoto()
+        } catch {
+          // 健康記録は更新済みなので、写真削除の部分失敗として通知する
+          setFormErrorMessage('健康記録は保存されましたが、写真の削除に失敗しました')
+          return
+        }
+
+        photoChanges.resetPhotoChanges()
         formModal.close()
         return
       }
 
-      // 作成後は表示中月の一覧を再取得対象にして、タイムラインへ反映する
+      // 編集対象がない場合は健康記録を新規作成する
       await createHealthLog(payload)
       await invalidateHealthLogs()
+
+      photoChanges.resetPhotoChanges()
       formModal.close()
     } catch (error) {
       setFormErrorMessage(getActionErrorMessage(error, '健康記録の保存に失敗しました'))
@@ -184,6 +207,7 @@ export function useHealthLogActions({
       await deleteHealthLog(deleteDialog.deleteTarget.id)
       await invalidateHealthLogs()
       deleteDialog.confirmDelete()
+      photoChanges.resetPhotoChanges()
       formModal.close()
     } catch (error) {
       setDeleteErrorMessage(getActionErrorMessage(error, '健康記録の削除に失敗しました'))

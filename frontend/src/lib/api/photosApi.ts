@@ -127,3 +127,12 @@ export async function fetchPhotoDownloadUrl(photoId: string): Promise<string> {
 
   return res.download.url
 }
+
+/**
+ * @description 写真メタデータ、健康記録との紐付け、storage objectを削除する
+ */
+export async function deleteHealthLogPhoto(photoId: string): Promise<void> {
+  await req<void>(`/api/v1/photos/${photoId}`, {
+    method: 'DELETE',
+  })
+}

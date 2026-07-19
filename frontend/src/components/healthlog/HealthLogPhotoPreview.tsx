@@ -6,8 +6,12 @@ import { FiImage, FiTrash2 } from 'react-icons/fi'
 type HealthLogPhotoPreviewProps = {
   /** 表示する写真メタデータ */
   photo: HealthLogPhoto
+  /** 写真削除中かどうか */
+  isDeletingPhoto: boolean
+  /** 親フォームの処理中で写真操作を無効にするか */
+  disabled?: boolean
   /** 写真を削除する処理 */
-  onRemovePhoto: (photoId: string) => void
+  onRemovePhoto: (photoId: string) => Promise<void>
 }
 
 /**
@@ -15,17 +19,26 @@ type HealthLogPhotoPreviewProps = {
  */
 export default function HealthLogPhotoPreview({
   photo,
+  isDeletingPhoto,
+  disabled = false,
   onRemovePhoto,
 }: HealthLogPhotoPreviewProps) {
   const { previewUrl, hasPreviewError, markPreviewError } = useHealthLogPhotoPreviewUrl(photo.id)
 
+  const handleRemovePhoto = () => {
+    void onRemovePhoto(photo.id)
+  }
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-background">
       <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2">
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-foreground">{photo.originalName}</p>
           <p className="text-xs text-muted-foreground">
-            {hasPreviewError ? 'プレビューを表示できません' : photo.mimeType}
+            {isDeletingPhoto
+              ? '削除中...'
+              : hasPreviewError
+                ? 'プレビューを表示できません'
+                : photo.mimeType}
           </p>
         </div>
 
@@ -33,7 +46,8 @@ export default function HealthLogPhotoPreview({
           type="button"
           variant="outline"
           size="icon"
-          onClick={() => onRemovePhoto(photo.id)}
+          onClick={handleRemovePhoto}
+          disabled={disabled || isDeletingPhoto}
           aria-label={`${photo.originalName}を削除`}
           className="shrink-0 text-red-500 hover:text-red-600"
         >
