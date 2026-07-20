@@ -4,12 +4,8 @@ import { useHealthLogFormModal } from '@/hooks/healthlog/useHealthLogFormModal'
 import { useHealthLogPage } from '@/hooks/healthlog/useHealthLogPage'
 import useHealthLogPhotoModal from '@/hooks/healthlog/useHealthLogPhotoModal'
 import { useHealthLogPhotoUpload } from '@/hooks/healthlog/useHealthLogPhotoUpload'
-import type {
-  HealthLogFilterType,
-  HealthLogPhoto,
-  HealthLogRecord,
-  HealthLogType,
-} from '@/types/healthLog'
+import type { HealthLogFilterType, HealthLogPhoto, HealthLogRecord } from '@/types/healthLog'
+import type { HealthLogFormModalViewModel } from '@/types/healthLogPage'
 
 type HealthLogSummaryCardsViewModel = {
   /** 今月の記録回数 */
@@ -40,57 +36,6 @@ type HealthLogTimelineViewModel = {
   onEdit: (log: HealthLogRecord) => void
   /** 写真モーダルを開く処理 */
   onOpenPhoto: (photo: HealthLogPhoto) => void
-}
-
-type HealthLogFormModalViewModel = {
-  /** モーダルの表示状態 */
-  open: boolean
-  /** モーダル見出し */
-  title: string
-  /** 現在選択中の記録種別 */
-  selectedRecordType: HealthLogType
-  /** 発生日の入力値 */
-  occurredDate: string
-  /** 発生時刻の入力値 */
-  occurredTime: string
-  /** メモ入力欄の値 */
-  note: string
-  /** 体重入力欄の値 */
-  weightKg: string
-  /** エラー表示用メッセージ */
-  errorMessage: string | null
-  /** 編集モード時に削除ボタンを表示するか */
-  showDelete: boolean
-  /** 写真メタデータ一覧 */
-  photos: HealthLogPhoto[]
-  /** 保存処理中かどうか */
-  isSaving: boolean
-  /** 写真アップロード中かどうか */
-  isUploadingPhoto: boolean
-  /** 写真削除中かどうか */
-  isDeletingPhoto: boolean
-  /** 写真操作エラー */
-  photoErrorMessage: string | null
-  /** 保存ボタン押下時の処理 */
-  onSave: () => Promise<void>
-  /** 写真ファイル選択時の処理 */
-  onUploadPhoto: (file: File) => Promise<void>
-  /** 写真を削除する処理 */
-  onRemovePhoto: (photoId: string) => Promise<void>
-  /** 削除ボタン押下時の処理 */
-  onDelete: () => void
-  /** モーダルを閉じる処理 */
-  onClose: () => void
-  /** 記録種別を変更する処理 */
-  onChangeRecordType: (type: HealthLogType) => void
-  /** 発生日を更新する処理 */
-  onChangeOccurredDate: (value: string) => void
-  /** 発生時刻を更新する処理 */
-  onChangeOccurredTime: (value: string) => void
-  /** メモ入力値を更新する処理 */
-  onChangeNote: (value: string) => void
-  /** 体重入力値を更新する処理 */
-  onChangeWeightKg: (value: string) => void
 }
 
 type HealthLogDeleteDialogViewModel = {
@@ -193,32 +138,37 @@ export function useHealthLogPageViewModel(): UseHealthLogPageViewModelResult {
       onOpenPhoto: photoModal.openPhotoModal,
     },
 
-    // 入力モーダルに必要なフォーム状態と保存操作をまとめる
+    // 入力モーダルの値・状態・操作を責務別にまとめる
     formModal: {
-      open: formModal.isOpen,
-      title: formModal.editingLog ? '健康記録を編集' : '健康記録を追加',
-      selectedRecordType: formModal.selectedRecordType,
-      occurredDate: formModal.occurredDate,
-      occurredTime: formModal.occurredTime,
-      note: formModal.note,
-      weightKg: formModal.weightKg,
-      errorMessage: healthLogActions.formErrorMessage,
-      showDelete: formModal.editingLog !== null,
-      photos: formModal.photos,
-      isSaving: healthLogActions.isSaving,
-      isUploadingPhoto: photoUpload.isUploadingPhoto,
-      isDeletingPhoto: photoUpload.isDeletingPhoto,
-      photoErrorMessage: photoUpload.photoErrorMessage,
-      onSave: healthLogActions.saveHealthLog,
-      onUploadPhoto: photoUpload.uploadPhoto,
-      onRemovePhoto: photoUpload.removePhoto,
-      onDelete: healthLogActions.requestDeleteFromForm,
-      onClose: healthLogActions.closeForm,
-      onChangeRecordType: formModal.setSelectedRecordType,
-      onChangeOccurredDate: formModal.setOccurredDate,
-      onChangeOccurredTime: formModal.setOccurredTime,
-      onChangeNote: formModal.setNote,
-      onChangeWeightKg: formModal.setWeightKg,
+      form: {
+        selectedRecordType: formModal.selectedRecordType,
+        occurredDate: formModal.occurredDate,
+        occurredTime: formModal.occurredTime,
+        note: formModal.note,
+        weightKg: formModal.weightKg,
+        photos: formModal.photos,
+      },
+      state: {
+        open: formModal.isOpen,
+        mode: formModal.editingLog ? 'edit' : 'create',
+        errorMessage: healthLogActions.formErrorMessage,
+        isSaving: healthLogActions.isSaving,
+        isUploadingPhoto: photoUpload.isUploadingPhoto,
+        isDeletingPhoto: photoUpload.isDeletingPhoto,
+        photoErrorMessage: photoUpload.photoErrorMessage,
+      },
+      actions: {
+        onSave: healthLogActions.saveHealthLog,
+        onUploadPhoto: photoUpload.uploadPhoto,
+        onRemovePhoto: photoUpload.removePhoto,
+        onDelete: healthLogActions.requestDeleteFromForm,
+        onClose: healthLogActions.closeForm,
+        onChangeRecordType: formModal.setSelectedRecordType,
+        onChangeOccurredDate: formModal.setOccurredDate,
+        onChangeOccurredTime: formModal.setOccurredTime,
+        onChangeNote: formModal.setNote,
+        onChangeWeightKg: formModal.setWeightKg,
+      },
     },
 
     // 削除確認ダイアログに必要な状態と削除操作をまとめる

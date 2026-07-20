@@ -4,93 +4,44 @@ import { Button } from '@/components/ui/button'
 import { healthLogTypeLabels, healthLogTypes } from '@/lib/health-log/constants'
 import { FiTrash2 } from 'react-icons/fi'
 
-import type { HealthLogPhoto, HealthLogType } from '@/types/healthLog'
-
-type HealthLogFormModalProps = {
-  /** モーダルの表示状態 */
-  open: boolean
-  /** モーダル見出し */
-  title: string
-  /** 現在選択中の記録種別 */
-  selectedRecordType: HealthLogType
-  /** 発生日の入力値 */
-  occurredDate: string
-  /** 発生時刻の入力値 */
-  occurredTime: string
-  /** メモ入力欄の値 */
-  note: string
-  /** 体重入力欄の値 */
-  weightKg: string
-  /** エラー表示用メッセージ */
-  errorMessage?: string | null
-  /** 編集モード時に削除ボタンを表示するか */
-  showDelete?: boolean
-  /** 写真メタデータ一覧 */
-  photos: HealthLogPhoto[]
-  /** 写真アップロード中かどうか */
-  isUploadingPhoto?: boolean
-  /** 写真削除中かどうか */
-  isDeletingPhoto?: boolean
-  /** 写真操作エラー */
-  photoErrorMessage?: string | null
-  /** 保存処理中かどうか */
-  isSaving?: boolean
-  /** 保存ボタン押下時の処理 */
-  onSave: () => void
-  /** 写真ファイル選択時の処理 */
-  onUploadPhoto: (file: File) => void
-  /** 写真を削除する処理 */
-  onRemovePhoto: (photoId: string) => Promise<void>
-  /** 削除ボタン押下時の処理 */
-  onDelete?: () => void
-  /** モーダルを閉じる処理 */
-  onClose: () => void
-  /** 記録種別を変更する処理 */
-  onChangeRecordType: (type: HealthLogType) => void
-  /** 発生日を更新する処理 */
-  onChangeOccurredDate: (value: string) => void
-  /** 発生時刻を更新する処理 */
-  onChangeOccurredTime: (value: string) => void
-  /** メモ入力値を更新する処理 */
-  onChangeNote: (value: string) => void
-  /** 体重入力値を更新する処理 */
-  onChangeWeightKg: (value: string) => void
-}
+import type { HealthLogFormModalViewModel } from '@/types/healthLogPage'
 
 /**
- * @description 健康記録の追加フォームモーダルを表示する
+ * @description 健康記録の追加・編集フォームモーダルを表示する
  * 入力中の値は親コンポーネントから受け取り、表示と入力欄に専念する
  */
+export default function HealthLogFormModal({ form, state, actions }: HealthLogFormModalViewModel) {
+  const { selectedRecordType, occurredDate, occurredTime, note, weightKg, photos } = form
 
-export default function HealthLogFormModal({
-  open,
-  title,
-  selectedRecordType,
-  occurredDate,
-  occurredTime,
-  note,
-  weightKg,
-  errorMessage,
-  showDelete = false,
-  photos,
-  isUploadingPhoto = false,
-  isDeletingPhoto = false,
-  photoErrorMessage,
-  isSaving = false,
-  onSave,
-  onUploadPhoto,
-  onRemovePhoto,
-  onDelete,
-  onClose,
-  onChangeRecordType,
-  onChangeOccurredDate,
-  onChangeOccurredTime,
-  onChangeNote,
-  onChangeWeightKg,
-}: HealthLogFormModalProps) {
+  const {
+    open,
+    mode,
+    errorMessage,
+    isSaving,
+    isUploadingPhoto,
+    isDeletingPhoto,
+    photoErrorMessage,
+  } = state
+
+  const {
+    onSave,
+    onUploadPhoto,
+    onRemovePhoto,
+    onDelete,
+    onClose,
+    onChangeRecordType,
+    onChangeOccurredDate,
+    onChangeOccurredTime,
+    onChangeNote,
+    onChangeWeightKg,
+  } = actions
+
   if (!open) {
     return null
   }
+
+  const isEditMode = mode === 'edit'
+  const title = isEditMode ? '健康記録を編集' : '健康記録を追加'
   const isFormBusy = isSaving || isUploadingPhoto || isDeletingPhoto
 
   return (
@@ -210,7 +161,7 @@ export default function HealthLogFormModal({
         {/* 削除 */}
         <div className="flex shrink-0 items-center justify-between border-t border-border px-6 py-4">
           <div>
-            {showDelete ? (
+            {isEditMode ? (
               <Button type="button" variant="outline" onClick={onDelete} disabled={isFormBusy}>
                 <FiTrash2 className="h-5 w-5 text-red-500" aria-hidden="true" />
               </Button>
