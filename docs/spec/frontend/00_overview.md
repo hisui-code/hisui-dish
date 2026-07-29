@@ -9,6 +9,7 @@ Frontend は、Backend から取得したデータを画面に表示し、利用
 - Login
 - Dashboard
 - Logs
+- HealthLog
 - Settings
 - Users
 

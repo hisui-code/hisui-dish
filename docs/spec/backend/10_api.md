@@ -51,6 +51,28 @@ Backend が提供する API をまとめている。
 
 - `14_logs.md`
 
+## HealthLog 系
+
+- 健康記録の一覧取得、追加、更新、削除を行う API
+- `GET /api/v1/health_logs`
+- `POST /api/v1/health_logs`
+- `PATCH /api/v1/health_logs/{health_log_id}`
+- `DELETE /api/v1/health_logs/{health_log_id}`
+
+## 画像系
+
+- 健康記録に添付する画像のアップロード、表示 URL 発行、削除を行う API
+- `POST /api/v1/uploads/presign`
+- `POST /api/v1/uploads/local`
+- `POST /api/v1/uploads/complete`
+- `GET /api/v1/photos/{photo}/download-url`
+- `GET /api/v1/photos/{photo}/content`
+- `DELETE /api/v1/photos/{photo}`
+
+詳細:
+
+- `21_photo_storage.md`
+
 ## 認証、ユーザー系
 
 - Web 画面のログインやユーザー管理を行う API
